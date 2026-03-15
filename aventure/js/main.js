@@ -4,6 +4,9 @@ import { populateJungle } from './vegetation.js';
 import { VirtualJoystick } from './joystick.js';
 import { CameraControls } from './camera-controls.js';
 import { Snake } from './snake.js';
+import { Spider } from './spider.js';
+import { Crocodile } from './crocodile.js';
+import { Monkey } from './monkey.js';
 import { Sword } from './sword.js';
 import { HUD } from './hud.js';
 
@@ -192,22 +195,43 @@ const HEAL_DELAY = 5;
 let idleTimer = 0;
 let playerIsIdle = true;
 
-// Spawn snakes
-const snakes = [];
-function spawnSnakes() {
-    for (const s of snakes) {
-        if (!s.isDead()) s.die();
+// Spawn monsters
+const monsters = [];
+function randomSpawnPos(minDist, maxDist) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = minDist + Math.random() * (maxDist - minDist);
+    return { x: Math.cos(angle) * dist, z: Math.sin(angle) * dist };
+}
+
+function spawnMonsters() {
+    for (const m of monsters) {
+        if (!m.isDead()) m.die();
     }
-    snakes.length = 0;
+    monsters.length = 0;
+    // 5 serpents (50 HP, faibles)
     for (let i = 0; i < 5; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 15 + Math.random() * 40;
-        const sx = Math.cos(angle) * dist;
-        const sz = Math.sin(angle) * dist;
-        snakes.push(new Snake(scene, sx, sz));
+        const { x, z } = randomSpawnPos(15, 55);
+        monsters.push(new Snake(scene, x, z));
+    }
+    // 3 araignées (80 HP, rapides)
+    for (let i = 0; i < 3; i++) {
+        const { x, z } = randomSpawnPos(25, 60);
+        monsters.push(new Spider(scene, x, z));
+    }
+    // 2 crocodiles (150 HP, très puissants mais lents)
+    for (let i = 0; i < 2; i++) {
+        const { x, z } = randomSpawnPos(30, 70);
+        monsters.push(new Crocodile(scene, x, z));
+    }
+    // 2 singes (60 HP, lancent des projectiles)
+    for (let i = 0; i < 2; i++) {
+        const { x, z } = randomSpawnPos(20, 50);
+        monsters.push(new Monkey(scene, x, z));
     }
 }
-spawnSnakes();
+spawnMonsters();
+// Alias pour compatibilité
+const snakes = monsters;
 
 function checkCollision(newX, newZ) {
     for (const obj of vegetation) {
@@ -252,7 +276,7 @@ function restartGame() {
     cameraControls.yaw = 0;
     cameraControls.pitch = 0;
     hud.reset();
-    spawnSnakes();
+    spawnMonsters();
     damageCooldownTimer = 0;
 }
 
