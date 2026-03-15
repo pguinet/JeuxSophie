@@ -234,40 +234,40 @@ function randomPosition(clearRadius = 5) {
 export function populateJungle(scene) {
     const vegetation = [];
 
-    // Arbres (~40)
-    for (let i = 0; i < 40; i++) {
+    // Arbres (~120)
+    for (let i = 0; i < 120; i++) {
         const { x, z } = randomPosition();
         const tree = createTree(x, z);
         scene.add(tree);
         vegetation.push(tree);
     }
 
-    // Palmiers (~15)
-    for (let i = 0; i < 15; i++) {
+    // Palmiers (~50)
+    for (let i = 0; i < 50; i++) {
         const { x, z } = randomPosition();
         const palm = createPalm(x, z);
         scene.add(palm);
         vegetation.push(palm);
     }
 
-    // Buissons (~100)
-    for (let i = 0; i < 100; i++) {
+    // Buissons (~300)
+    for (let i = 0; i < 300; i++) {
         const { x, z } = randomPosition();
         const bush = createBush(x, z);
         scene.add(bush);
         vegetation.push(bush);
     }
 
-    // Gros buissons touffus (~30)
-    for (let i = 0; i < 30; i++) {
+    // Gros buissons touffus (~100)
+    for (let i = 0; i < 100; i++) {
         const { x, z } = randomPosition();
         const thickBush = createThickBush(x, z);
         scene.add(thickBush);
         vegetation.push(thickBush);
     }
 
-    // Lianes (~40, placées près des arbres)
-    for (let i = 0; i < 40; i++) {
+    // Lianes (~150)
+    for (let i = 0; i < 150; i++) {
         const { x, z } = randomPosition();
         const vine = createVine(x, z);
         scene.add(vine);
