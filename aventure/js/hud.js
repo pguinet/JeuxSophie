@@ -201,6 +201,14 @@ export class HUD {
         gunSlot.appendChild(gunLabel);
         bar.appendChild(gunSlot);
         this.gunSlot = gunSlot;
+        this.gunActive = false;
+        this.onGunToggle = null; // callback défini dans main.js
+
+        gunSlot.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this._toggleGun();
+        });
+        gunSlot.addEventListener('click', () => this._toggleGun());
 
         // Kit de soin
         const healSlot = document.createElement('div');
@@ -224,6 +232,18 @@ export class HUD {
         healSlot.addEventListener('click', () => this._useHealKit());
 
         this.hudEl.appendChild(bar);
+    }
+
+    _toggleGun() {
+        this.gunActive = !this.gunActive;
+        if (this.gunActive) {
+            this.gunSlot.style.borderColor = '#ff8800';
+            this.gunSlot.style.boxShadow = '0 0 10px #ff8800';
+        } else {
+            this.gunSlot.style.borderColor = 'rgba(255,255,255,0.6)';
+            this.gunSlot.style.boxShadow = 'none';
+        }
+        if (this.onGunToggle) this.onGunToggle(this.gunActive);
     }
 
     _useShield() {
@@ -306,6 +326,9 @@ export class HUD {
         this.shieldSlot.style.boxShadow = 'none';
         this.healKits = 5;
         this.healLabel.textContent = '5';
+        this.gunActive = false;
+        this.gunSlot.style.borderColor = 'rgba(255,255,255,0.6)';
+        this.gunSlot.style.boxShadow = 'none';
         this.coinText.textContent = '0';
         this.damageFlash.style.opacity = '0';
     }

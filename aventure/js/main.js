@@ -105,13 +105,73 @@ attackBtn.textContent = '\u2694\uFE0F';
 attackBtn.style.cssText = 'position:absolute; bottom:40px; right:40px; width:80px; height:80px; border-radius:50%; background:rgba(200,50,30,0.6); border:3px solid rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; font-size:36px; z-index:15; pointer-events:auto; user-select:none; -webkit-user-select:none; transition:background 0.15s ease;';
 container.appendChild(attackBtn);
 
+// Bullets
+const bullets = [];
+const BULLET_SPEED = 40;
+const BULLET_DAMAGE = 20;
+const BULLET_MAX_DIST = 50;
+const bulletGeo = new THREE.SphereGeometry(0.08, 6, 6);
+const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+
+function shootBullet() {
+    const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+    bullet.position.copy(camera.position);
+    const dir = new THREE.Vector3(0, 0, -1);
+    dir.applyQuaternion(camera.quaternion);
+    bullet.userData.direction = dir;
+    bullet.userData.distance = 0;
+    scene.add(bullet);
+    bullets.push(bullet);
+}
+
+function updateBullets(delta) {
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        const move = BULLET_SPEED * delta;
+        b.position.addScaledVector(b.userData.direction, move);
+        b.userData.distance += move;
+
+        // Vérifier collision avec serpents
+        let hit = false;
+        for (const snake of snakes) {
+            if (snake.isDead()) continue;
+            const dx = b.position.x - snake.group.position.x;
+            const dz = b.position.z - snake.group.position.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            if (dist < 1.5) {
+                snake.takeDamage(BULLET_DAMAGE);
+                if (snake.isDead() && !snake.coinAwarded) {
+                    snake.coinAwarded = true;
+                    hud.addCoins(5);
+                }
+                hit = true;
+                break;
+            }
+        }
+
+        if (hit || b.userData.distance > BULLET_MAX_DIST) {
+            scene.remove(b);
+            bullets.splice(i, 1);
+        }
+    }
+}
+
+// Changer l'icône du bouton quand on switch d'arme
+hud.onGunToggle = (active) => {
+    attackBtn.textContent = active ? '\uD83D\uDD2B' : '\u2694\uFE0F';
+};
+
 attackBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    sword.attack(snakes, camera.position, cameraControls.yaw);
-    for (const snake of snakes) {
-        if (snake.isDead() && !snake.coinAwarded) {
-            snake.coinAwarded = true;
-            hud.addCoins(5);
+    if (hud.gunActive) {
+        shootBullet();
+    } else {
+        sword.attack(snakes, camera.position, cameraControls.yaw);
+        for (const snake of snakes) {
+            if (snake.isDead() && !snake.coinAwarded) {
+                snake.coinAwarded = true;
+                hud.addCoins(5);
+            }
         }
     }
     attackBtn.style.background = 'rgba(80,20,10,0.8)';
@@ -226,6 +286,7 @@ function animate() {
     camera.position.z = Math.max(-95, Math.min(95, camera.position.z));
 
     sword.update(delta);
+    updateBullets(delta);
     updateParticles(delta);
 
     // Régénération de vie quand immobile
