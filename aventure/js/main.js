@@ -122,6 +122,9 @@ const clock = new THREE.Clock();
 const DAMAGE_COOLDOWN = 1;
 let damageCooldownTimer = 0;
 let gameOver = false;
+const HEAL_DELAY = 5;
+let idleTimer = 0;
+let playerIsIdle = true;
 
 // Spawn snakes
 const snakes = [];
@@ -196,7 +199,8 @@ function animate() {
     cameraControls.update();
 
     const dir = joystick.getDirection();
-    if (dir.x !== 0 || dir.y !== 0) {
+    playerIsIdle = (dir.x === 0 && dir.y === 0);
+    if (!playerIsIdle) {
         const forward = new THREE.Vector3(0, 0, -1);
         forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraControls.yaw);
         const right = new THREE.Vector3(1, 0, 0);
@@ -219,6 +223,17 @@ function animate() {
 
     sword.update(delta);
     updateParticles(delta);
+
+    // Régénération de vie quand immobile
+    if (playerIsIdle && hud.health < hud.maxHealth) {
+        idleTimer += delta;
+        if (idleTimer >= HEAL_DELAY) {
+            hud.updateHealth(10);
+            idleTimer = 0;
+        }
+    } else if (!playerIsIdle) {
+        idleTimer = 0;
+    }
 
     damageCooldownTimer = Math.max(0, damageCooldownTimer - delta);
     for (const snake of snakes) {
