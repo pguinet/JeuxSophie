@@ -19,6 +19,7 @@ scene.fog = new THREE.FogExp2(0x4a7c59, 0.025);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 0);
+scene.add(camera);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(50, 50, 50);
