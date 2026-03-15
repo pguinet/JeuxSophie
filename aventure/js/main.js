@@ -240,7 +240,8 @@ function animate() {
         if (!snake.isDead()) {
             const attacking = snake.update(delta, camera.position);
             if (attacking && damageCooldownTimer <= 0) {
-                const isDead = hud.updateHealth(-snake.damage);
+                const dmg = hud.shieldActive ? Math.floor(snake.damage / 2) : snake.damage;
+                const isDead = hud.updateHealth(-dmg);
                 damageCooldownTimer = DAMAGE_COOLDOWN;
                 if (isDead) {
                     gameOver = true;

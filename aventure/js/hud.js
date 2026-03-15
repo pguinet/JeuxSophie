@@ -27,6 +27,9 @@ export class HUD {
 
         // Build damage flash overlay
         this._buildDamageFlash();
+
+        // Build inventory bar
+        this._buildInventory();
     }
 
     _buildHealthBar() {
@@ -132,6 +135,126 @@ export class HUD {
         this.hudEl.appendChild(this.damageFlash);
     }
 
+    _buildInventory() {
+        this.healKits = 5;
+
+        const bar = document.createElement('div');
+        Object.assign(bar.style, {
+            position: 'absolute',
+            bottom: '15px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '8px',
+            pointerEvents: 'auto',
+        });
+
+        const slotStyle = {
+            width: '60px',
+            height: '60px',
+            border: '2px solid rgba(255,255,255,0.6)',
+            borderRadius: '8px',
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+        };
+
+        // Bouclier
+        const shieldSlot = document.createElement('div');
+        Object.assign(shieldSlot.style, slotStyle);
+        shieldSlot.style.cursor = 'pointer';
+        const shieldIcon = document.createElement('div');
+        shieldIcon.textContent = '\uD83D\uDEE1\uFE0F';
+        shieldIcon.style.fontSize = '28px';
+        shieldSlot.appendChild(shieldIcon);
+        const shieldLabel = document.createElement('div');
+        shieldLabel.textContent = '1';
+        Object.assign(shieldLabel.style, { color: 'white', fontSize: '11px', fontWeight: 'bold' });
+        shieldSlot.appendChild(shieldLabel);
+        bar.appendChild(shieldSlot);
+        this.shieldSlot = shieldSlot;
+        this.shieldLabel = shieldLabel;
+        this.shieldCount = 1;
+        this.shieldActive = false;
+
+        shieldSlot.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this._useShield();
+        });
+        shieldSlot.addEventListener('click', () => this._useShield());
+
+        // Pistolet
+        const gunSlot = document.createElement('div');
+        Object.assign(gunSlot.style, slotStyle);
+        gunSlot.style.cursor = 'pointer';
+        const gunIcon = document.createElement('div');
+        gunIcon.textContent = '\uD83D\uDD2B';
+        gunIcon.style.fontSize = '28px';
+        gunSlot.appendChild(gunIcon);
+        const gunLabel = document.createElement('div');
+        gunLabel.textContent = '\u221E';
+        Object.assign(gunLabel.style, { color: 'white', fontSize: '11px', fontWeight: 'bold' });
+        gunSlot.appendChild(gunLabel);
+        bar.appendChild(gunSlot);
+        this.gunSlot = gunSlot;
+
+        // Kit de soin
+        const healSlot = document.createElement('div');
+        Object.assign(healSlot.style, slotStyle);
+        healSlot.style.cursor = 'pointer';
+        const healIcon = document.createElement('div');
+        healIcon.textContent = '\u2764\uFE0F\u200D\uD83E\uDE79';
+        healIcon.style.fontSize = '28px';
+        healSlot.appendChild(healIcon);
+        this.healLabel = document.createElement('div');
+        this.healLabel.textContent = '5';
+        Object.assign(this.healLabel.style, { color: 'white', fontSize: '11px', fontWeight: 'bold' });
+        healSlot.appendChild(this.healLabel);
+        bar.appendChild(healSlot);
+        this.healSlot = healSlot;
+
+        healSlot.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this._useHealKit();
+        });
+        healSlot.addEventListener('click', () => this._useHealKit());
+
+        this.hudEl.appendChild(bar);
+    }
+
+    _useShield() {
+        if (this.shieldCount <= 0 || this.shieldActive) return;
+        this.shieldActive = true;
+        this.shieldCount--;
+        this.shieldLabel.textContent = this.shieldCount.toString();
+        this.shieldSlot.style.borderColor = '#44aaff';
+        this.shieldSlot.style.boxShadow = '0 0 10px #44aaff';
+        // Le bouclier dure 10 secondes et réduit les dégâts de moitié
+        setTimeout(() => {
+            this.shieldActive = false;
+            this.shieldSlot.style.borderColor = 'rgba(255,255,255,0.6)';
+            this.shieldSlot.style.boxShadow = 'none';
+        }, 10000);
+    }
+
+    _useHealKit() {
+        if (this.healKits <= 0 || this.health >= this.maxHealth) return;
+        this.healKits--;
+        this.healLabel.textContent = this.healKits.toString();
+        this.updateHealth(30);
+        // Animation
+        this.healSlot.style.borderColor = '#22cc22';
+        this.healSlot.style.boxShadow = '0 0 10px #22cc22';
+        setTimeout(() => {
+            this.healSlot.style.borderColor = 'rgba(255,255,255,0.6)';
+            this.healSlot.style.boxShadow = 'none';
+        }, 500);
+    }
+
     updateHealth(amount) {
         this.health = Math.max(0, Math.min(this.maxHealth, this.health + amount));
 
@@ -174,6 +297,15 @@ export class HUD {
         this.healthBarFill.style.width = '100%';
         this.healthBarFill.style.background = 'linear-gradient(to right, #2ecc40, #01ff70)';
         this.healthText.textContent = `${this.maxHealth}/${this.maxHealth}`;
+
+        // Reset inventaire
+        this.shieldCount = 1;
+        this.shieldActive = false;
+        this.shieldLabel.textContent = '1';
+        this.shieldSlot.style.borderColor = 'rgba(255,255,255,0.6)';
+        this.shieldSlot.style.boxShadow = 'none';
+        this.healKits = 5;
+        this.healLabel.textContent = '5';
         this.coinText.textContent = '0';
         this.damageFlash.style.opacity = '0';
     }
