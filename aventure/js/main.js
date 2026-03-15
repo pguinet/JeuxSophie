@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createTerrain } from './terrain.js';
+import { populateJungle } from './vegetation.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -22,6 +23,7 @@ const ambientLight = new THREE.AmbientLight(0x404040);
 scene.add(ambientLight);
 
 createTerrain(scene);
+const vegetation = populateJungle(scene);
 
 function animate() {
     requestAnimationFrame(animate);
