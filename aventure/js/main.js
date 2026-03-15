@@ -3,6 +3,7 @@ import { createTerrain } from './terrain.js';
 import { populateJungle } from './vegetation.js';
 import { VirtualJoystick } from './joystick.js';
 import { CameraControls } from './camera-controls.js';
+import { Snake } from './snake.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -35,6 +36,16 @@ const cameraControls = new CameraControls(camera, canvas);
 const MOVE_SPEED = 5;
 const COLLISION_RADIUS = 1.5;
 const clock = new THREE.Clock();
+
+// Spawn snakes at random positions (at least 15 units from origin)
+const snakes = [];
+for (let i = 0; i < 5; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 15 + Math.random() * 40;
+    const sx = Math.cos(angle) * dist;
+    const sz = Math.sin(angle) * dist;
+    snakes.push(new Snake(scene, sx, sz));
+}
 
 function checkCollision(newX, newZ) {
     for (const obj of vegetation) {
@@ -76,6 +87,16 @@ function animate() {
     // Keep player within terrain bounds
     camera.position.x = Math.max(-95, Math.min(95, camera.position.x));
     camera.position.z = Math.max(-95, Math.min(95, camera.position.z));
+
+    // Update snakes
+    let snakeAttacking = false;
+    for (const snake of snakes) {
+        if (!snake.isDead()) {
+            if (snake.update(delta, camera.position)) {
+                snakeAttacking = true;
+            }
+        }
+    }
 
     renderer.render(scene, camera);
 }
