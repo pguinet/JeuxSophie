@@ -284,20 +284,18 @@ export function populateJungle(scene) {
         vegetation.push(palm);
     }
 
-    // Buissons (~300)
+    // Buissons (~300) — pas de collision, on peut passer à travers
     for (let i = 0; i < 300; i++) {
         const { x, z } = randomPosition();
         const bush = createBush(x, z);
         scene.add(bush);
-        vegetation.push(bush);
     }
 
-    // Gros buissons touffus (~100)
+    // Gros buissons touffus (~100) — pas de collision
     for (let i = 0; i < 100; i++) {
         const { x, z } = randomPosition();
         const thickBush = createThickBush(x, z);
         scene.add(thickBush);
-        vegetation.push(thickBush);
     }
 
     // Lianes (~150)
