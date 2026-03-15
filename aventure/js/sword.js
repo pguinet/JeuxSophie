@@ -5,40 +5,75 @@ export class Sword {
         this.camera = camera;
         this.attacking = false;
         this.attackTime = 0;
-        this.attackDuration = 0.3; // seconds
+        this.attackDuration = 0.4;
         this.damage = 15;
         this.attackRange = 3;
-        this.attackAngle = Math.PI / 3; // 60 degree cone in front
+        this.attackAngle = Math.PI / 3;
 
-        // Build sword mesh as a Group, child of camera
         this.group = new THREE.Group();
 
-        // Handle (bottom) - brown cylinder
-        const handleGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.15);
-        const handleMaterial = new THREE.MeshStandardMaterial({ color: 0x4a2800 });
-        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        // Handle (bottom) - brown cylinder, plus gros
+        const handleGeo = new THREE.CylinderGeometry(0.035, 0.04, 0.25, 8);
+        const handleMat = new THREE.MeshStandardMaterial({ color: 0x4a2800 });
+        const handle = new THREE.Mesh(handleGeo, handleMat);
         handle.position.y = 0;
         this.group.add(handle);
 
-        // Guard (middle) - gold box
-        const guardGeometry = new THREE.BoxGeometry(0.15, 0.03, 0.05);
-        const guardMaterial = new THREE.MeshStandardMaterial({ color: 0xdaa520 });
-        const guard = new THREE.Mesh(guardGeometry, guardMaterial);
-        guard.position.y = 0.075 + 0.015; // top of handle + half guard height
+        // Pommeau (bout de la poignée) - sphère dorée
+        const pommelGeo = new THREE.SphereGeometry(0.05, 8, 8);
+        const pommelMat = new THREE.MeshStandardMaterial({ color: 0xdaa520 });
+        const pommel = new THREE.Mesh(pommelGeo, pommelMat);
+        pommel.position.y = -0.13;
+        this.group.add(pommel);
+
+        // Guard (middle) - gold, plus large
+        const guardGeo = new THREE.BoxGeometry(0.25, 0.04, 0.06);
+        const guardMat = new THREE.MeshStandardMaterial({ color: 0xdaa520 });
+        const guard = new THREE.Mesh(guardGeo, guardMat);
+        guard.position.y = 0.14;
         this.group.add(guard);
 
-        // Blade (top) - silver/grey box
-        const bladeGeometry = new THREE.BoxGeometry(0.05, 0.6, 0.05);
-        const bladeMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
-        const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
-        blade.position.y = 0.075 + 0.03 + 0.3; // top of guard + half blade height
+        // Blade - lame triangulaire plus imposante
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0);
+        bladeShape.lineTo(0.06, 0);
+        bladeShape.lineTo(0.0, 0.8);
+        bladeShape.lineTo(-0.06, 0);
+        bladeShape.closePath();
+
+        const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+            depth: 0.03,
+            bevelEnabled: true,
+            bevelThickness: 0.005,
+            bevelSize: 0.005,
+            bevelSegments: 1,
+        });
+        const bladeMat = new THREE.MeshStandardMaterial({
+            color: 0xcccccc,
+            metalness: 0.8,
+            roughness: 0.2,
+        });
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.position.set(0, 0.16, -0.015);
         this.group.add(blade);
 
-        // Position bottom-right of view
-        this.group.position.set(0.4, -0.3, -0.5);
+        // Ligne brillante au centre de la lame
+        const edgeGeo = new THREE.BoxGeometry(0.01, 0.75, 0.005);
+        const edgeMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            metalness: 1,
+            roughness: 0.1,
+        });
+        const edge = new THREE.Mesh(edgeGeo, edgeMat);
+        edge.position.set(0, 0.53, 0);
+        this.group.add(edge);
 
-        // Rest rotation (slight tilt)
-        this.restRotation = new THREE.Euler(-0.3, 0, 0.2);
+        // Position en bas à droite, bien visible
+        this.group.position.set(0.45, -0.35, -0.6);
+        this.group.scale.set(1.3, 1.3, 1.3);
+
+        // Rotation au repos (légèrement inclinée)
+        this.restRotation = new THREE.Euler(-0.2, 0, 0.15);
         this.group.rotation.copy(this.restRotation);
 
         camera.add(this.group);
@@ -49,7 +84,6 @@ export class Sword {
         this.attacking = true;
         this.attackTime = 0;
 
-        // Check which snakes are in range and in front of player
         for (const snake of snakes) {
             if (snake.isDead()) continue;
 
@@ -59,10 +93,8 @@ export class Sword {
 
             if (dist > this.attackRange) continue;
 
-            // Check if snake is in front of player (within attackAngle cone)
             const angleToSnake = Math.atan2(dx, -dz);
             let angleDiff = angleToSnake - cameraYaw;
-            // Normalize angle difference to -PI..PI
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
@@ -79,21 +111,38 @@ export class Sword {
         const t = this.attackTime / this.attackDuration;
 
         if (t >= 1) {
-            // Attack finished, return to rest
             this.attacking = false;
             this.group.rotation.copy(this.restRotation);
+            this.group.position.set(0.45, -0.35, -0.6);
             return;
         }
 
-        // Swing animation: rotate forward then back
-        // First half: swing forward (rotate on X axis)
-        // Second half: return to rest
-        const swing = t < 0.5
-            ? t * 2       // 0 to 1 in first half
-            : (1 - t) * 2; // 1 to 0 in second half
-
-        this.group.rotation.x = this.restRotation.x - swing * 1.5;
-        this.group.rotation.z = this.restRotation.z - swing * 0.3;
+        // Animation de frappe en 3 phases :
+        // 1. Lever l'épée (0-25%)
+        // 2. Frapper vers l'avant (25-50%)
+        // 3. Revenir au repos (50-100%)
+        if (t < 0.25) {
+            // Lever : l'épée monte et recule
+            const p = t / 0.25;
+            this.group.rotation.x = this.restRotation.x + p * 1.0;
+            this.group.rotation.z = this.restRotation.z - p * 0.4;
+            this.group.position.y = -0.35 + p * 0.15;
+        } else if (t < 0.5) {
+            // Frapper : descente rapide vers l'avant
+            const p = (t - 0.25) / 0.25;
+            this.group.rotation.x = this.restRotation.x + 1.0 - p * 2.8;
+            this.group.rotation.z = this.restRotation.z - 0.4 + p * 0.6;
+            this.group.position.y = -0.35 + 0.15 - p * 0.25;
+            this.group.position.z = -0.6 - p * 0.15;
+        } else {
+            // Retour au repos
+            const p = (t - 0.5) / 0.5;
+            const ease = p * p * (3 - 2 * p); // smoothstep
+            this.group.rotation.x = (this.restRotation.x - 1.8) + ease * (this.restRotation.x - (this.restRotation.x - 1.8));
+            this.group.rotation.z = (this.restRotation.z + 0.2) + ease * (this.restRotation.z - (this.restRotation.z + 0.2));
+            this.group.position.y = -0.45 + ease * 0.1;
+            this.group.position.z = -0.75 + ease * 0.15;
+        }
     }
 
     isAttacking() { return this.attacking; }
