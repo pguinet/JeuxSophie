@@ -156,15 +156,17 @@ function updateBullets(delta) {
     }
 }
 
-// Changer l'icône du bouton quand on switch d'arme
+// Changer l'arme quand on switch
 hud.onGunToggle = (active) => {
     attackBtn.textContent = active ? '\uD83D\uDD2B' : '\u2694\uFE0F';
+    sword.switchToGun(active);
 };
 
 attackBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     if (hud.gunActive) {
         shootBullet();
+        sword.gunRecoil();
     } else {
         sword.attack(snakes, camera.position, cameraControls.yaw);
         for (const snake of snakes) {
