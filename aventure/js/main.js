@@ -14,7 +14,8 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.shadowMap.enabled = true;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
+scene.background = new THREE.Color(0x4a7c59);
+scene.fog = new THREE.FogExp2(0x4a7c59, 0.025);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 0);
@@ -29,6 +30,65 @@ scene.add(ambientLight);
 
 createTerrain(scene);
 const vegetation = populateJungle(scene);
+
+// Floating particles (insects / pollen)
+const PARTICLE_COUNT = 200;
+const PARTICLE_SPREAD = 30;
+const particleGeometry = new THREE.BufferGeometry();
+const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
+const particleVelocities = new Float32Array(PARTICLE_COUNT * 3);
+
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const i3 = i * 3;
+    particlePositions[i3]     = (Math.random() - 0.5) * PARTICLE_SPREAD * 2;
+    particlePositions[i3 + 1] = Math.random() * 6;
+    particlePositions[i3 + 2] = (Math.random() - 0.5) * PARTICLE_SPREAD * 2;
+    particleVelocities[i3]     = (Math.random() - 0.5) * 0.3;
+    particleVelocities[i3 + 1] = 0.1 + Math.random() * 0.2;
+    particleVelocities[i3 + 2] = (Math.random() - 0.5) * 0.3;
+}
+
+particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+const particleMaterial = new THREE.PointsMaterial({
+    color: 0xc8e550,
+    size: 0.05,
+    transparent: true,
+    opacity: 0.7,
+    depthWrite: false,
+});
+
+const particles = new THREE.Points(particleGeometry, particleMaterial);
+scene.add(particles);
+
+function updateParticles(delta) {
+    const positions = particleGeometry.attributes.position.array;
+    const px = camera.position.x;
+    const pz = camera.position.z;
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const i3 = i * 3;
+        positions[i3]     += particleVelocities[i3] * delta;
+        positions[i3 + 1] += particleVelocities[i3 + 1] * delta;
+        positions[i3 + 2] += particleVelocities[i3 + 2] * delta;
+
+        // Wrap around player when too far
+        if (positions[i3] - px > PARTICLE_SPREAD)  positions[i3] -= PARTICLE_SPREAD * 2;
+        if (positions[i3] - px < -PARTICLE_SPREAD) positions[i3] += PARTICLE_SPREAD * 2;
+        if (positions[i3 + 1] > 7) positions[i3 + 1] = 0;
+        if (positions[i3 + 1] < 0) positions[i3 + 1] = 7;
+        if (positions[i3 + 2] - pz > PARTICLE_SPREAD)  positions[i3 + 2] -= PARTICLE_SPREAD * 2;
+        if (positions[i3 + 2] - pz < -PARTICLE_SPREAD) positions[i3 + 2] += PARTICLE_SPREAD * 2;
+
+        // Random drift
+        particleVelocities[i3]     += (Math.random() - 0.5) * 0.05;
+        particleVelocities[i3 + 2] += (Math.random() - 0.5) * 0.05;
+        particleVelocities[i3]     = Math.max(-0.5, Math.min(0.5, particleVelocities[i3]));
+        particleVelocities[i3 + 2] = Math.max(-0.5, Math.min(0.5, particleVelocities[i3 + 2]));
+    }
+
+    particleGeometry.attributes.position.needsUpdate = true;
+}
 
 // Controls
 const container = document.getElementById('game-container');
@@ -157,6 +217,7 @@ function animate() {
     camera.position.z = Math.max(-95, Math.min(95, camera.position.z));
 
     sword.update(delta);
+    updateParticles(delta);
 
     damageCooldownTimer = Math.max(0, damageCooldownTimer - delta);
     for (const snake of snakes) {
