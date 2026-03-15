@@ -117,31 +117,40 @@ export class Sword {
             return;
         }
 
-        // Animation de frappe en 3 phases :
-        // 1. Lever l'épée (0-25%)
-        // 2. Frapper vers l'avant (25-50%)
+        // Grande animation de frappe en 3 phases :
+        // 1. Lever l'épée en haut à droite (0-20%)
+        // 2. Trancher en diagonale vers le centre/bas-gauche (20-50%)
         // 3. Revenir au repos (50-100%)
-        if (t < 0.25) {
-            // Lever : l'épée monte et recule
-            const p = t / 0.25;
-            this.group.rotation.x = this.restRotation.x + p * 1.0;
-            this.group.rotation.z = this.restRotation.z - p * 0.4;
-            this.group.position.y = -0.35 + p * 0.15;
-        } else if (t < 0.5) {
-            // Frapper : descente rapide vers l'avant
-            const p = (t - 0.25) / 0.25;
-            this.group.rotation.x = this.restRotation.x + 1.0 - p * 2.8;
-            this.group.rotation.z = this.restRotation.z - 0.4 + p * 0.6;
-            this.group.position.y = -0.35 + 0.15 - p * 0.25;
-            this.group.position.z = -0.6 - p * 0.15;
+        if (t < 0.20) {
+            // Lever : l'épée monte au-dessus de l'épaule droite
+            const p = t / 0.20;
+            this.group.position.x = 0.45 - p * 0.1;
+            this.group.position.y = -0.35 + p * 0.6;
+            this.group.position.z = -0.6 + p * 0.1;
+            this.group.rotation.x = this.restRotation.x + p * 1.2;
+            this.group.rotation.z = this.restRotation.z - p * 0.8;
+            this.group.rotation.y = p * 0.3;
+        } else if (t < 0.50) {
+            // Frapper : grand slash diagonal de droite à gauche au centre de l'écran
+            const p = (t - 0.20) / 0.30;
+            const easeIn = p * p; // accélération
+            this.group.position.x = 0.35 - easeIn * 0.7;
+            this.group.position.y = 0.25 - easeIn * 0.5;
+            this.group.position.z = -0.5 - easeIn * 0.3;
+            this.group.rotation.x = this.restRotation.x + 1.2 - easeIn * 3.0;
+            this.group.rotation.z = this.restRotation.z - 0.8 + easeIn * 1.8;
+            this.group.rotation.y = 0.3 - easeIn * 0.6;
         } else {
             // Retour au repos
-            const p = (t - 0.5) / 0.5;
+            const p = (t - 0.50) / 0.50;
             const ease = p * p * (3 - 2 * p); // smoothstep
-            this.group.rotation.x = (this.restRotation.x - 1.8) + ease * (this.restRotation.x - (this.restRotation.x - 1.8));
-            this.group.rotation.z = (this.restRotation.z + 0.2) + ease * (this.restRotation.z - (this.restRotation.z + 0.2));
-            this.group.position.y = -0.45 + ease * 0.1;
-            this.group.position.z = -0.75 + ease * 0.15;
+            // Position de fin de frappe → position repos
+            this.group.position.x = -0.35 + ease * 0.8;
+            this.group.position.y = -0.25 - ease * 0.1;
+            this.group.position.z = -0.8 + ease * 0.2;
+            this.group.rotation.x = (this.restRotation.x - 1.8) + ease * 1.6;
+            this.group.rotation.z = (this.restRotation.z + 1.0) - ease * 0.85;
+            this.group.rotation.y = -0.3 + ease * 0.3;
         }
     }
 
