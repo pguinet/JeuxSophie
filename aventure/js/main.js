@@ -102,7 +102,7 @@ const hud = new HUD(container);
 const attackBtn = document.createElement('div');
 attackBtn.id = 'attack-btn';
 attackBtn.textContent = '\u2694\uFE0F';
-attackBtn.style.cssText = 'position:absolute; bottom:40px; right:40px; width:80px; height:80px; border-radius:50%; background:rgba(200,50,30,0.6); border:3px solid rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; font-size:36px; z-index:15; pointer-events:auto; user-select:none; -webkit-user-select:none;';
+attackBtn.style.cssText = 'position:absolute; bottom:40px; right:40px; width:80px; height:80px; border-radius:50%; background:rgba(200,50,30,0.6); border:3px solid rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; font-size:36px; z-index:15; pointer-events:auto; user-select:none; -webkit-user-select:none; transition:background 0.15s ease;';
 container.appendChild(attackBtn);
 
 attackBtn.addEventListener('touchstart', (e) => {
@@ -114,6 +114,10 @@ attackBtn.addEventListener('touchstart', (e) => {
             hud.addCoins(5);
         }
     }
+    attackBtn.style.background = 'rgba(80,20,10,0.8)';
+    setTimeout(() => {
+        attackBtn.style.background = 'rgba(200,50,30,0.6)';
+    }, 1000);
 });
 
 const MOVE_SPEED = 5;
