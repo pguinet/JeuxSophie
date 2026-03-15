@@ -25,6 +25,7 @@ export class Snake {
         this.originalColors = [];
 
         this._buildBody();
+        this._buildHealthBar();
 
         this.group.position.set(x, 0.3, z);
         scene.add(this.group);
@@ -65,6 +66,47 @@ export class Snake {
         const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
         rightEye.position.set(0.12, 0.1, 0.15);
         this.segments[0].add(rightEye);
+    }
+
+    _buildHealthBar() {
+        this.hbCanvas = document.createElement('canvas');
+        this.hbCanvas.width = 64;
+        this.hbCanvas.height = 12;
+        this.hbTexture = new THREE.CanvasTexture(this.hbCanvas);
+        this.hbTexture.minFilter = THREE.LinearFilter;
+
+        const mat = new THREE.SpriteMaterial({ map: this.hbTexture, depthTest: false });
+        this.healthBar = new THREE.Sprite(mat);
+        this.healthBar.scale.set(1.2, 0.25, 1);
+        this.healthBar.position.set(0, 0.7, 0);
+        this.group.add(this.healthBar);
+
+        this._updateHealthBar();
+    }
+
+    _updateHealthBar() {
+        const ctx = this.hbCanvas.getContext('2d');
+        const w = this.hbCanvas.width;
+        const h = this.hbCanvas.height;
+        const ratio = Math.max(0, this.hp / this.maxHp);
+
+        // Fond noir semi-transparent
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.roundRect(0, 0, w, h, 3);
+        ctx.fill();
+
+        // Barre de vie (vert > jaune > rouge)
+        let color;
+        if (ratio > 0.6) color = '#22cc22';
+        else if (ratio > 0.3) color = '#cccc22';
+        else color = '#cc2222';
+
+        ctx.fillStyle = color;
+        ctx.roundRect(2, 2, (w - 4) * ratio, h - 4, 2);
+        ctx.fill();
+
+        this.hbTexture.needsUpdate = true;
     }
 
     _pickPatrolTarget() {
@@ -155,6 +197,7 @@ export class Snake {
         if (this.dead) return;
         this.hp -= amount;
         this._flashRed();
+        this._updateHealthBar();
         if (this.hp <= 0) {
             this.die();
         }
