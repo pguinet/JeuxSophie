@@ -90,11 +90,15 @@ export class Snake {
         const h = this.hbCanvas.height;
         const ratio = Math.max(0, this.hp / this.maxHp);
 
-        // Fond noir semi-transparent
+        // Fond noir
         ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.roundRect(0, 0, w, h, 3);
-        ctx.fill();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Bordure blanche
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, w, h);
 
         // Barre de vie (vert > jaune > rouge)
         let color;
@@ -102,9 +106,11 @@ export class Snake {
         else if (ratio > 0.3) color = '#cccc22';
         else color = '#cc2222';
 
-        ctx.fillStyle = color;
-        ctx.roundRect(2, 2, (w - 4) * ratio, h - 4, 2);
-        ctx.fill();
+        const barWidth = (w - 4) * ratio;
+        if (barWidth > 0) {
+            ctx.fillStyle = color;
+            ctx.fillRect(2, 2, barWidth, h - 4);
+        }
 
         this.hbTexture.needsUpdate = true;
     }
