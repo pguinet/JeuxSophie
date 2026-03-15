@@ -4,6 +4,8 @@ import { populateJungle } from './vegetation.js';
 import { VirtualJoystick } from './joystick.js';
 import { CameraControls } from './camera-controls.js';
 import { Snake } from './snake.js';
+import { Sword } from './sword.js';
+import { HUD } from './hud.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -32,20 +34,50 @@ const vegetation = populateJungle(scene);
 const container = document.getElementById('game-container');
 const joystick = new VirtualJoystick(container);
 const cameraControls = new CameraControls(camera, canvas);
+const sword = new Sword(camera);
+const hud = new HUD(container);
+
+// Attack button
+const attackBtn = document.createElement('div');
+attackBtn.id = 'attack-btn';
+attackBtn.textContent = '\u2694\uFE0F';
+attackBtn.style.cssText = 'position:absolute; bottom:40px; right:40px; width:80px; height:80px; border-radius:50%; background:rgba(200,50,30,0.6); border:3px solid rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; font-size:36px; z-index:15; pointer-events:auto; user-select:none; -webkit-user-select:none;';
+container.appendChild(attackBtn);
+
+attackBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    sword.attack(snakes, camera.position, cameraControls.yaw);
+    for (const snake of snakes) {
+        if (snake.isDead() && !snake.coinAwarded) {
+            snake.coinAwarded = true;
+            hud.addCoins(5);
+        }
+    }
+});
 
 const MOVE_SPEED = 5;
 const COLLISION_RADIUS = 1.5;
 const clock = new THREE.Clock();
+const DAMAGE_COOLDOWN = 1;
+let damageCooldownTimer = 0;
+let gameOver = false;
 
-// Spawn snakes at random positions (at least 15 units from origin)
+// Spawn snakes
 const snakes = [];
-for (let i = 0; i < 5; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 15 + Math.random() * 40;
-    const sx = Math.cos(angle) * dist;
-    const sz = Math.sin(angle) * dist;
-    snakes.push(new Snake(scene, sx, sz));
+function spawnSnakes() {
+    for (const s of snakes) {
+        if (!s.isDead()) s.die();
+    }
+    snakes.length = 0;
+    for (let i = 0; i < 5; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 15 + Math.random() * 40;
+        const sx = Math.cos(angle) * dist;
+        const sz = Math.sin(angle) * dist;
+        snakes.push(new Snake(scene, sx, sz));
+    }
 }
+spawnSnakes();
 
 function checkCollision(newX, newZ) {
     for (const obj of vegetation) {
@@ -57,14 +89,51 @@ function checkCollision(newX, newZ) {
     return false;
 }
 
+// Game Over overlay
+const gameOverEl = document.createElement('div');
+gameOverEl.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; pointer-events:auto;';
+
+const gameOverTitle = document.createElement('div');
+gameOverTitle.textContent = 'GAME OVER';
+gameOverTitle.style.cssText = 'color:red; font-size:48px; font-weight:bold; text-shadow:2px 2px 4px black; font-family:sans-serif;';
+gameOverEl.appendChild(gameOverTitle);
+
+const finalScore = document.createElement('div');
+finalScore.style.cssText = 'color:gold; font-size:28px; margin:20px 0; font-family:sans-serif;';
+gameOverEl.appendChild(finalScore);
+
+const replayBtn = document.createElement('div');
+replayBtn.textContent = 'Rejouer';
+replayBtn.style.cssText = 'background:rgba(50,150,50,0.8); color:white; font-size:24px; padding:15px 40px; border-radius:10px; border:2px solid white; cursor:pointer; font-family:sans-serif;';
+gameOverEl.appendChild(replayBtn);
+
+container.appendChild(gameOverEl);
+
+replayBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    restartGame();
+});
+replayBtn.addEventListener('click', restartGame);
+
+function restartGame() {
+    gameOver = false;
+    gameOverEl.style.display = 'none';
+    camera.position.set(0, 1.6, 0);
+    cameraControls.yaw = 0;
+    cameraControls.pitch = 0;
+    hud.reset();
+    spawnSnakes();
+    damageCooldownTimer = 0;
+}
+
 function animate() {
     requestAnimationFrame(animate);
+    if (gameOver) return;
+
     const delta = clock.getDelta();
 
-    // Camera rotation
     cameraControls.update();
 
-    // Player movement (relative to camera direction)
     const dir = joystick.getDirection();
     if (dir.x !== 0 || dir.y !== 0) {
         const forward = new THREE.Vector3(0, 0, -1);
@@ -84,16 +153,23 @@ function animate() {
         }
     }
 
-    // Keep player within terrain bounds
     camera.position.x = Math.max(-95, Math.min(95, camera.position.x));
     camera.position.z = Math.max(-95, Math.min(95, camera.position.z));
 
-    // Update snakes
-    let snakeAttacking = false;
+    sword.update(delta);
+
+    damageCooldownTimer = Math.max(0, damageCooldownTimer - delta);
     for (const snake of snakes) {
         if (!snake.isDead()) {
-            if (snake.update(delta, camera.position)) {
-                snakeAttacking = true;
+            const attacking = snake.update(delta, camera.position);
+            if (attacking && damageCooldownTimer <= 0) {
+                const isDead = hud.updateHealth(-snake.damage);
+                damageCooldownTimer = DAMAGE_COOLDOWN;
+                if (isDead) {
+                    gameOver = true;
+                    finalScore.textContent = 'Pi\u00e8ces r\u00e9colt\u00e9es : ' + hud.coins + ' \uD83E\uDE99';
+                    gameOverEl.style.display = 'flex';
+                }
             }
         }
     }
