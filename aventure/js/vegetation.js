@@ -213,6 +213,40 @@ export function createThickBush(x, z) {
 }
 
 /**
+ * Crée une touffe de hautes herbes.
+ * @param {number} x
+ * @param {number} z
+ * @returns {THREE.Group}
+ */
+export function createTallGrass(x, z) {
+    const group = new THREE.Group();
+    const bladeCount = 5 + Math.floor(Math.random() * 6);
+
+    for (let i = 0; i < bladeCount; i++) {
+        const height = 0.6 + Math.random() * 0.8;
+        const bladeGeo = new THREE.PlaneGeometry(0.08, height);
+        const shade = 0.3 + Math.random() * 0.3;
+        const bladeMat = new THREE.MeshLambertMaterial({
+            color: new THREE.Color(shade * 0.3, shade, shade * 0.15),
+            side: THREE.DoubleSide,
+        });
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.position.set(
+            (Math.random() - 0.5) * 0.5,
+            height / 2,
+            (Math.random() - 0.5) * 0.5
+        );
+        blade.rotation.y = Math.random() * Math.PI;
+        blade.rotation.x = (Math.random() - 0.5) * 0.3;
+        blade.rotation.z = (Math.random() - 0.5) * 0.2;
+        group.add(blade);
+    }
+
+    group.position.set(x, 0, z);
+    return group;
+}
+
+/**
  * Génère une position aléatoire sur le terrain en évitant la zone de spawn.
  * @param {number} clearRadius - Rayon de la zone libre autour de l'origine
  * @returns {{x: number, z: number}}
@@ -272,6 +306,14 @@ export function populateJungle(scene) {
         const vine = createVine(x, z);
         scene.add(vine);
         // Pas de collision avec les lianes
+    }
+
+    // Hautes herbes (~500)
+    for (let i = 0; i < 500; i++) {
+        const { x, z } = randomPosition(3);
+        const grass = createTallGrass(x, z);
+        scene.add(grass);
+        // Pas de collision avec les herbes
     }
 
     return vegetation;
