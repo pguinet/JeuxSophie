@@ -111,7 +111,7 @@ container.appendChild(attackBtn);
 // Bullets
 const bullets = [];
 const BULLET_SPEED = 40;
-const BULLET_DAMAGE = 20;
+const BULLET_DAMAGE = 10;
 const BULLET_MAX_DIST = 50;
 const bulletGeo = new THREE.SphereGeometry(0.08, 6, 6);
 const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
