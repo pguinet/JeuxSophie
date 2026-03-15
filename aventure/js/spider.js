@@ -3,8 +3,8 @@ import * as THREE from 'three';
 export class Spider {
     constructor(scene, x, z) {
         this.scene = scene;
-        this.hp = 80;
-        this.maxHp = 80;
+        this.hp = 180;
+        this.maxHp = 180;
         this.speed = 4;
         this.damage = 15;
         this.detectionRange = 18;

@@ -3,8 +3,8 @@ import * as THREE from 'three';
 export class Snake {
     constructor(scene, x, z) {
         this.scene = scene;
-        this.hp = 50;
-        this.maxHp = 50;
+        this.hp = 150;
+        this.maxHp = 150;
         this.speed = 3;
         this.damage = 10;
         this.detectionRange = 15;
