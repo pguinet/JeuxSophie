@@ -187,9 +187,15 @@ export class Cat {
             const dist = Math.sqrt(dx * dx + dz * dz);
 
             if (dist < 0.2) {
-                this.state = 'idle';
-                this.targetPos = null;
                 this._resetLegs();
+                this.targetPos = null;
+                if (this._onArrival) {
+                    const cb = this._onArrival;
+                    this._onArrival = null;
+                    cb();
+                } else {
+                    this.state = 'idle';
+                }
                 this.idleTimer = 0;
                 this.nextWanderTime = 3 + Math.random() * 5;
             } else {

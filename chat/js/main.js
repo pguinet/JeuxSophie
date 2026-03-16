@@ -122,6 +122,31 @@ function animate() {
     cat.update(delta);
     hud.update(delta);
 
+    // Comportement autonome basé sur les jauges
+    if (cat.state === 'idle') {
+        const needs = hud.needs;
+        if (needs.hunger.value < 20) {
+            cat.walkTo(furniturePos.bowl.x, furniturePos.bowl.z);
+        } else if (needs.thirst.value < 20) {
+            cat.walkTo(furniturePos.water.x, furniturePos.water.z);
+        } else if (needs.fatigue.value > 80) {
+            cat.walkTo(furniturePos.cushion.x, furniturePos.cushion.z);
+            cat._onArrival = () => { cat.playSleep(); };
+        } else if (needs.happiness.value < 20) {
+            // Chat triste : il s'assoit et ne bouge plus
+            cat.state = 'sad';
+            cat._resetLegs();
+            cat.head.position.y = 0.55;
+            setTimeout(() => {
+                if (cat.state === 'sad') {
+                    cat.state = 'idle';
+                    cat.head.position.y = 0.65;
+                    cat.idleTimer = 0;
+                }
+            }, 4000);
+        }
+    }
+
     // Caméra orbitale
     camera.position.x = Math.sin(orbitAngle) * orbitRadius;
     camera.position.z = Math.cos(orbitAngle) * orbitRadius;
