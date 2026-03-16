@@ -294,7 +294,8 @@ export class Cat {
         if (!this.targetPos) return;
         const dx = this.targetPos.x - this.group.position.x;
         const dz = this.targetPos.z - this.group.position.z;
-        const targetAngle = Math.atan2(dx, dz);
+        // Le modèle fait face à -Z, donc on inverse
+        const targetAngle = Math.atan2(-dx, -dz);
         // Rotation progressive (smooth)
         let diff = targetAngle - this.group.rotation.y;
         while (diff > Math.PI) diff -= Math.PI * 2;
@@ -302,7 +303,32 @@ export class Cat {
         this.group.rotation.y += diff * 0.1;
     }
 
+    // Vérifie si une position est valide (pas dans un mur)
+    _isValidPos(x, z) {
+        const margin = 0.3;
+        // Limites extérieures
+        if (x < -9.5 + margin) return false;
+        if (x > 9.5 - margin) return false;
+        if (z < -9.5 + margin) return false;
+        if (z > 9.5 - margin) return false;
+
+        // Mur de séparation maison/jardin à x=0
+        // Ouverture (porte) entre z=-3 et z=3
+        const prevX = this.group.position.x;
+        if ((prevX < 0 && x >= -margin) || (prevX > 0 && x <= margin)) {
+            // On essaie de traverser le mur à x=0
+            if (z < -3 + margin || z > 3 - margin) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     walkTo(x, z) {
+        // Clamp la destination dans les limites
+        x = Math.max(-9.2, Math.min(9.2, x));
+        z = Math.max(-9.2, Math.min(9.2, z));
         this.targetPos = new THREE.Vector3(x, 0, z);
         this.state = 'walking';
     }
@@ -333,8 +359,20 @@ export class Cat {
                 this.nextWanderTime = 3 + Math.random() * 5;
             } else {
                 const speed = this.walkSpeed * delta;
-                this.group.position.x += (dx / dist) * speed;
-                this.group.position.z += (dz / dist) * speed;
+                const newX = this.group.position.x + (dx / dist) * speed;
+                const newZ = this.group.position.z + (dz / dist) * speed;
+
+                if (this._isValidPos(newX, newZ)) {
+                    this.group.position.x = newX;
+                    this.group.position.z = newZ;
+                } else {
+                    // Bloqué par un mur, arrêter
+                    this._resetLegs();
+                    this.targetPos = null;
+                    this.state = 'idle';
+                    this.idleTimer = 0;
+                    this.nextWanderTime = 1 + Math.random() * 3;
+                }
             }
         }
 
