@@ -4,6 +4,7 @@ import { Cat } from './cat.js';
 import { ColorPicker } from './color-picker.js';
 import { HUD } from './hud.js';
 import { ActionBar } from './actions.js';
+import { createFurniture } from './furniture.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -87,15 +88,14 @@ cat.group.position.set(-3, 0, 0);
 // HUD
 const hud = new HUD(container);
 
+// Meubles
+const furniturePos = createFurniture(scene);
+
 // Actions
 const actions = new ActionBar(container);
-// Positions des meubles (gamelle, bol d'eau, coussin)
-const BOWL_POS = { x: -7, z: -6 };
-const WATER_POS = { x: -7, z: -4.5 };
-const CUSHION_POS = { x: -8, z: 6 };
 
-actions.on('feed', () => { hud.feed(); cat.playEat(BOWL_POS.x, BOWL_POS.z); });
-actions.on('drink', () => { hud.drink(); cat.playEat(WATER_POS.x, WATER_POS.z); });
+actions.on('feed', () => { hud.feed(); cat.playEat(furniturePos.bowl.x, furniturePos.bowl.z); });
+actions.on('drink', () => { hud.drink(); cat.playEat(furniturePos.water.x, furniturePos.water.z); });
 actions.on('pet', () => { hud.pet(); cat.playPet(); });
 actions.on('wash', () => { hud.wash(); cat.playWash(); });
 actions.on('sleep', () => { hud.sleep(); cat.playSleep(); });
