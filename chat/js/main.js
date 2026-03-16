@@ -6,6 +6,7 @@ import { HUD } from './hud.js';
 import { ActionBar } from './actions.js';
 import { createFurniture } from './furniture.js';
 import { saveGame, loadGame, hasSave } from './save.js';
+import { Shop } from './shop.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -100,6 +101,19 @@ actions.on('drink', () => { hud.drink(); cat.playEat(furniturePos.water.x, furni
 actions.on('pet', () => { hud.pet(); cat.playPet(); });
 actions.on('wash', () => { hud.wash(); cat.playWash(); });
 actions.on('sleep', () => { hud.sleep(); cat.playSleep(); });
+
+// Boutique
+const shop = new Shop(container, hud);
+shop.onBuy = (item) => {
+    if (item.id === 'ball' || item.id === 'mouse') {
+        hud.needs.happiness.value = Math.min(100, hud.needs.happiness.value + (item.id === 'mouse' ? 20 : 15));
+        cat.playPet();
+    } else if (item.id === 'fish') {
+        hud.needs.hunger.value = Math.min(100, hud.needs.hunger.value + 40);
+    } else if (item.id === 'cushion_lux') {
+        hud.needs.fatigue.value = Math.max(0, hud.needs.fatigue.value - 40);
+    }
+};
 
 // Chargement sauvegarde ou choix de couleur
 let catColor = 0xe87e24;
