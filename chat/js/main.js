@@ -5,6 +5,7 @@ import { ColorPicker } from './color-picker.js';
 import { HUD } from './hud.js';
 import { ActionBar } from './actions.js';
 import { createFurniture } from './furniture.js';
+import { saveGame, loadGame, hasSave } from './save.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -100,17 +101,27 @@ actions.on('pet', () => { hud.pet(); cat.playPet(); });
 actions.on('wash', () => { hud.wash(); cat.playWash(); });
 actions.on('sleep', () => { hud.sleep(); cat.playSleep(); });
 
-// Choix de couleur
-const savedColor = localStorage.getItem('monchat_color');
-if (savedColor) {
-    cat.setColor(parseInt(savedColor));
-} else {
+// Chargement sauvegarde ou choix de couleur
+let catColor = 0xe87e24;
+const saved = loadGame();
+if (saved) {
+    catColor = saved.color;
+    cat.setColor(catColor);
+    hud.loadState(saved.needs);
+} else if (!hasSave()) {
     const picker = new ColorPicker(container);
     picker.onSelect = (hex) => {
+        catColor = hex;
         cat.setColor(hex);
-        localStorage.setItem('monchat_color', hex.toString());
     };
 }
+
+// Auto-save toutes les 30s
+let saveTimer = 0;
+setInterval(() => { saveGame(hud, catColor); }, 30000);
+
+// Save à la fermeture
+window.addEventListener('beforeunload', () => { saveGame(hud, catColor); });
 
 // Boucle d'animation
 const clock = new THREE.Clock();
