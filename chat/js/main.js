@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createScene } from './scene.js';
+import { Cat } from './cat.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -74,12 +75,18 @@ canvas.addEventListener('mousemove', (e) => {
 });
 canvas.addEventListener('mouseup', () => { mouseDown = false; });
 
+// Chat
+const cat = new Cat(scene, 0xe87e24);
+cat.group.position.set(-3, 0, 0);
+
 // Boucle d'animation
 const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
+
+    cat.update(delta);
 
     // Caméra orbitale
     camera.position.x = Math.sin(orbitAngle) * orbitRadius;
