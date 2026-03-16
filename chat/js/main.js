@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { Cat } from './cat.js';
 import { ColorPicker } from './color-picker.js';
+import { HUD } from './hud.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -82,6 +83,9 @@ canvas.addEventListener('mouseup', () => { mouseDown = false; });
 const cat = new Cat(scene, 0xe87e24);
 cat.group.position.set(-3, 0, 0);
 
+// HUD
+const hud = new HUD(container);
+
 // Choix de couleur
 const savedColor = localStorage.getItem('monchat_color');
 if (savedColor) {
@@ -102,6 +106,7 @@ function animate() {
     const delta = clock.getDelta();
 
     cat.update(delta);
+    hud.update(delta);
 
     // Caméra orbitale
     camera.position.x = Math.sin(orbitAngle) * orbitRadius;
