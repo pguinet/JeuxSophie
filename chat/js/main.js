@@ -131,11 +131,97 @@ if (saved) {
 }
 
 // Auto-save toutes les 30s
-let saveTimer = 0;
 setInterval(() => { saveGame(hud, catColor); }, 30000);
 
 // Save à la fermeture
 window.addEventListener('beforeunload', () => { saveGame(hud, catColor); });
+
+// Textes flottants et particules
+const floatingTexts = [];
+
+function spawnFloatingText(text, color = '#fff') {
+    const div = document.createElement('div');
+    Object.assign(div.style, {
+        position: 'absolute',
+        color: color,
+        fontSize: '20px',
+        fontWeight: 'bold',
+        fontFamily: "'Segoe UI', Arial, sans-serif",
+        textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
+        pointerEvents: 'none',
+        zIndex: '25',
+        transition: 'none',
+        left: '50%',
+        transform: 'translateX(-50%)',
+    });
+    div.textContent = text;
+    container.appendChild(div);
+
+    const startY = window.innerHeight * 0.4;
+    div.style.top = startY + 'px';
+    floatingTexts.push({ el: div, y: startY, life: 1.5 });
+}
+
+function updateFloatingTexts(delta) {
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 40 * delta;
+        ft.life -= delta;
+        ft.el.style.top = ft.y + 'px';
+        ft.el.style.opacity = Math.max(0, ft.life / 1.5).toString();
+        if (ft.life <= 0) {
+            ft.el.remove();
+            floatingTexts.splice(i, 1);
+        }
+    }
+}
+
+// Ajouter "Miaou!" quand le chat a faim/soif
+let lastMeowTime = 0;
+
+// Particules coeurs pour caresses
+const heartParticles = [];
+function spawnHearts() {
+    for (let i = 0; i < 5; i++) {
+        const div = document.createElement('div');
+        div.textContent = '❤️';
+        Object.assign(div.style, {
+            position: 'absolute',
+            fontSize: '18px',
+            pointerEvents: 'none',
+            zIndex: '25',
+            left: (40 + Math.random() * 20) + '%',
+        });
+        container.appendChild(div);
+        const startY = window.innerHeight * 0.35 + Math.random() * 40;
+        div.style.top = startY + 'px';
+        heartParticles.push({ el: div, y: startY, x: -1 + Math.random() * 2, life: 1.2 + Math.random() * 0.5 });
+    }
+}
+
+function updateHearts(delta) {
+    for (let i = heartParticles.length - 1; i >= 0; i--) {
+        const h = heartParticles[i];
+        h.y -= 50 * delta;
+        h.life -= delta;
+        h.el.style.top = h.y + 'px';
+        h.el.style.left = (parseFloat(h.el.style.left) + h.x * delta * 10) + '%';
+        h.el.style.opacity = Math.max(0, h.life / 1.5).toString();
+        if (h.life <= 0) {
+            h.el.remove();
+            heartParticles.splice(i, 1);
+        }
+    }
+}
+
+// Override caresser pour ajouter les coeurs
+const originalPetCb = actions.callbacks['pet'];
+actions.on('pet', () => {
+    originalPetCb();
+    spawnHearts();
+    spawnFloatingText('Prrrrr... 😻', '#ff69b4');
+    if (navigator.vibrate) navigator.vibrate(200);
+});
 
 // Boucle d'animation
 const clock = new THREE.Clock();
@@ -146,6 +232,18 @@ function animate() {
 
     cat.update(delta);
     hud.update(delta);
+    updateFloatingTexts(delta);
+    updateHearts(delta);
+
+    // Miaou quand le chat a faim/soif
+    lastMeowTime += delta;
+    if (lastMeowTime > 8) {
+        const needs = hud.needs;
+        if (needs.hunger.value < 25 || needs.thirst.value < 25) {
+            spawnFloatingText('Miaou! 🐱', '#ffaa00');
+            lastMeowTime = 0;
+        }
+    }
 
     // Comportement autonome basé sur les jauges
     if (cat.state === 'idle') {
