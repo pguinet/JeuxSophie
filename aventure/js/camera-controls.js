@@ -57,8 +57,6 @@ export class CameraControls {
     }
 
     update() {
-        this.camera.rotation.order = 'YXZ';
-        this.camera.rotation.y = this.yaw;
-        this.camera.rotation.x = this.pitch;
+        // yaw et pitch sont lus par main.js pour positionner la caméra en 3ème personne
     }
 }

@@ -25,6 +25,9 @@ export class HUD {
         // Build coin counter
         this._buildCoinCounter();
 
+        // Build crosshair (point rouge central)
+        this._buildCrosshair();
+
         // Build damage flash overlay
         this._buildDamageFlash();
 
@@ -117,6 +120,24 @@ export class HUD {
         wrapper.appendChild(this.coinText);
 
         this.hudEl.appendChild(wrapper);
+    }
+
+    _buildCrosshair() {
+        const dot = document.createElement('div');
+        Object.assign(dot.style, {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: 'red',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            zIndex: '25',
+            boxShadow: '0 0 3px rgba(0,0,0,0.5)',
+        });
+        this.hudEl.appendChild(dot);
     }
 
     _buildDamageFlash() {

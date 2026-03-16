@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 
 export class Sword {
-    constructor(camera) {
-        this.camera = camera;
+    constructor(weaponMount) {
         this.attacking = false;
         this.attackTime = 0;
         this.attackDuration = 0.4;
@@ -68,25 +67,23 @@ export class Sword {
         edge.position.set(0, 0.53, 0);
         this.group.add(edge);
 
-        // Position en bas à droite, bien visible
-        this.group.position.set(0.45, -0.35, -0.6);
-        this.group.scale.set(1.3, 1.3, 1.3);
-
-        // Rotation au repos (légèrement inclinée)
-        this.restRotation = new THREE.Euler(-0.2, 0, 0.15);
+        // Position au repos dans la main
+        this.group.position.set(0, 0.1, 0);
+        this.group.scale.set(1.0, 1.0, 1.0);
+        this.restRotation = new THREE.Euler(0, 0, 0.15);
         this.group.rotation.copy(this.restRotation);
 
-        camera.add(this.group);
+        weaponMount.add(this.group);
 
         // Construire le pistolet (caché par défaut)
         this.gunGroup = new THREE.Group();
         this._buildGun();
-        this.gunGroup.position.set(0.35, -0.3, -0.5);
-        this.gunGroup.scale.set(1.2, 1.2, 1.2);
+        this.gunGroup.position.set(0, 0.05, -0.1);
+        this.gunGroup.scale.set(0.9, 0.9, 0.9);
         this.gunRestRotation = new THREE.Euler(0, 0, 0);
         this.gunGroup.rotation.copy(this.gunRestRotation);
         this.gunGroup.visible = false;
-        camera.add(this.gunGroup);
+        weaponMount.add(this.gunGroup);
 
         this.isGun = false;
     }
@@ -167,7 +164,7 @@ export class Sword {
         this.attackTime = 0;
     }
 
-    update(deltaTime) {
+    update(deltaTime, rightArm) {
         if (!this.attacking) return;
 
         this.attackTime += deltaTime;
@@ -178,14 +175,14 @@ export class Sword {
             const t = this.attackTime / gunDuration;
             if (t >= 1) {
                 this.attacking = false;
-                this.gunGroup.position.set(0.35, -0.3, -0.5);
+                this.gunGroup.position.set(0, 0.05, -0.1);
                 this.gunGroup.rotation.copy(this.gunRestRotation);
+                if (rightArm) rightArm.rotation.x = 0;
                 return;
             }
-            // Recul rapide puis retour
             const recoil = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
-            this.gunGroup.position.z = -0.5 + recoil * 0.15;
-            this.gunGroup.rotation.x = -recoil * 0.3;
+            this.gunGroup.position.z = -0.1 + recoil * 0.1;
+            if (rightArm) rightArm.rotation.x = -recoil * 0.3;
             return;
         }
 
@@ -194,44 +191,24 @@ export class Sword {
         if (t >= 1) {
             this.attacking = false;
             this.group.rotation.copy(this.restRotation);
-            this.group.position.set(0.45, -0.35, -0.6);
+            this.group.position.set(0, 0.1, 0);
+            if (rightArm) rightArm.rotation.x = 0;
             return;
         }
 
-        // Grande animation de frappe en 3 phases :
-        // 1. Lever l'épée en haut à droite (0-20%)
-        // 2. Trancher en diagonale vers le centre/bas-gauche (20-50%)
-        // 3. Revenir au repos (50-100%)
-        if (t < 0.20) {
-            // Lever : l'épée monte au-dessus de l'épaule droite
-            const p = t / 0.20;
-            this.group.position.x = 0.45 - p * 0.1;
-            this.group.position.y = -0.35 + p * 0.6;
-            this.group.position.z = -0.6 + p * 0.1;
-            this.group.rotation.x = this.restRotation.x + p * 1.2;
-            this.group.rotation.z = this.restRotation.z - p * 0.8;
-            this.group.rotation.y = p * 0.3;
-        } else if (t < 0.50) {
-            // Frapper : grand slash diagonal de droite à gauche au centre de l'écran
-            const p = (t - 0.20) / 0.30;
-            const easeIn = p * p; // accélération
-            this.group.position.x = 0.35 - easeIn * 0.7;
-            this.group.position.y = 0.25 - easeIn * 0.5;
-            this.group.position.z = -0.5 - easeIn * 0.3;
-            this.group.rotation.x = this.restRotation.x + 1.2 - easeIn * 3.0;
-            this.group.rotation.z = this.restRotation.z - 0.8 + easeIn * 1.8;
-            this.group.rotation.y = 0.3 - easeIn * 0.6;
-        } else {
-            // Retour au repos
-            const p = (t - 0.50) / 0.50;
-            const ease = p * p * (3 - 2 * p); // smoothstep
-            // Position de fin de frappe → position repos
-            this.group.position.x = -0.35 + ease * 0.8;
-            this.group.position.y = -0.25 - ease * 0.1;
-            this.group.position.z = -0.8 + ease * 0.2;
-            this.group.rotation.x = (this.restRotation.x - 1.8) + ease * 1.6;
-            this.group.rotation.z = (this.restRotation.z + 1.0) - ease * 0.85;
-            this.group.rotation.y = -0.3 + ease * 0.3;
+        // Animation de frappe via le bras droit
+        if (rightArm) {
+            if (t < 0.20) {
+                const p = t / 0.20;
+                rightArm.rotation.x = -p * 1.5;
+            } else if (t < 0.50) {
+                const p = (t - 0.20) / 0.30;
+                rightArm.rotation.x = -1.5 + p * 3.0;
+            } else {
+                const p = (t - 0.50) / 0.50;
+                const ease = p * p * (3 - 2 * p);
+                rightArm.rotation.x = 1.5 - ease * 1.5;
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import { Monkey } from './monkey.js';
 import { Sword } from './sword.js';
 import { HUD } from './hud.js';
 import { QuestSystem } from './quests.js';
+import { Player } from './player.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -22,7 +23,6 @@ scene.background = new THREE.Color(0x4a7c59);
 scene.fog = new THREE.FogExp2(0x4a7c59, 0.025);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.6, 0);
 scene.add(camera);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -68,8 +68,8 @@ scene.add(particles);
 
 function updateParticles(delta) {
     const positions = particleGeometry.attributes.position.array;
-    const px = camera.position.x;
-    const pz = camera.position.z;
+    const px = player.group.position.x;
+    const pz = player.group.position.z;
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
         const i3 = i * 3;
@@ -99,9 +99,15 @@ function updateParticles(delta) {
 const container = document.getElementById('game-container');
 const joystick = new VirtualJoystick(container);
 const cameraControls = new CameraControls(camera, canvas);
-const sword = new Sword(camera);
+const player = new Player(scene);
+const sword = new Sword(player.weaponMount);
 const hud = new HUD(container);
 const quests = new QuestSystem(container, hud);
+
+// Camera third-person settings
+const CAM_DISTANCE = 5;
+const CAM_HEIGHT = 3;
+const CAM_LOOK_HEIGHT = 1.4;
 
 // Attack button
 const attackBtn = document.createElement('div');
@@ -120,9 +126,10 @@ const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
 
 function shootBullet() {
     const bullet = new THREE.Mesh(bulletGeo, bulletMat);
-    bullet.position.copy(camera.position);
+    // Tirer depuis la position du joueur
+    bullet.position.set(player.group.position.x, 1.2, player.group.position.z);
     const dir = new THREE.Vector3(0, 0, -1);
-    dir.applyQuaternion(camera.quaternion);
+    dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraControls.yaw);
     bullet.userData.direction = dir;
     bullet.userData.distance = 0;
     scene.add(bullet);
@@ -136,7 +143,7 @@ function updateBullets(delta) {
         b.position.addScaledVector(b.userData.direction, move);
         b.userData.distance += move;
 
-        // Vérifier collision avec serpents
+        // Vérifier collision avec monstres
         let hit = false;
         for (const snake of snakes) {
             if (snake.isDead()) continue;
@@ -175,7 +182,7 @@ attackBtn.addEventListener('touchstart', (e) => {
         shootBullet();
         sword.gunRecoil();
     } else {
-        sword.attack(snakes, camera.position, cameraControls.yaw);
+        sword.attack(snakes, player.group.position, cameraControls.yaw);
         for (const snake of snakes) {
             if (snake.isDead() && !snake.coinAwarded) {
                 snake.coinAwarded = true;
@@ -214,29 +221,28 @@ function spawnMonsters() {
         if (!m.isDead()) m.die();
     }
     monsters.length = 0;
-    // 5 serpents (50 HP, faibles)
+    // 5 serpents
     for (let i = 0; i < 5; i++) {
         const { x, z } = randomSpawnPos(15, 55);
         monsters.push(new Snake(scene, x, z));
     }
-    // 3 araignées (80 HP, rapides)
+    // 3 araignées
     for (let i = 0; i < 3; i++) {
         const { x, z } = randomSpawnPos(25, 60);
         monsters.push(new Spider(scene, x, z));
     }
-    // 2 crocodiles (150 HP, très puissants mais lents)
+    // 2 crocodiles
     for (let i = 0; i < 2; i++) {
         const { x, z } = randomSpawnPos(30, 70);
         monsters.push(new Crocodile(scene, x, z));
     }
-    // 2 singes (60 HP, lancent des projectiles)
+    // 2 singes
     for (let i = 0; i < 2; i++) {
         const { x, z } = randomSpawnPos(20, 50);
         monsters.push(new Monkey(scene, x, z));
     }
 }
 spawnMonsters();
-// Alias pour compatibilité
 const snakes = monsters;
 
 function checkCollision(newX, newZ) {
@@ -278,7 +284,7 @@ replayBtn.addEventListener('click', restartGame);
 function restartGame() {
     gameOver = false;
     gameOverEl.style.display = 'none';
-    camera.position.set(0, 1.6, 0);
+    player.group.position.set(0, 0, 0);
     cameraControls.yaw = 0;
     cameraControls.pitch = 0;
     hud.reset();
@@ -293,8 +299,10 @@ function animate() {
 
     const delta = clock.getDelta();
 
+    // Lire les contrôles tactiles (yaw/pitch)
     cameraControls.update();
 
+    // Déplacement du joueur
     const dir = joystick.getDirection();
     playerIsIdle = (dir.x === 0 && dir.y === 0);
     if (!playerIsIdle) {
@@ -306,19 +314,30 @@ function animate() {
         const moveX = (right.x * dir.x + forward.x * (-dir.y)) * MOVE_SPEED * delta;
         const moveZ = (right.z * dir.x + forward.z * (-dir.y)) * MOVE_SPEED * delta;
 
-        const newX = camera.position.x + moveX;
-        const newZ = camera.position.z + moveZ;
+        const newX = player.group.position.x + moveX;
+        const newZ = player.group.position.z + moveZ;
 
         if (!checkCollision(newX, newZ)) {
-            camera.position.x = newX;
-            camera.position.z = newZ;
+            player.group.position.x = newX;
+            player.group.position.z = newZ;
         }
     }
 
-    camera.position.x = Math.max(-95, Math.min(95, camera.position.x));
-    camera.position.z = Math.max(-95, Math.min(95, camera.position.z));
+    player.group.position.x = Math.max(-95, Math.min(95, player.group.position.x));
+    player.group.position.z = Math.max(-95, Math.min(95, player.group.position.z));
 
-    sword.update(delta);
+    // Mettre à jour le modèle du joueur (animation marche + rotation)
+    player.update(delta, !playerIsIdle, cameraControls.yaw);
+
+    // Caméra troisième personne : derrière et au-dessus du joueur
+    const camOffsetX = Math.sin(cameraControls.yaw) * CAM_DISTANCE;
+    const camOffsetZ = Math.cos(cameraControls.yaw) * CAM_DISTANCE;
+    camera.position.x = player.group.position.x + camOffsetX;
+    camera.position.z = player.group.position.z + camOffsetZ;
+    camera.position.y = CAM_HEIGHT - cameraControls.pitch * 2;
+    camera.lookAt(player.group.position.x, CAM_LOOK_HEIGHT, player.group.position.z);
+
+    sword.update(delta, player.rightArm);
     updateBullets(delta);
     updateParticles(delta);
 
@@ -336,7 +355,7 @@ function animate() {
     damageCooldownTimer = Math.max(0, damageCooldownTimer - delta);
     for (const snake of snakes) {
         if (!snake.isDead()) {
-            const attacking = snake.update(delta, camera.position);
+            const attacking = snake.update(delta, player.group.position);
             if (attacking && damageCooldownTimer <= 0) {
                 const dmg = hud.shieldActive ? Math.floor(snake.damage / 2) : snake.damage;
                 const isDead = hud.updateHealth(-dmg);

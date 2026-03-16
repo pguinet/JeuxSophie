@@ -1,6 +1,7 @@
 export class QuestSystem {
     constructor(container, hud) {
         this.hud = hud;
+        this.container = hud.hudEl;
         this.questReward = 10;
 
         // Pool de quêtes possibles
@@ -15,7 +16,7 @@ export class QuestSystem {
 
         this.quests = [];
         this._loadOrGenerate();
-        this._buildUI(container);
+        this._buildUI(this.container);
         this._updateUI();
     }
 
