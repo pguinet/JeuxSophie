@@ -9,6 +9,7 @@ import { Crocodile } from './crocodile.js';
 import { Monkey } from './monkey.js';
 import { Sword } from './sword.js';
 import { HUD } from './hud.js';
+import { QuestSystem } from './quests.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -100,6 +101,7 @@ const joystick = new VirtualJoystick(container);
 const cameraControls = new CameraControls(camera, canvas);
 const sword = new Sword(camera);
 const hud = new HUD(container);
+const quests = new QuestSystem(container, hud);
 
 // Attack button
 const attackBtn = document.createElement('div');
@@ -146,6 +148,8 @@ function updateBullets(delta) {
                 if (snake.isDead() && !snake.coinAwarded) {
                     snake.coinAwarded = true;
                     hud.addCoins(5);
+                    quests.onMonsterKilled(snake.monsterType);
+                    quests.onCoinsCollected(hud.coins);
                 }
                 hit = true;
                 break;
@@ -176,6 +180,8 @@ attackBtn.addEventListener('touchstart', (e) => {
             if (snake.isDead() && !snake.coinAwarded) {
                 snake.coinAwarded = true;
                 hud.addCoins(5);
+                quests.onMonsterKilled(snake.monsterType);
+                quests.onCoinsCollected(hud.coins);
             }
         }
     }
@@ -276,6 +282,7 @@ function restartGame() {
     cameraControls.yaw = 0;
     cameraControls.pitch = 0;
     hud.reset();
+    quests.reset();
     spawnMonsters();
     damageCooldownTimer = 0;
 }

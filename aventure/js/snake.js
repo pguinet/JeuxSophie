@@ -3,6 +3,7 @@ import * as THREE from 'three';
 export class Snake {
     constructor(scene, x, z) {
         this.scene = scene;
+        this.monsterType = 'snake';
         this.hp = 150;
         this.maxHp = 150;
         this.speed = 3;
