@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { Cat } from './cat.js';
+import { ColorPicker } from './color-picker.js';
 
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -9,7 +10,7 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.shadowMap.enabled = true;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); // Ciel bleu clair
+scene.background = new THREE.Color(0x87ceeb);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 12, 18);
@@ -26,6 +27,8 @@ scene.add(ambientLight);
 
 // Créer la scène (maison + jardin)
 createScene(scene);
+
+const container = document.getElementById('game-container');
 
 // Contrôle orbital tactile (rotation autour de la scène)
 let orbitAngle = 0;
@@ -78,6 +81,18 @@ canvas.addEventListener('mouseup', () => { mouseDown = false; });
 // Chat
 const cat = new Cat(scene, 0xe87e24);
 cat.group.position.set(-3, 0, 0);
+
+// Choix de couleur
+const savedColor = localStorage.getItem('monchat_color');
+if (savedColor) {
+    cat.setColor(parseInt(savedColor));
+} else {
+    const picker = new ColorPicker(container);
+    picker.onSelect = (hex) => {
+        cat.setColor(hex);
+        localStorage.setItem('monchat_color', hex.toString());
+    };
+}
 
 // Boucle d'animation
 const clock = new THREE.Clock();
