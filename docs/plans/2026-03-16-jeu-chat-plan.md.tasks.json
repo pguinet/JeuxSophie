@@ -1,0 +1,16 @@
+{
+  "planPath": "docs/plans/2026-03-16-jeu-chat-plan.md",
+  "tasks": [
+    {"id": 1, "subject": "Task 1: Structure + scène de base", "status": "pending"},
+    {"id": 2, "subject": "Task 2: Modèle 3D du chat", "status": "pending", "blockedBy": [1]},
+    {"id": 3, "subject": "Task 3: Écran choix de couleur", "status": "pending", "blockedBy": [2]},
+    {"id": 4, "subject": "Task 4: Jauges (HUD)", "status": "pending", "blockedBy": [1]},
+    {"id": 5, "subject": "Task 5: Boutons d'action", "status": "pending", "blockedBy": [2, 4]},
+    {"id": 6, "subject": "Task 6: Comportement autonome du chat", "status": "pending", "blockedBy": [5, 7]},
+    {"id": 7, "subject": "Task 7: Meubles et objets", "status": "pending", "blockedBy": [1]},
+    {"id": 8, "subject": "Task 8: Sauvegarde localStorage", "status": "pending", "blockedBy": [3, 4]},
+    {"id": 9, "subject": "Task 9: Boutique", "status": "pending", "blockedBy": [4, 8]},
+    {"id": 10, "subject": "Task 10: Polish final", "status": "pending", "blockedBy": [5, 6, 9]}
+  ],
+  "lastUpdated": "2026-03-16T18:00:00Z"
+}
