@@ -31,7 +31,7 @@ const ambientLight = new THREE.AmbientLight(0x606060);
 scene.add(ambientLight);
 
 // Créer la scène (maison + jardin)
-createScene(scene);
+const sceneAnim = createScene(scene);
 
 const container = document.getElementById('game-container');
 
@@ -232,6 +232,7 @@ function animate() {
 
     cat.update(delta);
     hud.update(delta);
+    if (sceneAnim.update) sceneAnim.update(delta);
     updateFloatingTexts(delta);
     updateHearts(delta);
 
