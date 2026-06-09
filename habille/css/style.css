@@ -1,0 +1,122 @@
+/* Habille ton personnage — atelier d'habillage. UI générée en JS. */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+    font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #ffe7f3 0%, #e6e0ff 55%, #d6f0ff 100%);
+    color: #5a3a6e;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2vmin;
+    padding: 2vmin 3vmin;
+    flex-shrink: 0;
+}
+.topbar .title { font-size: clamp(18px, 4vmin, 34px); font-weight: bold; color: #d6336c; text-shadow: 1px 1px 0 #fff; }
+.icon-btn {
+    text-decoration: none;
+    border: none;
+    background: rgba(255, 255, 255, .85);
+    border-radius: 50%;
+    width: clamp(44px, 8vmin, 60px);
+    height: clamp(44px, 8vmin, 60px);
+    font-size: clamp(22px, 4.5vmin, 32px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+    color: inherit;
+    cursor: pointer;
+}
+.icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .12); }
+
+/* Zone principale : personnage + panneau. Côte à côte sur grand écran. */
+.main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 1vmin;
+}
+.stage svg { height: 100%; max-height: 46vh; width: auto; max-width: 92vw; }
+
+.controls {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, .6);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    padding: 2vmin 3vmin 3vmin;
+}
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4vmin;
+    justify-content: center;
+    margin-bottom: 2vmin;
+}
+.tab {
+    border: none;
+    border-radius: 999px;
+    background: #fff;
+    color: #5a3a6e;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(13px, 2.6vmin, 20px);
+    padding: 1.1vmin 2.6vmin;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .1);
+}
+.tab.active { background: #d6336c; color: #fff; }
+
+.options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.6vmin;
+    justify-content: center;
+    align-items: center;
+    min-height: clamp(48px, 9vmin, 64px);
+}
+.opt {
+    border: none;
+    border-radius: 14px;
+    background: #fff;
+    color: #5a3a6e;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(13px, 2.8vmin, 20px);
+    padding: 1.4vmin 2.6vmin;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .1);
+}
+.opt.active { outline: 3px solid #d6336c; }
+.swatch {
+    width: clamp(38px, 8vmin, 54px);
+    height: clamp(38px, 8vmin, 54px);
+    border-radius: 50%;
+    border: 3px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .15);
+}
+.swatch.active { outline: 3px solid #d6336c; outline-offset: 2px; }
+
+@media (min-width: 760px) and (orientation: landscape) {
+    .main { flex-direction: row; }
+    .controls {
+        width: 42%;
+        border-radius: 28px 0 0 28px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .stage svg { max-height: 78vh; }
+}
