@@ -1,0 +1,238 @@
+/* J'apprends en jouant — jeu éducatif (questions/réponses).
+   UI 100% générée en JS ; ici uniquement les styles de base.
+   Pensé pour ordinateur (souris + clavier) ET tablette (tactile). */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body { height: 100%; }
+
+body {
+    font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #ffe7a3 0%, #ffd0e0 45%, #b8e6ff 100%);
+    color: #3a2e5c;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#app { position: fixed; inset: 0; display: flex; }
+
+/* --- Écran générique : centré, en colonne --- */
+.screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.6vmin;
+    padding: 5vmin 4vmin;
+    text-align: center;
+}
+
+/* --- Menu d'accueil --- */
+.title {
+    font-size: clamp(30px, 7vmin, 66px);
+    color: #ff5fa2;
+    text-shadow: 2px 2px 0 #fff;
+    line-height: 1.1;
+}
+.subtitle { font-size: clamp(16px, 3vmin, 28px); }
+
+/* Barre de choix de la classe */
+.level-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5vmin;
+    align-items: center;
+    justify-content: center;
+    width: min(900px, 92vw);
+}
+.level-label { font-size: clamp(15px, 2.8vmin, 24px); font-weight: bold; }
+.level-btn {
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .8);
+    color: #3a2e5c;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(14px, 2.8vmin, 24px);
+    padding: 1.2vmin 3.2vmin;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+    transition: transform .1s, box-shadow .1s;
+}
+.level-btn.active { background: #ff5fa2; color: #fff; }
+.level-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .12); }
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 3vmin;
+    width: min(900px, 92vw);
+}
+.theme-card {
+    border: none;
+    border-radius: 26px;
+    padding: 4vmin 2vmin;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vmin;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .18);
+    transition: transform .12s, box-shadow .12s;
+    font-family: inherit;
+}
+.theme-card:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+.theme-emoji { font-size: clamp(40px, 9vmin, 82px); }
+.theme-name { font-size: clamp(18px, 3.4vmin, 30px); font-weight: bold; text-shadow: 1px 1px 0 rgba(0, 0, 0, .25); }
+.theme-best { font-size: clamp(13px, 2.2vmin, 20px); opacity: .95; }
+
+/* Grande image vers les jeux pour s'amuser */
+.fun-link {
+    margin-top: 2vmin;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 2vmin;
+    background: linear-gradient(90deg, #ff6b6b, #f06595, #cc5de8);
+    color: #fff;
+    border-radius: 999px;
+    padding: 2.2vmin 6vmin;
+    font-size: clamp(18px, 4vmin, 34px);
+    font-weight: bold;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, .25);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .18);
+    transition: transform .12s, box-shadow .12s;
+}
+.fun-link:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+@media (hover: hover) { .fun-link:hover { transform: translateY(-3px); } }
+.fun-emoji { font-size: clamp(28px, 6vmin, 50px); }
+
+/* --- Écran de quiz --- */
+.quiz-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    gap: 2vmin;
+    padding: 2vmin 3vmin;
+}
+.progress-pill {
+    background: #fff;
+    border-radius: 999px;
+    padding: 1vmin 3vmin;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+    font-weight: bold;
+    font-size: clamp(14px, 2.6vmin, 24px);
+}
+
+.prompt { font-size: clamp(22px, 5vmin, 44px); font-weight: bold; }
+
+.visual { min-height: 20vmin; display: flex; align-items: center; justify-content: center; }
+.big-sum, .big-letter {
+    font-size: clamp(44px, 12vmin, 120px);
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #fff;
+}
+.big-sum { color: #ff5fa2; }
+.big-letter { color: #9775fa; }
+.shape-sym { font-size: clamp(70px, 19vmin, 190px); color: #fa5252; line-height: 1; }
+.shape-svg {
+    width: clamp(120px, 28vmin, 240px);
+    height: clamp(120px, 28vmin, 240px);
+    filter: drop-shadow(0 6px 0 rgba(0, 0, 0, .12));
+}
+.color-blob {
+    width: clamp(90px, 22vmin, 190px);
+    height: clamp(90px, 22vmin, 190px);
+    border-radius: 30px;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .18), inset 0 0 0 6px rgba(255, 255, 255, .4);
+}
+.count-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4vmin;
+    justify-content: center;
+    max-width: 78vw;
+    font-size: clamp(30px, 7.5vmin, 66px);
+    line-height: 1;
+}
+
+.choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3vmin;
+    width: min(640px, 90vw);
+}
+.choice {
+    border: none;
+    border-radius: 22px;
+    background: #fff;
+    color: #3a2e5c;
+    font-family: inherit;
+    font-size: clamp(18px, 4.4vmin, 38px);
+    font-weight: bold;
+    line-height: 1.1;
+    word-break: break-word;
+    padding: 4vmin 2vmin;
+    cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .15);
+    transition: transform .1s, box-shadow .1s;
+}
+.choice:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .15); }
+.choice.correct { background: #51cf66; color: #fff; animation: pop .3s; }
+.choice.wrong { background: #ff8787; color: #fff; animation: shake .3s; }
+
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+.feedback { font-size: clamp(22px, 5vmin, 40px); font-weight: bold; min-height: 1.3em; }
+
+/* --- Écran de résultat --- */
+.result-stars { font-size: clamp(54px, 14vmin, 140px); line-height: 1; }
+.result-msg { font-size: clamp(26px, 6vmin, 52px); font-weight: bold; color: #ff5fa2; }
+.result-score { font-size: clamp(20px, 4vmin, 34px); }
+
+/* --- Boutons communs --- */
+.btn-row { display: flex; gap: 3vmin; flex-wrap: wrap; justify-content: center; }
+.btn {
+    border: none;
+    border-radius: 20px;
+    background: #ff5fa2;
+    color: #fff;
+    font-family: inherit;
+    font-size: clamp(18px, 3.6vmin, 30px);
+    font-weight: bold;
+    padding: 2.6vmin 6vmin;
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .18);
+    transition: transform .1s, box-shadow .1s;
+}
+.btn.secondary { background: #9775fa; }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+
+.mute-btn, .home-btn {
+    border: none;
+    background: rgba(255, 255, 255, .8);
+    border-radius: 50%;
+    width: clamp(44px, 8vmin, 60px);
+    height: clamp(44px, 8vmin, 60px);
+    font-size: clamp(22px, 4.5vmin, 32px);
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+    flex-shrink: 0;
+}
+.mute-btn { position: fixed; top: 2vmin; right: 2vmin; z-index: 50; }
+
+/* Sur ordinateur, petit effet au survol. */
+@media (hover: hover) {
+    .theme-card:hover, .btn:hover, .choice:hover { transform: translateY(-3px); }
+    .choice.correct:hover, .choice.wrong:hover { transform: none; }
+}
