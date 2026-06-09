@@ -1,0 +1,115 @@
+/* Memory — jeu de paires. UI générée en JS ; styles de base ici. */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+    font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #c3f0d8 0%, #b8e6ff 50%, #ffd0e0 100%);
+    color: #2e5c4a;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; }
+
+.topbar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2vmin 3vmin;
+    gap: 2vmin;
+}
+.home-btn {
+    text-decoration: none;
+    border: none;
+    background: rgba(255, 255, 255, .85);
+    border-radius: 50%;
+    width: clamp(44px, 8vmin, 60px);
+    height: clamp(44px, 8vmin, 60px);
+    font-size: clamp(22px, 4.5vmin, 32px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+    color: inherit;
+}
+.score-pill {
+    background: #fff;
+    border-radius: 999px;
+    padding: 1vmin 3vmin;
+    font-weight: bold;
+    font-size: clamp(15px, 3vmin, 24px);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+}
+
+.board {
+    flex: 1;
+    display: grid;
+    gap: 2vmin;
+    padding: 2vmin;
+    align-content: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 680px;
+}
+
+.card {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    perspective: 600px;
+    padding: 0;
+}
+.card-inner {
+    position: absolute;
+    inset: 0;
+    transition: transform .35s;
+    transform-style: preserve-3d;
+}
+.card.flipped .card-inner, .card.matched .card-inner { transform: rotateY(180deg); }
+.face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    backface-visibility: hidden;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .15);
+}
+.face.back { background: linear-gradient(135deg, #6a5acd, #9775fa); color: #fff; font-size: clamp(26px, 7vmin, 54px); }
+.face.front { background: #fff; transform: rotateY(180deg); font-size: clamp(30px, 8vmin, 64px); }
+.card.matched .face.front { background: #d3f9d8; }
+.card.matched { animation: pop .3s; }
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(46, 92, 74, .55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vmin;
+    text-align: center;
+    color: #fff;
+    padding: 5vmin;
+}
+.overlay h2 { font-size: clamp(34px, 9vmin, 80px); text-shadow: 2px 2px 0 rgba(0, 0, 0, .25); }
+.overlay p { font-size: clamp(20px, 4.5vmin, 36px); }
+.btn {
+    border: none;
+    border-radius: 20px;
+    background: #ff5fa2;
+    color: #fff;
+    font-family: inherit;
+    font-size: clamp(18px, 4vmin, 32px);
+    font-weight: bold;
+    padding: 2.4vmin 6vmin;
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .25);
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .25); }

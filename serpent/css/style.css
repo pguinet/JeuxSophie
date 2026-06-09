@@ -1,0 +1,103 @@
+/* Le Serpent — Snake sur canvas, clavier + tactile (glisser ou flèches). */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+    font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #d8f5c3 0%, #b8e6ff 100%);
+    color: #2e5c2e;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+}
+.topbar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2vmin 3vmin;
+}
+.home-btn {
+    text-decoration: none;
+    background: rgba(255, 255, 255, .85);
+    border-radius: 50%;
+    width: clamp(44px, 8vmin, 60px);
+    height: clamp(44px, 8vmin, 60px);
+    font-size: clamp(22px, 4.5vmin, 32px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+    color: inherit;
+}
+.score-pill {
+    background: #fff;
+    border-radius: 999px;
+    padding: 1vmin 3vmin;
+    font-weight: bold;
+    font-size: clamp(16px, 3.4vmin, 28px);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+}
+#game {
+    background: #aee37d;
+    border-radius: 18px;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .15);
+    touch-action: none;
+    margin: 1vmin;
+}
+/* Croix directionnelle tactile */
+#pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 1.4vmin;
+    width: min(46vw, 220px);
+    margin: 1.5vmin 0 3vmin;
+}
+#pad button {
+    border: none;
+    background: rgba(255, 255, 255, .85);
+    border-radius: 16px;
+    font-size: clamp(22px, 6vmin, 38px);
+    padding: 2vmin 0;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .15);
+    color: #2e5c2e;
+}
+#pad button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .15); }
+.pad-up { grid-area: 1 / 2; }
+.pad-left { grid-area: 2 / 1; }
+.pad-right { grid-area: 2 / 3; }
+.pad-down { grid-area: 3 / 2; }
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(46, 92, 46, .6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vmin;
+    text-align: center;
+    color: #fff;
+    padding: 5vmin;
+}
+.overlay h2 { font-size: clamp(34px, 9vmin, 80px); text-shadow: 2px 2px 0 rgba(0, 0, 0, .25); }
+.overlay p { font-size: clamp(20px, 4.5vmin, 36px); }
+.btn {
+    border: none;
+    border-radius: 20px;
+    background: #ff5fa2;
+    color: #fff;
+    font-family: inherit;
+    font-size: clamp(18px, 4vmin, 32px);
+    font-weight: bold;
+    padding: 2.4vmin 6vmin;
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .25);
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .25); }

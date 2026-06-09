@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Les jeux de Sophie</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { min-height: 100%; }
+        body {
+            font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(160deg, #ffe7a3 0%, #ffd0e0 45%, #b8e6ff 100%);
+            color: #3a2e5c;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3vmin;
+            padding: 5vmin 4vmin;
+            text-align: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        h1 {
+            font-size: clamp(32px, 8vmin, 72px);
+            color: #ff5fa2;
+            text-shadow: 2px 2px 0 #fff;
+        }
+        p.sub { font-size: clamp(16px, 3vmin, 28px); }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 3vmin;
+            width: min(960px, 94vw);
+        }
+        a.card {
+            text-decoration: none;
+            color: #fff;
+            border-radius: 26px;
+            padding: 4.5vmin 2vmin;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.2vmin;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, .18);
+            transition: transform .12s, box-shadow .12s;
+        }
+        a.card:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+        @media (hover: hover) { a.card:hover { transform: translateY(-4px); } }
+        .emoji { font-size: clamp(44px, 10vmin, 90px); }
+        .name { font-size: clamp(18px, 3.4vmin, 30px); font-weight: bold; text-shadow: 1px 1px 0 rgba(0, 0, 0, .25); }
+        .section { font-size: clamp(18px, 3.4vmin, 28px); font-weight: bold; color: #6b4fa0; margin-top: 2vmin; }
+    </style>
+</head>
+<body>
+    <h1>Les jeux de Sophie 🎮</h1>
+    <p class="sub">Choisis un jeu pour commencer !</p>
+
+    <div class="section">📚 Pour apprendre</div>
+    <div class="grid">
+        <a class="card" href="apprendre/" style="background:#ff6b6b"><span class="emoji">🎓</span><span class="name">J'apprends en jouant</span></a>
+    </div>
+
+    <div class="section">🎉 Pour s'amuser</div>
+    <div class="grid">
+        <a class="card" href="aventure/" style="background:#2a9d3f"><span class="emoji">🌴</span><span class="name">Aventure Jungle</span></a>
+        <a class="card" href="chat/" style="background:#f39c12"><span class="emoji">🐱</span><span class="name">Mon Chat</span></a>
+        <a class="card" href="dessin/" style="background:#cc5de8"><span class="emoji">🎨</span><span class="name">Mon Dessin</span></a>
+        <a class="card" href="saut/" style="background:#4dabf7"><span class="emoji">🦘</span><span class="name">Monte tout en haut !</span></a>
+        <a class="card" href="memoire/" style="background:#20c997"><span class="emoji">🧠</span><span class="name">Memory</span></a>
+        <a class="card" href="serpent/" style="background:#51cf66"><span class="emoji">🐍</span><span class="name">Le Serpent</span></a>
+        <a class="card" href="briques/" style="background:#f06595"><span class="emoji">🧱</span><span class="name">Casse-briques</span></a>
+    </div>
+</body>
+</html>

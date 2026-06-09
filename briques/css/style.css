@@ -1,0 +1,78 @@
+/* Casse-briques — Breakout sur canvas. Raquette suit la souris / le doigt. */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+    font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #2b2d6e 0%, #4a2d6e 100%);
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+}
+.topbar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2vmin 3vmin;
+}
+.home-btn {
+    text-decoration: none;
+    background: rgba(255, 255, 255, .2);
+    border-radius: 50%;
+    width: clamp(44px, 8vmin, 60px);
+    height: clamp(44px, 8vmin, 60px);
+    font-size: clamp(22px, 4.5vmin, 32px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .25);
+    color: inherit;
+}
+.score-pill {
+    background: rgba(255, 255, 255, .18);
+    border-radius: 999px;
+    padding: 1vmin 3vmin;
+    font-weight: bold;
+    font-size: clamp(16px, 3.4vmin, 28px);
+}
+#game {
+    background: #11132e;
+    border-radius: 14px;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .3);
+    touch-action: none;
+    margin: 1vmin;
+}
+.hint { font-size: clamp(14px, 3vmin, 22px); opacity: .85; margin-bottom: 2vmin; min-height: 1.4em; }
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 19, 46, .78);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vmin;
+    text-align: center;
+    padding: 5vmin;
+}
+.overlay h2 { font-size: clamp(34px, 9vmin, 80px); }
+.overlay p { font-size: clamp(20px, 4.5vmin, 36px); }
+.btn {
+    border: none;
+    border-radius: 20px;
+    background: #ff5fa2;
+    color: #fff;
+    font-family: inherit;
+    font-size: clamp(18px, 4vmin, 32px);
+    font-weight: bold;
+    padding: 2.4vmin 6vmin;
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .35);
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
