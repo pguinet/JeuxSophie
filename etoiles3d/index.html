@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Étoiles en 3D</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "/vendor/three@0.170.0/three.module.js"
+        }
+    }
+    </script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background: #7ec8f0; }
+        body {
+            font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+            -webkit-user-select: none; user-select: none; touch-action: none;
+        }
+        canvas { display: block; position: fixed; inset: 0; }
+
+        #hud {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 3vw; padding: 2.4vmin 4vw; pointer-events: none;
+        }
+        .retour {
+            pointer-events: auto;
+            font-family: inherit; cursor: pointer; border: none; color: #fff;
+            background: rgba(0, 0, 0, .3); border-radius: 20px;
+            padding: 2.2vmin 4vw; font-size: clamp(15px, 3.4vmin, 22px); font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, .3); white-space: nowrap;
+        }
+        .retour:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+        #score {
+            font-size: clamp(24px, 6vmin, 44px); font-weight: bold; color: #fff;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, .35);
+        }
+        #consigne {
+            position: fixed; left: 50%; bottom: 3vmin; transform: translateX(-50%);
+            z-index: 9; color: #fff; font-size: clamp(14px, 3vmin, 20px);
+            background: rgba(0, 0, 0, .3); padding: 1.4vmin 4vw; border-radius: 18px;
+            text-align: center; pointer-events: none; max-width: 92vw;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <button class="retour" onclick="location.href='../monde/jouer.html'">⬅️ Retour</button>
+        <div id="score">⭐ 0</div>
+    </div>
+    <div id="consigne">👆 Touche le sol (ou les flèches) pour te promener et ramasser les étoiles !</div>
+
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>
