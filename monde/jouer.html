@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Choisis un jeu</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { min-height: 100%; }
+        body {
+            font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+            background: #000;                 /* remplacé par la couleur choisie au menu */
+            color: #fff;
+            min-height: 100vh;
+            padding: 4vmin 4vmin 8vmin;
+            -webkit-user-select: none;
+            user-select: none;
+            transition: background .35s ease;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 3vw;
+            width: min(720px, 96vw);
+            margin: 0 auto 4vmin;
+        }
+        button.retour {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            color: #fff;
+            background: rgba(255, 255, 255, .18);
+            border-radius: 20px;
+            padding: 2.4vmin 4vw;
+            font-size: clamp(16px, 3.6vmin, 24px);
+            font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, .35);
+            transition: transform .12s, box-shadow .12s;
+            white-space: nowrap;
+        }
+        button.retour:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+        h1 {
+            font-size: clamp(26px, 6vmin, 48px);
+            color: #ffd43b;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, .55);
+        }
+
+        .liste {
+            display: flex;
+            flex-direction: column;
+            gap: 4vmin;
+            width: min(720px, 96vw);
+            margin: 0 auto;
+        }
+        a.jeu {
+            text-decoration: none;
+            color: #fff;
+            border-radius: 26px;
+            overflow: hidden;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, .4);
+            background: rgba(255, 255, 255, .1);
+            transition: transform .12s, box-shadow .12s;
+            display: block;
+        }
+        a.jeu:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
+        @media (hover: hover) { a.jeu:hover { transform: translateY(-4px); } }
+
+        /* La "image" du jeu : une grande vignette colorée avec un gros dessin */
+        .vignette {
+            height: clamp(120px, 26vmin, 190px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(64px, 16vmin, 120px);
+        }
+        .titre {
+            padding: 2.6vmin 4vw;
+            font-size: clamp(20px, 4.4vmin, 32px);
+            font-weight: bold;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, .35);
+            text-align: center;
+        }
+
+        /* Message quand il n'y a pas encore de jeu */
+        .vide {
+            text-align: center;
+            margin-top: 8vmin;
+            opacity: .9;
+        }
+        .vide .grand { font-size: clamp(70px, 20vmin, 140px); }
+        .vide .mot { font-size: clamp(18px, 4.2vmin, 30px); margin-top: 3vmin; }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="retour" onclick="location.href='index.html'">⬅️ Retour</button>
+        <h1>🎮 Choisis un jeu !</h1>
+    </header>
+
+    <div class="liste" id="liste"></div>
+
+    <script>
+        // La liste des jeux. Vide pour l'instant — on ajoutera les jeux de Sophie ici plus tard.
+        // Exemple de jeu à ajouter dans le tableau :
+        //   { emoji: '🐱', titre: 'Mon Chat', dossier: 'chat', c1: '#f39c12', c2: '#e67700' }
+        const JEUX = [
+            { emoji: '⭐', titre: 'Attrape les étoiles', dossier: 'etoiles', c1: '#ffd43b', c2: '#f59f00' },
+            { emoji: '🌟', titre: 'Étoiles en 3D', dossier: 'etoiles3d', c1: '#4dabf7', c2: '#1971c2' },
+        ];
+
+        const liste = document.getElementById('liste');
+
+        if (JEUX.length === 0) {
+            liste.innerHTML =
+                '<div class="vide">' +
+                '<div class="grand">🎮✨</div>' +
+                '<div class="mot">Bientôt plein de jeux ici !</div>' +
+                '</div>';
+        }
+
+        JEUX.forEach(function (j) {
+            const a = document.createElement('a');
+            a.className = 'jeu';
+            a.href = '../' + j.dossier + '/';
+
+            const v = document.createElement('div');
+            v.className = 'vignette';
+            v.style.background = 'linear-gradient(135deg, ' + j.c1 + ', ' + j.c2 + ')';
+            v.textContent = j.emoji;
+
+            const t = document.createElement('div');
+            t.className = 'titre';
+            t.textContent = j.titre;
+
+            a.appendChild(v);
+            a.appendChild(t);
+            liste.appendChild(a);
+        });
+
+        // On garde la même couleur de fond que celle choisie dans le menu
+        try {
+            const fond = localStorage.getItem('monde_fond');
+            if (fond) document.body.style.background = fond;
+        } catch (e) {}
+    </script>
+</body>
+</html>
