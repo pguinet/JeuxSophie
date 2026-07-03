@@ -6,13 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Collection de petits jeux web 3D faits pour Sophie (la fille de Pascal), jouables sur mobile/tablette. Chaque jeu vit dans son propre sous-dossier à la racine (`aventure/`, `chat/`) et est totalement autonome.
 
-- **`aventure/`** — *Aventure Jungle* : jeu d'action 3D à la première personne. Le joueur explore une jungle, combat des monstres (serpent, araignée, crocodile, singe) à l'épée et au projectile, gagne des pièces et progresse via un système de quêtes.
+- **`aventure/`** — *Aventure Jungle* : jeu d'action 3D à la troisième personne (personnage visible, caméra derrière/au-dessus). Le joueur explore une jungle, combat des monstres (serpent, araignée, crocodile, singe) à l'épée et au projectile, gagne des pièces et progresse via un système de quêtes.
 - **`chat/`** — *Mon Chat* : tamagotchi 3D. Sophie s'occupe d'un chat dans une maison avec jardin (5 jauges : faim, soif, bonheur, propreté, fatigue), avec boutique de meubles et sauvegarde locale.
+
+## À qui tu parles
+
+**Par défaut, sans indication contraire, considère que c'est Sophie (une enfant) qui te prompte, pas Pascal.** Adapte-toi en conséquence :
+
+- **En tout début de session, la première chose à faire est de dire bonjour à Sophie et de lui demander ce qu'elle a envie de faire aujourd'hui** — avant toute autre action. Un message court, chaleureux et accueillant. 👋
+
+
+- **Messages simples, gentils et encourageants.** Phrases courtes, vocabulaire d'enfant, pas de jargon technique (ni « rsync », « importmap », « localStorage »…). On peut mettre des emojis. 😊
+- **Ne jamais publier d'URL de dev local** (`pascal.local:8000`, `localhost`, une IP…) : ce sont des adresses pour Pascal. Pour jouer, donne **toujours** l'adresse du Raspberry Pi : `http://jeux.local/` (ou le jeu précis, ex. `http://jeux.local/chat/`).
+- Si une demande est clairement technique (déploiement, refactor, config, git…), c'est Pascal — tu peux repasser en mode développeur normal.
 
 ## Stack & contraintes
 
 - **Pas de bundler, pas de npm, pas d'étape de build.** Ce sont des pages statiques pures.
-- **Three.js 0.170.0 chargé via CDN** (jsdelivr) à l'aide d'un `<script type="importmap">` dans chaque `index.html`. Aucune dépendance n'est versionnée localement.
+- **Three.js 0.170.0 hébergé en local** dans `vendor/three@0.170.0/three.module.js`, référencé via un `<script type="importmap">` (`"three"` → `/vendor/…`) dans les `index.html` qui en ont besoin (`aventure/`, `chat/`). Aucune dépendance CDN — les jeux marchent hors ligne.
 - **ES modules vanilla** (`import`/`export`), HTML5, CSS3. Aucun framework.
 - Persistance via `localStorage` (voir `chat/js/save.js`, clé `monchat_save`).
 
@@ -26,9 +37,38 @@ python3 -m http.server 8000
 ```
 
 Puis ouvrir, sur le réseau local, `http://pascal.local:8000/aventure/` ou `http://pascal.local:8000/chat/`.
-**Toujours utiliser `pascal.local` (mDNS) dans les URLs**, jamais `localhost` ni une IP — c'est l'adresse depuis laquelle Sophie joue sur sa tablette.
+**En dev, toujours utiliser `pascal.local` (mDNS) dans les URLs**, jamais `localhost` ni une IP. ⚠️ `pascal.local:8000` est le serveur de dev de Pascal ; **Sophie, elle, joue sur le Pi (`http://jeux.local/`)** — ne jamais lui donner d'URL `pascal.local` (voir « À qui tu parles »).
 
-Les `index.html` envoient des en-têtes `no-cache` : un simple rafraîchissement suffit à voir les changements, pas besoin de vider le cache.
+Sur le Pi, lighttpd renvoie `Cache-Control: no-cache` sur le code des jeux (revalidation à chaque requête) : un simple rafraîchissement suffit à voir un déploiement. Les assets figés de `vendor/` (Three.js) sont eux mis en cache long (`immutable`), donc téléchargés une seule fois. En dev via `python3 -m http.server`, aucun de ces en-têtes n'est envoyé ; un rafraîchissement suffit tout de même.
+
+## Déployer sur le Raspberry Pi
+
+**Les jeux sont hébergés sur un Raspberry Pi** (modèle 1, ARMv6) qui sert les pages statiques via `lighttpd` sur le réseau local. Le Pi n'est qu'un serveur de fichiers ; le rendu 3D Three.js tourne sur la tablette de Sophie. Three.js est hébergé en local (`vendor/three@0.170.0/three.module.js`, référencé par les `importmap`) — aucune dépendance CDN.
+
+**Une fois une évolution terminée et validée, déployer vers le Pi** avec :
+
+```bash
+./deploy/deploy.sh            # défaut : rsync vers sophie@jeux.local:/var/www/jeux
+PI_HOST=192.168.1.42 ./deploy/deploy.sh   # forcer l'IP si le mDNS jeux.local ne répond pas
+./deploy/deploy.sh --dry-run  # simuler sans rien copier
+```
+
+Le script utilise `rsync -az --delete` (fichiers modifiés uniquement, suppressions répercutées) et exclut `.git/`, `.claude/`, `docs/`, `deploy/`, `croquis.pdf`, `CLAUDE.md`. Sophie joue ensuite sur `http://jeux.local/`. Tout est détaillé dans `deploy/README.md` (install du Pi, config lighttpd, dépannage).
+
+> Note : `jeux.local` est le hostname du Pi. `pascal.local` reste l'adresse du serveur de dev local lancé à la main.
+
+### Accès direct au Pi (SSH)
+
+Depuis le poste de dev, **on peut agir directement sur le Pi** — pas seulement via `deploy.sh` :
+
+- Accès : `ssh sophie@jeux.local` (clé SSH configurée, sans mot de passe).
+- `sudo` est **sans mot de passe** sur le Pi → possible de gérer lighttpd (`sudo systemctl restart lighttpd`), copier une conf, etc.
+- Binaire lighttpd : `/usr/sbin/lighttpd` (hors PATH d'un shell SSH non-login — l'appeler par chemin complet). Version : lighttpd 1.4.79. Docroot : `/var/www/jeux`.
+
+**Précautions avant toute action qui touche le service :**
+- Toujours tester la syntaxe **avant** de redémarrer : `sudo /usr/sbin/lighttpd -tt -f /etc/lighttpd/lighttpd.conf` (une conf invalide empêche le redémarrage → plus de jeux pour Sophie).
+- Sauvegarder la conf existante avant de l'écraser, et ne redémarrer que si le test passe.
+- Une connexion SSH peut tomber en cours de route : **vérifier l'état réel** (`systemctl is-active`, `curl -sI`) au lieu de se fier au code de retour.
 
 ## Architecture commune aux jeux
 
