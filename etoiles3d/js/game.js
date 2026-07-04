@@ -64,6 +64,7 @@ function makeTree(x, z) {
 
 // --- Animaux (qui suivent) et décorations (posées dans le monde) ---
 const animauxActifs = [];   // { id, group, vole }
+const decosAnimees = [];    // groupes de décos avec une animation (ex. la fontaine)
 const infosAnimal = {};
 ANIMAUX.forEach((a) => { infosAnimal[a.id] = a; });
 
@@ -82,6 +83,7 @@ function ajouterDeco(id) {
     const p = DECO_POS[id] || { x: 0, z: 0 };
     g.position.set(p.x, 0, p.z);
     scene.add(g);
+    if (g.userData && g.userData.update) decosAnimees.push(g);   // ex. l'eau de la fontaine
 }
 
 // --- Personnage ---
@@ -403,6 +405,9 @@ function frame(now) {
             rangSol++;
         }
     }
+
+    // décorations animées (l'eau de la fontaine)
+    for (const d of decosAnimees) d.userData.update(now);
 
     // étoiles : rotation + collision + durée de vie
     for (const star of stars) {

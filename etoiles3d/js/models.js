@@ -364,13 +364,33 @@ function buildFontaine() {
     const vasque = cyl(0.6, 0.4, 0.2, pierre, 14);
     vasque.position.y = 1.35;
     g.add(vasque);
-    // jet d'eau
-    const jet = cyl(0.08, 0.14, 0.7, eau, 8);
-    jet.position.y = 1.7;
+    // jet d'eau central (il pulse)
+    const jet = cyl(0.08, 0.14, 0.8, eau, 8);
+    jet.position.y = 1.75;
     g.add(jet);
-    const goutte = sph(0.16, eau);
-    goutte.position.y = 2.1;
-    g.add(goutte);
+
+    // gouttes qui jaillissent du sommet et retombent dans le bassin
+    const gouttes = [];
+    const N = 12;
+    for (let i = 0; i < N; i++) {
+        const d = sph(0.11, eau);
+        g.add(d);
+        gouttes.push({ mesh: d, angle: (i / N) * Math.PI * 2, phase: i / N });
+    }
+
+    // animation : appelée à chaque image par le jeu (t en millisecondes)
+    g.userData.update = (t) => {
+        const s = t * 0.001;
+        gouttes.forEach((gt) => {
+            const p = (s * 0.7 + gt.phase) % 1;          // progression 0..1
+            const r = 0.15 + p * 0.95;                   // s'éloigne du centre
+            const y = 2.0 + p * 1.4 - p * p * 3.1;       // parabole : monte puis retombe
+            gt.mesh.position.set(Math.cos(gt.angle) * r, Math.max(0.58, y), Math.sin(gt.angle) * r);
+            gt.mesh.scale.setScalar(0.55 + (1 - p) * 0.6);
+        });
+        surface.scale.y = 1 + Math.sin(s * 3) * 0.18;    // l'eau ondule
+        jet.scale.y = 1 + Math.sin(s * 6) * 0.14;        // le jet pulse
+    };
     return g;
 }
 
