@@ -96,7 +96,8 @@ function render() {
     topbar.className = 'topbar';
     const home = document.createElement('a');
     home.className = 'icon-btn';
-    home.href = '../';
+    // La maison ramène toujours au menu « Mon monde ».
+    home.href = '../monde/';
     home.textContent = '🏠';
     const title = document.createElement('div');
     title.className = 'title';
