@@ -153,14 +153,45 @@ function appliquerTailleAnimaux() {
     const s = echellePourNiveau(niveauPourXp(etat.petXp));
     for (const a of animauxActifs) a.group.scale.setScalar(s);
 }
+
+// Multiplicateur d'étoiles = le meilleur (le plus fort) parmi les animaux
+// possédés (les animaux chers valent plus : x2 pour le moins cher, x10 pour
+// la licorne). Sans animal : x1.
+function multiEtoiles() {
+    let m = 1;
+    for (const a of animauxActifs) {
+        const info = infosAnimal[a.id];
+        if (info && info.etoilesX > m) m = info.etoilesX;
+    }
+    return m;
+}
+
 function majNiveauHud() {
     const xp = etat.petXp;
     const L = niveauPourXp(xp);
     const base = 5 * L * (L - 1), suivant = 5 * (L + 1) * L;
     const frac = suivant > base ? (xp - base) / (suivant - base) : 0;
-    niveauTxt.textContent = '🐾 Niveau ' + L;
+    niveauTxt.textContent = '🐾 Niveau ' + L + '   ⭐ x' + multiEtoiles();
     niveauBarre.style.width = Math.round(frac * 100) + '%';
     niveauHud.style.display = animauxActifs.length ? 'block' : 'none';
+}
+
+// petit « +N » qui s'envole quand on ramasse (montre le multiplicateur)
+function popupGain(gain) {
+    const t = document.createElement('div');
+    t.textContent = '+' + gain + ' ⭐';
+    Object.assign(t.style, {
+        position: 'fixed', top: '20vmin', left: '50%', zIndex: '15',
+        transform: 'translateX(-50%)', color: '#ffe066', fontWeight: 'bold',
+        fontSize: 'clamp(20px, 5vmin, 36px)', textShadow: '2px 2px 0 rgba(0,0,0,.4)',
+        pointerEvents: 'none',
+    });
+    document.body.appendChild(t);
+    t.animate(
+        [{ transform: 'translate(-50%, 0)', opacity: 1 }, { transform: 'translate(-50%, -60px)', opacity: 0 }],
+        { duration: 800, easing: 'ease-out' },
+    );
+    setTimeout(() => t.remove(), 820);
 }
 function feteNiveau(L) {
     const t = document.createElement('div');
@@ -201,13 +232,15 @@ niveauHud.append(niveauTxt, niveauBarreFond);
 document.body.appendChild(niveauHud);
 
 function ramasse(star) {
-    etat.etoiles++;
+    const gain = multiEtoiles();          // plus l'animal est cher, plus on gagne d'étoiles
+    etat.etoiles += gain;
     const avant = niveauPourXp(etat.petXp);
-    etat.petXp += 1;
+    etat.petXp += gain;
     const apres = niveauPourXp(etat.petXp);
     sauver(etat);
     majHud();
     majNiveauHud();
+    popupGain(gain);
     if (apres > avant) { appliquerTailleAnimaux(); feteNiveau(apres); }
     if (consigne) consigne.style.display = 'none';
     placeStar(star);

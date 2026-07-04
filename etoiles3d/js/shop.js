@@ -79,7 +79,7 @@ export function initMagasin(options) {
     const grilleA = el('div', { display: 'flex', flexDirection: 'column', gap: '2vmin', marginBottom: '3vmin' });
     panneau.appendChild(grilleA);
     ANIMAUX.forEach((a) => {
-        const ligne = ligneArticle(a.emoji + ' ' + a.nom, () => acheter('animaux', a, onAchatAnimal, lignesAnimaux[a.id]));
+        const ligne = ligneArticle(a.emoji + ' ' + a.nom, () => acheter('animaux', a, onAchatAnimal, lignesAnimaux[a.id]), '⭐ Étoiles x' + a.etoilesX);
         grilleA.appendChild(ligne.racine);
         lignesAnimaux[a.id] = ligne;
     });
