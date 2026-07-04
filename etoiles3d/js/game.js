@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { loadAvatar } from '../../shared/avatar.js';
 import { buildAvatar3D } from '../../shared/avatar3d.js';
-import { charger, sauver } from './save.js';
+import { charger, sauver, reinitialiser } from './save.js';
 import { initMagasin } from './shop.js';
 import { ANIMAUX } from './catalogue.js';
 import { buildAnimal, buildDeco, DECO_POS } from './models.js';
@@ -263,7 +263,12 @@ for (const a of animauxActifs) {
 }
 
 // Magasin (l'achat ajoute aussitôt l'objet dans le monde)
-initMagasin({ etat, sauver, majHud, onAchatAnimal: ajouterAnimal, onAchatDeco: ajouterDeco });
+initMagasin({
+    etat, sauver, majHud,
+    onAchatAnimal: ajouterAnimal,
+    onAchatDeco: ajouterDeco,
+    onReset: () => { reinitialiser(); location.reload(); },
+});
 
 // --- Contrôles ---
 const keys = {};

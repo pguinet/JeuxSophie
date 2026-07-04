@@ -31,3 +31,8 @@ export function sauver(data) {
         localStorage.setItem(CLE, JSON.stringify(data));
     } catch (e) { /* pas grave si le navigateur refuse */ }
 }
+
+// Efface complètement la sauvegarde (pour tout recommencer à zéro).
+export function reinitialiser() {
+    try { localStorage.removeItem(CLE); } catch (e) { /* rien */ }
+}

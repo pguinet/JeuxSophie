@@ -17,9 +17,9 @@ function el(tag, styles, texte) {
     return n;
 }
 
-// options = { etat, sauver, majHud, onAchatAnimal, onAchatDeco }
+// options = { etat, sauver, majHud, onAchatAnimal, onAchatDeco, onReset }
 export function initMagasin(options) {
-    const { etat, sauver, majHud, onAchatAnimal, onAchatDeco } = options;
+    const { etat, sauver, majHud, onAchatAnimal, onAchatDeco, onReset } = options;
 
     const btn = document.getElementById('magasin');
 
@@ -104,6 +104,46 @@ export function initMagasin(options) {
     }, '✅ C\'est bon, je joue !');
     fermer.addEventListener('click', ferme);
     panneau.appendChild(fermer);
+
+    // --- Bouton « tout recommencer à zéro » ---
+    const reset = el('button', {
+        fontFamily: 'inherit', cursor: 'pointer', border: 'none', color: '#fff',
+        background: 'rgba(230, 73, 128, .85)', borderRadius: '18px', padding: '2.2vmin 4vw',
+        fontSize: 'clamp(14px, 3vmin, 20px)', fontWeight: 'bold', width: '100%',
+        boxShadow: '0 4px 0 rgba(0,0,0,.28)', marginTop: '3vmin',
+    }, '🔄 Tout recommencer à zéro');
+    reset.addEventListener('click', demanderReset);
+    panneau.appendChild(reset);
+
+    function demanderReset() {
+        const conf = el('div', {
+            position: 'fixed', inset: '0', zIndex: '60', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.6)', padding: '6vmin',
+        });
+        const boite = el('div', {
+            background: '#fff', color: '#333', borderRadius: '24px', padding: '5vmin',
+            width: 'min(440px, 92vw)', textAlign: 'center', boxShadow: '0 10px 0 rgba(0,0,0,.3)',
+        });
+        boite.appendChild(el('div', { fontSize: 'clamp(20px, 5vmin, 30px)', fontWeight: 'bold', marginBottom: '3vmin' }, '⚠️ Tout recommencer ?'));
+        boite.appendChild(el('div', { fontSize: 'clamp(15px, 3.4vmin, 20px)', marginBottom: '4vmin', opacity: '.85' },
+            'Tu perdras tes étoiles, tes pièces, tes animaux et tes décorations.'));
+        const oui = el('button', {
+            fontFamily: 'inherit', cursor: 'pointer', border: 'none', color: '#fff',
+            background: '#e64980', borderRadius: '18px', padding: '2.6vmin 4vw', width: '100%',
+            fontSize: 'clamp(16px, 3.6vmin, 22px)', fontWeight: 'bold', boxShadow: '0 4px 0 rgba(0,0,0,.25)', marginBottom: '2vmin',
+        }, 'Oui, tout effacer');
+        const non = el('button', {
+            fontFamily: 'inherit', cursor: 'pointer', border: 'none', color: '#fff',
+            background: '#51cf66', borderRadius: '18px', padding: '2.6vmin 4vw', width: '100%',
+            fontSize: 'clamp(16px, 3.6vmin, 22px)', fontWeight: 'bold', boxShadow: '0 4px 0 rgba(0,0,0,.25)',
+        }, 'Non, je garde tout');
+        oui.addEventListener('click', () => { if (onReset) onReset(); });
+        non.addEventListener('click', () => conf.remove());
+        conf.addEventListener('click', (e) => { if (e.target === conf) conf.remove(); });
+        boite.append(oui, non);
+        conf.appendChild(boite);
+        document.body.appendChild(conf);
+    }
 
     // --- Achat ---
     function acheter(champ, article, onAchat, ligne) {
