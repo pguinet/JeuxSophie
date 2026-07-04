@@ -5,9 +5,17 @@
 import * as THREE from 'three';
 import { loadAvatar } from '../../shared/avatar.js';
 import { buildAvatar3D } from '../../shared/avatar3d.js';
+import { charger, sauver } from './save.js';
+import { initMagasin } from './shop.js';
+import { ANIMAUX } from './catalogue.js';
+import { buildAnimal, buildDeco, DECO_POS } from './models.js';
 
 const scoreEl = document.getElementById('score');
+const piecesEl = document.getElementById('pieces');
 const consigne = document.getElementById('consigne');
+
+// Sauvegarde (étoiles ramassées, pièces, animaux et décos achetés)
+const etat = charger();
 
 // --- Renderer / scène / caméra ---
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -53,6 +61,28 @@ function makeTree(x, z) {
     scene.add(t);
 }
 [[-9, -6], [8, -8], [-11, 5], [12, 4], [0, -13], [-6, 11], [7, 10]].forEach(([x, z]) => makeTree(x, z));
+
+// --- Animaux (qui suivent) et décorations (posées dans le monde) ---
+const animauxActifs = [];   // { id, group, vole }
+const infosAnimal = {};
+ANIMAUX.forEach((a) => { infosAnimal[a.id] = a; });
+
+function ajouterAnimal(id) {
+    const g = buildAnimal(id);
+    if (!g) return;
+    g.scale.setScalar(echellePourNiveau(niveauPourXp(etat.petXp)));   // taille selon le niveau
+    scene.add(g);
+    animauxActifs.push({ id, group: g, vole: !!(infosAnimal[id] && infosAnimal[id].vole) });
+    majNiveauHud();   // afficher/mettre à jour la jauge de niveau
+}
+
+function ajouterDeco(id) {
+    const g = buildDeco(id);
+    if (!g) return;
+    const p = DECO_POS[id] || { x: 0, z: 0 };
+    g.position.set(p.x, 0, p.z);
+    scene.add(g);
+}
 
 // --- Personnage ---
 const player = buildAvatar3D(loadAvatar());
@@ -105,14 +135,100 @@ for (let i = 0; i < STAR_COUNT; i++) {
     stars.push(star);
 }
 
-// --- Score ---
-let score = 0;
+// --- Score (étoiles + pièces) ---
+function majHud() {
+    scoreEl.textContent = '⭐ ' + etat.etoiles;
+    piecesEl.textContent = '🪙 ' + etat.pieces;
+}
+
+// --- Niveau des animaux ---
+// Chaque étoile ramassée donne de l'expérience aux animaux ; à chaque niveau,
+// ils grandissent. Il faut 5·N·(N-1) étoiles pour être au niveau N.
+const CROISSANCE_PAR_NIVEAU = 0.07;   // +7 % de taille par niveau
+const NIVEAU_MAX_TAILLE = 10;         // au-delà, ils ne grandissent plus
+function niveauPourXp(xp) { let L = 1; while (5 * (L + 1) * L <= xp) L++; return L; }
+function echellePourNiveau(L) { return 1 + Math.min(L - 1, NIVEAU_MAX_TAILLE) * CROISSANCE_PAR_NIVEAU; }
+
+function appliquerTailleAnimaux() {
+    const s = echellePourNiveau(niveauPourXp(etat.petXp));
+    for (const a of animauxActifs) a.group.scale.setScalar(s);
+}
+function majNiveauHud() {
+    const xp = etat.petXp;
+    const L = niveauPourXp(xp);
+    const base = 5 * L * (L - 1), suivant = 5 * (L + 1) * L;
+    const frac = suivant > base ? (xp - base) / (suivant - base) : 0;
+    niveauTxt.textContent = '🐾 Niveau ' + L;
+    niveauBarre.style.width = Math.round(frac * 100) + '%';
+    niveauHud.style.display = animauxActifs.length ? 'block' : 'none';
+}
+function feteNiveau(L) {
+    const t = document.createElement('div');
+    t.textContent = '🎉 Tes animaux passent au niveau ' + L + ' !';
+    Object.assign(t.style, {
+        position: 'fixed', top: '24vmin', left: '50%', transform: 'translateX(-50%)',
+        zIndex: '20', background: 'rgba(255,146,43,.95)', color: '#fff', fontWeight: 'bold',
+        padding: '2.4vmin 6vw', borderRadius: '22px', fontSize: 'clamp(16px, 4vmin, 28px)',
+        boxShadow: '0 5px 0 rgba(0,0,0,.3)', textShadow: '1px 1px 0 rgba(0,0,0,.3)',
+        pointerEvents: 'none', textAlign: 'center', maxWidth: '92vw',
+    });
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.transition = 'opacity .5s'; t.style.opacity = '0'; }, 1700);
+    setTimeout(() => t.remove(), 2300);
+}
+
+// jauge de niveau (créée dans le HUD, sous les compteurs)
+const niveauHud = document.createElement('div');
+Object.assign(niveauHud.style, {
+    position: 'fixed', top: '12vmin', left: '50%', transform: 'translateX(-50%)',
+    zIndex: '11', textAlign: 'center', color: '#fff', pointerEvents: 'none',
+    textShadow: '1px 1px 0 rgba(0,0,0,.4)', display: 'none',
+});
+const niveauTxt = document.createElement('div');
+Object.assign(niveauTxt.style, { fontSize: 'clamp(15px, 3.4vmin, 22px)', fontWeight: 'bold' });
+const niveauBarreFond = document.createElement('div');
+Object.assign(niveauBarreFond.style, {
+    width: 'min(210px, 52vw)', height: '12px', background: 'rgba(0,0,0,.3)',
+    borderRadius: '8px', margin: '0.6vmin auto 0', overflow: 'hidden',
+});
+const niveauBarre = document.createElement('div');
+Object.assign(niveauBarre.style, {
+    height: '100%', width: '0%', borderRadius: '8px', transition: 'width .3s',
+    background: 'linear-gradient(90deg, #ffd43b, #ff922b)',
+});
+niveauBarreFond.appendChild(niveauBarre);
+niveauHud.append(niveauTxt, niveauBarreFond);
+document.body.appendChild(niveauHud);
+
 function ramasse(star) {
-    score++;
-    scoreEl.textContent = '⭐ ' + score;
+    etat.etoiles++;
+    const avant = niveauPourXp(etat.petXp);
+    etat.petXp += 1;
+    const apres = niveauPourXp(etat.petXp);
+    sauver(etat);
+    majHud();
+    majNiveauHud();
+    if (apres > avant) { appliquerTailleAnimaux(); feteNiveau(apres); }
     if (consigne) consigne.style.display = 'none';
     placeStar(star);
 }
+majHud();
+
+// Recrée les animaux et décorations déjà achetés
+etat.animaux.forEach(ajouterAnimal);
+etat.decos.forEach(ajouterDeco);
+appliquerTailleAnimaux();
+majNiveauHud();
+
+// Au départ, on aligne les animaux qui marchent en file derrière le joueur
+// (qui regarde vers +Z) pour éviter qu'ils se superposent avant de bouger.
+let rangDepart = 0;
+for (const a of animauxActifs) {
+    if (!a.vole) a.group.position.set(0, 0, -1.3 * (++rangDepart));
+}
+
+// Magasin (l'achat ajoute aussitôt l'objet dans le monde)
+initMagasin({ etat, sauver, majHud, onAchatAnimal: ajouterAnimal, onAchatDeco: ajouterDeco });
 
 // --- Contrôles ---
 const keys = {};
@@ -149,7 +265,10 @@ function resize() {
 window.addEventListener('resize', resize);
 
 // --- Boucle ---
-const SPEED = 4.5;   // unités/s
+const SPEED = 4.5;             // unités/s
+const trail = [];              // fil des positions récentes du joueur
+const TRAIL_MAX = 260;
+const ESPACE = 16;             // écart (en images) entre chaque animal qui suit
 let last = performance.now();
 let walkPhase = 0;
 
@@ -215,6 +334,42 @@ function frame(now) {
 
     // ombre suit le personnage
     shadow.position.set(player.position.x, 0.02, player.position.z);
+
+    // fil des positions du joueur, pour que les animaux suivent en file.
+    // On n'ajoute un point que si le joueur avance : ainsi, à l'arrêt, les
+    // animaux gardent leur place derrière lui au lieu de se rassembler dessus.
+    if (moving) {
+        trail.unshift({ x: player.position.x, z: player.position.z, h: heading });
+        if (trail.length > TRAIL_MAX) trail.pop();
+    }
+
+    // animaux : ceux qui marchent suivent le joueur, ceux qui volent tournent autour
+    let rangSol = 0;
+    for (const a of animauxActifs) {
+        if (a.vole) {
+            const ang = now * 0.0016 + animauxActifs.indexOf(a) * 1.8;
+            const R = 1.7;
+            a.group.position.set(
+                player.position.x + Math.cos(ang) * R,
+                1.5 + Math.sin(now * 0.004 + a.id.length) * 0.25,
+                player.position.z + Math.sin(ang) * R,
+            );
+            a.group.rotation.y = -ang + Math.PI / 2;
+            const w = a.group.userData.parts && a.group.userData.parts.wings;
+            if (w) { const f = Math.sin(now * 0.02) * 0.8; w[0].rotation.y = f; w[1].rotation.y = -f; }
+        } else {
+            const idx = Math.min(trail.length - 1, ESPACE * (rangSol + 1));
+            const t = trail[idx];
+            if (t) { a.group.position.x = t.x; a.group.position.z = t.z; a.group.rotation.y = t.h; }
+            // petit saut quand le joueur bouge
+            const hop = a.group.userData.hop || 0.06;
+            a.group.position.y = moving ? Math.abs(Math.sin(walkPhase * 0.9 + rangSol)) * hop : 0;
+            // oreilles qui rebondissent
+            const ears = a.group.userData.parts && a.group.userData.parts.ears;
+            if (ears) ears.forEach((e, k) => { e.rotation.x = moving ? Math.sin(walkPhase + k) * 0.2 : 0; });
+            rangSol++;
+        }
+    }
 
     // étoiles : rotation + collision + durée de vie
     for (const star of stars) {
