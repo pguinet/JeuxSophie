@@ -17,9 +17,9 @@ function el(tag, styles, texte) {
     return n;
 }
 
-// options = { etat, sauver, majHud, onAchatAnimal, onAchatDeco, onReset }
+// options = { etat, sauver, majHud, onAchatAnimal, onAchatDeco, onRenaissance }
 export function initMagasin(options) {
-    const { etat, sauver, majHud, onAchatAnimal, onAchatDeco, onReset } = options;
+    const { etat, sauver, majHud, onAchatAnimal, onAchatDeco, onRenaissance } = options;
 
     const btn = document.getElementById('magasin');
 
@@ -105,44 +105,70 @@ export function initMagasin(options) {
     fermer.addEventListener('click', ferme);
     panneau.appendChild(fermer);
 
-    // --- Bouton « tout recommencer à zéro » ---
-    const reset = el('button', {
+    // --- Bouton « Renaissance » ---
+    // Débloqué seulement quand TOUT le magasin est acheté. Remet tout à zéro
+    // mais donne un bonus ×2 permanent (qui se cumule : ×2, ×4, ×8…).
+    const renais = el('button', {
         fontFamily: 'inherit', cursor: 'pointer', border: 'none', color: '#fff',
-        background: 'rgba(230, 73, 128, .85)', borderRadius: '18px', padding: '2.2vmin 4vw',
-        fontSize: 'clamp(14px, 3vmin, 20px)', fontWeight: 'bold', width: '100%',
-        boxShadow: '0 4px 0 rgba(0,0,0,.28)', marginTop: '3vmin',
-    }, '🔄 Tout recommencer à zéro');
-    reset.addEventListener('click', demanderReset);
-    panneau.appendChild(reset);
+        background: 'linear-gradient(135deg, #cc5de8, #9775fa)', borderRadius: '18px',
+        padding: '2.6vmin 4vw', fontSize: 'clamp(15px, 3.2vmin, 21px)', fontWeight: 'bold',
+        width: '100%', boxShadow: '0 4px 0 rgba(0,0,0,.28)', marginTop: '3vmin',
+    }, '✨ Renaissance');
+    const renaisAide = el('div', { fontSize: 'clamp(12px, 2.7vmin, 16px)', opacity: '.9', marginTop: '1.4vmin' }, '');
+    panneau.append(renais, renaisAide);
 
-    function demanderReset() {
+    function toutAchete() {
+        return etat.animaux.length >= ANIMAUX.length && etat.decos.length >= DECOS.length;
+    }
+    renais.addEventListener('click', () => {
+        if (!toutAchete()) { secoue(renais); flash(renaisAide, '🛒 Achète TOUT le magasin d\'abord !'); return; }
+        demanderRenaissance();
+    });
+
+    function demanderRenaissance() {
+        const bonusProchain = Math.pow(2, (etat.renaissances || 0) + 1);
         const conf = el('div', {
             position: 'fixed', inset: '0', zIndex: '60', display: 'flex',
             alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.6)', padding: '6vmin',
         });
         const boite = el('div', {
             background: '#fff', color: '#333', borderRadius: '24px', padding: '5vmin',
-            width: 'min(440px, 92vw)', textAlign: 'center', boxShadow: '0 10px 0 rgba(0,0,0,.3)',
+            width: 'min(460px, 92vw)', textAlign: 'center', boxShadow: '0 10px 0 rgba(0,0,0,.3)',
         });
-        boite.appendChild(el('div', { fontSize: 'clamp(20px, 5vmin, 30px)', fontWeight: 'bold', marginBottom: '3vmin' }, '⚠️ Tout recommencer ?'));
-        boite.appendChild(el('div', { fontSize: 'clamp(15px, 3.4vmin, 20px)', marginBottom: '4vmin', opacity: '.85' },
-            'Tu perdras tes étoiles, tes pièces, tes animaux et tes décorations.'));
+        boite.appendChild(el('div', { fontSize: 'clamp(21px, 5vmin, 32px)', fontWeight: 'bold', marginBottom: '3vmin' }, '✨ Faire une Renaissance ?'));
+        boite.appendChild(el('div', { fontSize: 'clamp(15px, 3.4vmin, 20px)', marginBottom: '2vmin', opacity: '.85' },
+            'Tu recommences tout à zéro (étoiles, pièces, animaux, décos)…'));
+        boite.appendChild(el('div', { fontSize: 'clamp(16px, 3.8vmin, 22px)', fontWeight: 'bold', marginBottom: '4vmin', color: '#9775fa' },
+            '…mais tu gardes un bonus ×' + bonusProchain + ' sur les étoiles POUR TOUJOURS ! 🚀'));
         const oui = el('button', {
             fontFamily: 'inherit', cursor: 'pointer', border: 'none', color: '#fff',
-            background: '#e64980', borderRadius: '18px', padding: '2.6vmin 4vw', width: '100%',
+            background: '#9775fa', borderRadius: '18px', padding: '2.6vmin 4vw', width: '100%',
             fontSize: 'clamp(16px, 3.6vmin, 22px)', fontWeight: 'bold', boxShadow: '0 4px 0 rgba(0,0,0,.25)', marginBottom: '2vmin',
-        }, 'Oui, tout effacer');
+        }, '✨ Oui, renaître !');
         const non = el('button', {
             fontFamily: 'inherit', cursor: 'pointer', border: 'none', color: '#fff',
             background: '#51cf66', borderRadius: '18px', padding: '2.6vmin 4vw', width: '100%',
             fontSize: 'clamp(16px, 3.6vmin, 22px)', fontWeight: 'bold', boxShadow: '0 4px 0 rgba(0,0,0,.25)',
-        }, 'Non, je garde tout');
-        oui.addEventListener('click', () => { if (onReset) onReset(); });
+        }, 'Non, pas encore');
+        oui.addEventListener('click', () => { if (onRenaissance) onRenaissance(); });
         non.addEventListener('click', () => conf.remove());
         conf.addEventListener('click', (e) => { if (e.target === conf) conf.remove(); });
         boite.append(oui, non);
         conf.appendChild(boite);
         document.body.appendChild(conf);
+    }
+
+    function majRenaissance() {
+        const bonusActuel = Math.pow(2, etat.renaissances || 0);
+        if (toutAchete()) {
+            renais.textContent = '✨ Renaissance (bonus ×' + (bonusActuel * 2) + ' !)';
+            renais.style.filter = 'none';
+            renaisAide.textContent = etat.renaissances > 0 ? 'Renaissances : ' + etat.renaissances + ' · bonus actuel ×' + bonusActuel : '';
+        } else {
+            renais.textContent = '🔒 Renaissance';
+            renais.style.filter = 'grayscale(.55) brightness(.9)';
+            renaisAide.textContent = 'Achète tout le magasin pour la débloquer !';
+        }
     }
 
     // --- Achat ---
@@ -176,6 +202,7 @@ export function initMagasin(options) {
         });
         maj(ANIMAUX, 'animaux');
         maj(DECOS, 'decos');
+        majRenaissance();
     }
 
     function ouvre() { rafraichir(); overlay.style.display = 'flex'; }

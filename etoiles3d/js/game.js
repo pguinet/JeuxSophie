@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { loadAvatar } from '../../shared/avatar.js';
 import { buildAvatar3D } from '../../shared/avatar3d.js';
-import { charger, sauver, reinitialiser } from './save.js';
+import { charger, sauver, renaitre } from './save.js';
 import { initMagasin } from './shop.js';
 import { ANIMAUX } from './catalogue.js';
 import { buildAnimal, buildDeco, DECO_POS } from './models.js';
@@ -159,7 +159,7 @@ function appliquerTailleAnimaux() {
 // Multiplicateur d'étoiles = le meilleur (le plus fort) parmi les animaux
 // possédés (les animaux chers valent plus : x2 pour le moins cher, x10 pour
 // la licorne). Sans animal : x1.
-function multiEtoiles() {
+function multiAnimaux() {
     let m = 1;
     for (const a of animauxActifs) {
         const info = infosAnimal[a.id];
@@ -168,14 +168,21 @@ function multiEtoiles() {
     return m;
 }
 
+// Bonus permanent gagné avec les Renaissances : ×2 par renaissance (×2, ×4, ×8…).
+function bonusRenaissance() { return Math.pow(2, etat.renaissances || 0); }
+
+// Multiplicateur total appliqué à chaque étoile ramassée.
+function multiEtoiles() { return multiAnimaux() * bonusRenaissance(); }
+
 function majNiveauHud() {
     const xp = etat.petXp;
     const L = niveauPourXp(xp);
     const base = 5 * L * (L - 1), suivant = 5 * (L + 1) * L;
     const frac = suivant > base ? (xp - base) / (suivant - base) : 0;
-    niveauTxt.textContent = '🐾 Niveau ' + L + '   ⭐ x' + multiEtoiles();
+    const rn = etat.renaissances || 0;
+    niveauTxt.textContent = '🐾 Niveau ' + L + '   ⭐ x' + multiEtoiles() + (rn > 0 ? '   ✨ ' + rn : '');
     niveauBarre.style.width = Math.round(frac * 100) + '%';
-    niveauHud.style.display = animauxActifs.length ? 'block' : 'none';
+    niveauHud.style.display = (animauxActifs.length || rn > 0) ? 'block' : 'none';
 }
 
 // petit « +N » qui s'envole quand on ramasse (montre le multiplicateur)
@@ -267,7 +274,7 @@ initMagasin({
     etat, sauver, majHud,
     onAchatAnimal: ajouterAnimal,
     onAchatDeco: ajouterDeco,
-    onReset: () => { reinitialiser(); location.reload(); },
+    onRenaissance: () => { renaitre(etat.renaissances); location.reload(); },
 });
 
 // --- Contrôles ---

@@ -6,7 +6,7 @@
 const CLE = 'etoiles3d_save';
 
 function vide() {
-    return { etoiles: 0, pieces: 0, animaux: [], decos: [], petXp: 0 };
+    return { etoiles: 0, pieces: 0, animaux: [], decos: [], petXp: 0, renaissances: 0 };
 }
 
 export function charger() {
@@ -20,10 +20,20 @@ export function charger() {
             animaux: Array.isArray(data.animaux) ? data.animaux : [],
             decos: Array.isArray(data.decos) ? data.decos : [],
             petXp: Number(data.petXp) || 0,
+            renaissances: Number(data.renaissances) || 0,
         };
     } catch (e) {
         return vide();
     }
+}
+
+// Fait une « Renaissance » : on repart à zéro MAIS on garde (et on augmente)
+// le compteur de renaissances, qui donne un bonus permanent.
+export function renaitre(renaissancesActuelles) {
+    const neuf = vide();
+    neuf.renaissances = (Number(renaissancesActuelles) || 0) + 1;
+    sauver(neuf);
+    return neuf;
 }
 
 export function sauver(data) {
