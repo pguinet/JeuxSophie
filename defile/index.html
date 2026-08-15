@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Défilé de mode</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "/vendor/three@0.170.0/three.module.js"
+        }
+    }
+    </script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; overflow: hidden; background: #ffd9e8; }
+        body {
+            font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+            -webkit-user-select: none; user-select: none; touch-action: none;
+        }
+        canvas { display: block; position: fixed; inset: 0; }
+
+        #hud {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+            display: flex; align-items: flex-start; justify-content: space-between;
+            gap: 2vw; padding: 2.2vmin 3vw; pointer-events: none;
+        }
+        button.pastille {
+            pointer-events: auto;
+            font-family: inherit; cursor: pointer; border: none; color: #fff;
+            background: rgba(0, 0, 0, .32); border-radius: 20px;
+            padding: 2vmin 3.4vw; font-size: clamp(14px, 3vmin, 20px); font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, .3); white-space: nowrap;
+        }
+        button.pastille:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+
+        /* Le thème du défilé, au centre en haut */
+        #bandeau {
+            text-align: center; color: #fff; max-width: 52vw;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, .45);
+        }
+        #theme { font-size: clamp(18px, 4.2vmin, 34px); font-weight: bold; }
+        #astuce {
+            font-size: clamp(12px, 2.4vmin, 17px); opacity: .95; margin-top: .4vmin;
+            background: rgba(0, 0, 0, .3); border-radius: 14px; padding: .8vmin 2vmin;
+            display: inline-block;
+        }
+
+        #droite { display: flex; flex-direction: column; align-items: flex-end; gap: 1.4vmin; }
+        #chrono, #etoiles {
+            color: #fff; font-weight: bold; font-size: clamp(16px, 3.6vmin, 26px);
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, .4);
+        }
+
+        #defiler {
+            position: fixed; right: 3vw; bottom: 3vmin; z-index: 11;
+            pointer-events: auto;
+            font-family: inherit; cursor: pointer; border: none; color: #fff;
+            background: linear-gradient(160deg, #ff8cc8, #e8590c);
+            border-radius: 26px; padding: 2.6vmin 5vw;
+            font-size: clamp(16px, 3.4vmin, 26px); font-weight: bold;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, .34);
+        }
+        #defiler:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .34); }
+
+        #consigne {
+            position: fixed; left: 50%; bottom: 3vmin; transform: translateX(-50%);
+            z-index: 9; color: #fff; font-size: clamp(13px, 2.8vmin, 19px);
+            background: rgba(0, 0, 0, .38); padding: 1.4vmin 4vw; border-radius: 18px;
+            text-align: center; pointer-events: none; max-width: 60vw;
+            transition: opacity .4s; opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <button id="retour" class="pastille">⬅️ Retour</button>
+
+        <div id="bandeau">
+            <div id="theme">✨</div>
+            <div id="astuce"></div>
+        </div>
+
+        <div id="droite">
+            <div id="chrono">⏱️ 4:00</div>
+            <div id="etoiles">⭐ 0</div>
+        </div>
+    </div>
+
+    <div id="consigne"></div>
+    <button id="defiler">✨ Défiler !</button>
+
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>

@@ -8,6 +8,11 @@
 // la marche.
 
 import * as THREE from 'three';
+import {
+    construireHaut, construireBas, construireRobe, construireChaussures,
+    construireChapeau, construireLunettes, construireAccessoire,
+} from './garderobe3d.js';
+import { construireCheveux } from './cheveux3d.js';
 
 function mat(color, opts = {}) {
     return new THREE.MeshStandardMaterial({
@@ -32,42 +37,60 @@ export function buildAvatar3D(s) {
     const g = new THREE.Group();
 
     const skin = mat(s.skin);
-    const hairMat = mat(s.hairColor, { rough: 0.82 });   // léger éclat sans délaver la couleur
-    const outfitMat = mat(s.outfitColor);
     const shoeMat = mat('#5b3a1a');
     const dark = mat('#3a2e2e');
 
-    const dressLike = DRESS_LIKE.has(s.outfit);
-    const legMat = PANTS_LIKE.has(s.outfit) ? outfitMat : skin;
+    // Deux garde-robes possibles :
+    //   - `s.look` : la grande garde-robe du défilé (haut + bas + robe + …)
+    //   - sinon    : la tenue simple du jeu d'habillage (`s.outfit`)
+    const look = s.look || null;
+    const animes = [];                       // accessoires qui bougent (ailes, auréole…)
+    const outfitMat = look ? null : mat(s.outfitColor);
 
     // --- Jambes ---
+    // Avec la grande garde-robe, les jambes restent couleur peau : les
+    // pantalons et les robes viennent se poser par-dessus.
+    const legMat = look ? skin : (PANTS_LIKE.has(s.outfit) ? outfitMat : skin);
     const legGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.5, 16);
     const leftLeg = mkMesh(legGeo, legMat, -0.13, 0.25, 0);
     const rightLeg = mkMesh(legGeo, legMat, 0.13, 0.25, 0);
     g.add(leftLeg, rightLeg);
+    const jambes = [leftLeg, rightLeg];
 
-    // --- Chaussures ---
-    const shoeGeo = new THREE.SphereGeometry(0.14, 16, 12);
-    for (const x of [-0.13, 0.13]) {
-        const shoe = mkMesh(shoeGeo, shoeMat, x, 0.05, 0.05);
-        shoe.scale.set(1, 0.55, 1.35);
-        g.add(shoe);
-    }
-
-    // --- Corps / tenue ---
-    if (dressLike) {
-        const dress = new THREE.CylinderGeometry(0.22, 0.46, 0.62, 24);
-        g.add(mkMesh(dress, outfitMat, 0, 0.78, 0));
+    // --- Vêtements et chaussures ---
+    let armMat = skin;
+    if (look) {
+        let habit;
+        if (look.robe && look.robe !== 'aucune') {
+            habit = construireRobe(g, look.robe, look.robeColor);
+            if (habit.manches) armMat = mat(look.robeColor);
+        } else {
+            construireBas(g, look.bottom, look.bottomColor, jambes);
+            habit = construireHaut(g, look.top, look.topColor);
+            if (habit.manches) armMat = mat(look.topColor);
+        }
+        construireChaussures(g, look.shoes, look.shoesColor, jambes);
     } else {
-        const torso = new THREE.CylinderGeometry(0.27, 0.3, 0.56, 24);
-        g.add(mkMesh(torso, outfitMat, 0, 0.8, 0));
+        // chaussures simples
+        const shoeGeo = new THREE.SphereGeometry(0.14, 16, 12);
+        for (const x of [-0.13, 0.13]) {
+            const shoe = mkMesh(shoeGeo, shoeMat, x, 0.05, 0.05);
+            shoe.scale.set(1, 0.55, 1.35);
+            g.add(shoe);
+        }
+        // corps / tenue
+        if (DRESS_LIKE.has(s.outfit)) {
+            g.add(mkMesh(new THREE.CylinderGeometry(0.22, 0.46, 0.62, 24), outfitMat, 0, 0.78, 0));
+        } else {
+            g.add(mkMesh(new THREE.CylinderGeometry(0.27, 0.3, 0.56, 24), outfitMat, 0, 0.8, 0));
+        }
+        armMat = LONG_SLEEVES.has(s.outfit) ? outfitMat : skin;
     }
 
     // --- Cou ---
     g.add(mkMesh(new THREE.CylinderGeometry(0.1, 0.1, 0.14, 12), skin, 0, 1.12, 0));
 
     // --- Bras ---
-    const armMat = LONG_SLEEVES.has(s.outfit) ? outfitMat : skin;
     const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 14);
     const leftArm = mkMesh(armGeo, armMat, -0.34, 0.84, 0);
     leftArm.rotation.z = 0.2;
@@ -103,152 +126,25 @@ export function buildAvatar3D(s) {
         g.add(mkMesh(browGeo, dark, 0.15, 1.63, 0.38));
     }
 
-    // --- Cheveux ---
-    addHair(g, s, hairMat);
+    // --- Cheveux (vraies mèches, voir cheveux3d.js) ---
+    construireCheveux(g, s.hairStyle, s.hairColor, s.gender);
 
     // --- Chapeau / lunettes / accessoires ---
-    addHat(g, s);
-    addGlasses(g, s, dark);
-    addAccessories(g, s);
+    if (look) {
+        construireChapeau(g, look.hat, look.hatColor);
+        construireLunettes(g, look.glasses, look.glassesColor);
+        construireAccessoire(g, look.accessoire, look.accColor, animes);
+    } else {
+        addHat(g, s);
+        addGlasses(g, s, dark);
+        addAccessories(g, s);
+    }
 
     g.userData.parts = { leftArm, rightArm, leftLeg, rightLeg };
+    g.userData.animes = animes;
     return g;
 }
 
-// ---------------------------------------------------------------------------
-// Une anglaise / tire-bouchon : un tube qui descend en spirale (cheveux bouclés)
-function makeRinglet(ax, ay, az, hairMat, drop = 0.5) {
-    const pts = [];
-    const turns = 2.3 + Math.random() * 0.9, segs = 28, spiralR = 0.05 + Math.random() * 0.03;
-    for (let i = 0; i <= segs; i++) {
-        const t = i / segs, ang = t * turns * Math.PI * 2;
-        pts.push(new THREE.Vector3(ax + Math.cos(ang) * spiralR, ay - t * drop, az + Math.sin(ang) * spiralR));
-    }
-    const curve = new THREE.CatmullRomCurve3(pts);
-    return new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.038, 6, false), hairMat);
-}
-
-// Des centaines de petites boucles (tailles + nuances variées) en un seul objet
-// 3D (InstancedMesh) → beaucoup de détail sans ralentir le jeu.
-function makeCurlyMesh(gender, hairColorHex) {
-    const base = new THREE.Color(hairColorHex);
-    const items = [];
-    const center = new THREE.Vector3(0, 1.55, -0.02);
-    function scatter(count, radius, sMin, sMax) {
-        for (let i = 0; i < count; i++) {
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(1 - Math.random() * 1.6);
-            const nv = new THREE.Vector3(Math.sin(phi) * Math.sin(theta), Math.cos(phi), Math.sin(phi) * Math.cos(theta));
-            if (nv.z > 0.32 && nv.y < 0.28) continue;   // pas de boucles sur le visage
-            const p = center.clone().addScaledVector(nv, radius + (Math.random() - 0.5) * 0.04);
-            const sc = sMin + Math.random() * (sMax - sMin);
-            const col = base.clone().offsetHSL(0, (Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.13);
-            items.push({ p, sc, col });
-        }
-    }
-    scatter(gender === 'garcon' ? 80 : 95, 0.44, 0.09, 0.15);   // grosses boucles
-    scatter(gender === 'garcon' ? 70 : 85, 0.49, 0.05, 0.09);   // petites boucles de détail
-
-    const geo = new THREE.SphereGeometry(1, 8, 7);
-    const material = new THREE.MeshStandardMaterial({ roughness: 0.82 });
-    const mesh = new THREE.InstancedMesh(geo, material, items.length);
-    const d = new THREE.Object3D();
-    items.forEach((it, i) => {
-        d.position.copy(it.p);
-        d.scale.setScalar(it.sc);
-        d.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-        d.updateMatrix();
-        mesh.setMatrixAt(i, d.matrix);
-        mesh.setColorAt(i, it.col);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    return mesh;
-}
-
-// Ajoute un léger relief de mèches sur une chevelure lisse (petites bosses de
-// la même couleur) pour un rendu plus vivant, sans piquants.
-function addWisps(g, hairMat, points) {
-    const wispGeo = new THREE.SphereGeometry(0.07, 10, 8);
-    for (const [x, y, z, sy] of points) {
-        const w = new THREE.Mesh(wispGeo, hairMat);
-        w.position.set(x, y, z);
-        w.scale.set(0.7, sy || 2.4, 0.7);
-        g.add(w);
-    }
-}
-
-function addHair(g, s, hairMat) {
-    const style = s.hairStyle;
-    const gender = s.gender;
-
-    // Calotte : dôme lisse qui couvre le crâne
-    const cap = new THREE.Mesh(
-        new THREE.SphereGeometry(0.45, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.62),
-        hairMat,
-    );
-    cap.position.set(0, 1.52, -0.04);
-    cap.rotation.x = -0.26;
-    g.add(cap);
-
-    // Frange lisse sur le front (sauf crête et boucles)
-    if (style !== 'crete' && style !== 'boucles') {
-        const fringe = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24, 16), hairMat);
-        fringe.position.set(0, 1.63, 0.13);
-        fringe.scale.set(1.06, 0.5, 0.72);
-        g.add(fringe);
-    }
-
-    if (style === 'longs') {
-        // grande masse lisse qui enveloppe l'arrière et les côtés, visage dégagé
-        const mass = new THREE.Mesh(new THREE.SphereGeometry(0.5, 28, 22), hairMat);
-        mass.position.set(0, 1.28, -0.12);
-        mass.scale.set(1.0, 1.18, 0.92);
-        g.add(mass);
-        // quelques mèches douces qui tombent devant les épaules
-        addWisps(g, hairMat, [
-            [-0.44, 1.15, 0.16, 3.2], [0.44, 1.15, 0.16, 3.2],
-            [-0.5, 1.25, 0.02, 3.0], [0.5, 1.25, 0.02, 3.0],
-        ]);
-    } else if (style === 'couettes') {
-        const mass = new THREE.Mesh(new THREE.SphereGeometry(0.46, 24, 20), hairMat);
-        mass.position.set(0, 1.44, -0.12);
-        mass.scale.set(1.0, 0.92, 0.88);
-        g.add(mass);
-        // deux couettes lisses qui pendent sur les côtés
-        for (const sx of [-1, 1]) {
-            const p = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14), hairMat);
-            p.position.set(sx * 0.5, 1.18, 0);
-            p.scale.set(0.85, 1.5, 0.85);
-            g.add(p);
-        }
-    } else if (style === 'chignon') {
-        g.add(mkMesh(new THREE.SphereGeometry(0.17, 16, 12), hairMat, 0, 1.94, -0.02));
-    } else if (style === 'crete') {
-        g.add(mkMesh(new THREE.BoxGeometry(0.12, 0.26, 0.46), hairMat, 0, 1.86, -0.02));
-    } else if (style === 'boucles') {
-        // Masse volumineuse de base (le volume des boucles)
-        const mass = new THREE.Mesh(new THREE.SphereGeometry(0.44, 24, 20), hairMat);
-        mass.position.set(0, 1.55, -0.05);
-        mass.scale.set(1.06, 1.02, 1.0);
-        g.add(mass);
-
-        // Des centaines de petites boucles détaillées (deux couches, nuances variées)
-        g.add(makeCurlyMesh(gender, s.hairColor));
-
-        // Fille : beaucoup de tire-bouchons de longueurs variées sur les côtés et l'arrière
-        if (gender !== 'garcon') {
-            const anchors = [
-                [-0.42, 1.48, 0.08, 0.5], [-0.47, 1.46, -0.08, 0.58], [-0.44, 1.45, -0.24, 0.46],
-                [-0.28, 1.45, -0.38, 0.4], [0.42, 1.48, 0.08, 0.5], [0.47, 1.46, -0.08, 0.58],
-                [0.44, 1.45, -0.24, 0.46], [0.28, 1.45, -0.38, 0.4], [0.12, 1.45, -0.45, 0.44],
-                [-0.12, 1.45, -0.45, 0.44],
-            ];
-            for (const [ax, ay, az, drop] of anchors) g.add(makeRinglet(ax, ay, az, hairMat, drop));
-        }
-    }
-    // 'courts' : calotte + frange suffisent
-}
 
 // ---------------------------------------------------------------------------
 function addHat(g, s) {
