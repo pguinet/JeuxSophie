@@ -137,6 +137,34 @@ export class Cat {
         head.add(this.whiskers);
     }
 
+    /** Accessoires achetés : 'collar' (collier rouge) et 'bow' (nœud rose), attachés au cou. */
+    setAccessories(owned) {
+        if (this.accessories) { this.accessories.parent.remove(this.accessories); }
+        this.accessories = new THREE.Group();
+        const neckPos = BONES.find((b) => b.name === 'neck').pos;
+        const local = (x, y, z) => new THREE.Vector3(x - neckPos[0], y - neckPos[1], z - neckPos[2]);
+        if (owned.includes('collar')) {
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.007, 12, 40), new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.45 }));
+            collar.position.copy(local(0.195, 0.278, 0)); collar.rotation.y = Math.PI / 2; collar.rotation.x = 0.35; collar.scale.set(1, 0.92, 1);
+            const bell = new THREE.Mesh(new THREE.SphereGeometry(0.011, 16, 12), new THREE.MeshStandardMaterial({ color: 0xe8c04a, roughness: 0.25, metalness: 0.9 }));
+            bell.position.copy(local(0.235, 0.232, 0));
+            collar.castShadow = bell.castShadow = true;
+            this.accessories.add(collar, bell);
+        }
+        if (owned.includes('bow')) {
+            const mat = new THREE.MeshStandardMaterial({ color: 0xff6fa8, roughness: 0.6 });
+            const bow = new THREE.Group();
+            for (const side of [1, -1]) {
+                const loop = new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 12), mat);
+                loop.scale.set(0.55, 0.7, 1); loop.position.set(0, 0.004, side * 0.02); loop.castShadow = true; bow.add(loop);
+            }
+            const knot = new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 10), mat); bow.add(knot);
+            bow.position.copy(local(0.232, 0.245, 0));
+            this.accessories.add(bow);
+        }
+        this.bone.neck.add(this.accessories);
+    }
+
     setCoat(id) {
         this.coat = id; this.materials.setCoat(id);
         // Reconstruit le visage (couleur des yeux / moustaches)

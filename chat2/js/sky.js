@@ -25,10 +25,9 @@ export class SkyDome {
                 uniform float uMix; uniform vec3 uTint; uniform float uExposure;
                 uniform vec3 uSunDir; uniform float uSunGlow;
                 varying vec3 vDir;
-                vec2 equirectUv(vec3 d) { return vec2(atan(d.z, d.x) * RECIPROCAL_PI2 + 0.5, asin(clamp(d.y, -1.0, 1.0)) * RECIPROCAL_PI + 0.5); }
                 void main() {
                     vec3 d = normalize(vDir);
-                    vec2 uv = equirectUv(d);
+                    vec2 uv = equirectUv(d); // fournie par <common>
                     vec3 day = texture2D(tDay, uv).rgb;
                     vec3 night = texture2D(tNight, uv).rgb * 1.6;
                     vec3 col = mix(day, night, uMix) * uTint * uExposure;

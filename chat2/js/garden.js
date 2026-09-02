@@ -63,7 +63,7 @@ export async function buildGarden(scene, assets, settings) {
     const size = GARDEN.max - GARDEN.min;
 
     const [grassMat, pathMat, plankMat] = await Promise.all([
-        assets.loadPBR('leafy_grass', { repeat: [size / 2.2, size / 2.2] }),
+        assets.loadPBR('leafy_grass', { repeat: [size / 2.2, size / 2.2], color: 0x8fa66a }),
         assets.loadPBR('cobblestone_02', { repeat: [(PATH.xMax - PATH.xMin) / 1.2, (PATH.zMax - PATH.zMin) / 1.2] }),
         assets.loadPBR('weathered_planks', { repeat: [1, 1] }),
     ]);
@@ -114,7 +114,7 @@ export async function buildGarden(scene, assets, settings) {
         s.set(sc, sc * (0.8 + Math.random() * 0.5), sc);
         p.set(x, 0, z);
         grass.setMatrixAt(placed, m.compose(p, q, s));
-        color.setHSL(0.24 + Math.random() * 0.05, 0.45 + Math.random() * 0.2, 0.42 + Math.random() * 0.2);
+        color.setHSL(0.23 + Math.random() * 0.06, 0.4 + Math.random() * 0.2, 0.26 + Math.random() * 0.16);
         grass.setColorAt(placed, color);
         placed++;
     }
@@ -188,7 +188,7 @@ export async function buildGarden(scene, assets, settings) {
     const [tree, shrub, gazania, dandelion, tuft] = await Promise.all([
         assets.loadModel('quiver_tree_02'), assets.loadModel('shrub_02'), assets.loadModel('flower_gazania'), assets.loadModel('dandelion_01'), assets.loadModel('grass_medium_01'),
     ]);
-    const put = (model, x, z, rot, opts) => { const c = model.clone(true); placeModel(c, x, z, rot, opts); group.add(c); return c; };
+    const put = (model, x, z, rot, opts) => { const c = model.clone(true); c.name = model.name; placeModel(c, x, z, rot, opts); group.add(c); return c; };
     put(tree, 3.8, -4.2, 0.3, { targetSize: 3.4, axis: 'y' });
     put(tree, -4.5, 5.2, 2.1, { targetSize: 3.0, axis: 'y' });
     for (const [x, z] of [[6.6, -6.4], [-6.6, 6.5], [6.5, 6.3], [1.5, -6.6], [-6.4, -6.2]]) put(shrub, x, z, Math.random() * 6, { targetSize: 0.9 + Math.random() * 0.4, axis: 'y' });

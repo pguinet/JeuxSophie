@@ -14,9 +14,14 @@ import { createBehavior, stepBehavior, requestAction } from './cat/behavior.js';
 import { Nav } from './nav.js';
 import { NAV_DEF, SPOTS } from './world-layout.js';
 import { CameraRig } from './camera.js';
-import { createNeeds, tickNeeds } from './needs.js';
+import { createNeeds, tickNeeds, applyAction, applyEffect } from './needs.js';
 import { createStorage, createState } from './save.js';
 import { tickWallet } from './shop-logic.js';
+import { HUD } from './hud.js';
+import { ActionBar } from './actions.js';
+import { Shop } from './shop.js';
+import { Effects } from './effects.js';
+import { showColorPicker } from './color-picker.js';
 
 THREE.Cache.enabled = true;
 const params = new URLSearchParams(location.search);
@@ -46,7 +51,9 @@ const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerH
 
 // ---------- Chargement ----------
 const storage = createStorage(localStorage);
-const state = storage.load() || createState(params.get('coat') || undefined);
+const savedState = storage.load();
+const isNewGame = !savedState;
+const state = savedState || createState(params.get('coat') || undefined);
 if (params.get('coat')) state.coat = params.get('coat');
 
 const assets = new Assets(renderer, { anisotropy: settings.anisotropy, onProgress: (l, t) => setLoading(0.05 + 0.6 * (l / Math.max(t, 1)), 'Chargement des décors…') });
@@ -85,7 +92,7 @@ async function boot() {
     const rig = new CameraRig(camera, canvas, { onPet: () => doAction('pet') });
     rig.hitObjects = [hit];
     rig.follow = cat.group;
-    rig.setInitial(new THREE.Vector3(behavior.pos[0], 0.28, behavior.pos[1]), 3.4, 0.7, 0.5);
+    rig.setInitial(new THREE.Vector3(behavior.pos[0], 0.28, behavior.pos[1]), 3.2, 1.25, 0.55);
     if (params.has('cam')) { const [x, y, z] = params.get('cam').split(',').map(Number); camera.position.set(x, y, z); rig.follow = null; rig.controls.target.set(...(params.get('look') || '-3,0.3,0').split(',').map(Number)); rig.controls.update(); }
 
     // ---------- Post-traitement ----------
@@ -106,14 +113,75 @@ async function boot() {
     const needs = state.needs || createNeeds();
     const wallet = state.wallet;
     const rng = Math.random;
+    const catHead = () => cat.bone.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.12, 0));
+    const effects = new Effects(container, camera);
+    const hud = new HUD(container);
+    hud.update(needs, wallet.coins);
+    let uiLocked = isNewGame;
+
     function doAction(kind) {
+        if (uiLocked) return;
+        const changed = applyAction(needs, kind);
         const map = { feed: 'eat', drink: 'drink', pet: 'pet', wash: 'groom', sleep: 'sleep' };
         requestAction(behavior, map[kind] || kind, spots);
+        const labels = { feed: 'Miam !', drink: 'Glou glou', pet: 'Rrrr… 💗', wash: 'Splash !', sleep: 'Zzz…' };
+        effects.text(catHead(), labels[kind] || 'Miaou !');
+        if (kind === 'pet') effects.burst(catHead(), '💗', 7);
+        if (kind === 'wash') effects.burst(catHead(), '🫧', 6);
+        hud.update(needs, wallet.coins);
+        void changed;
     }
-    window.__chat2 = { cat, behavior, needs, wallet, lighting, doAction, quality, renderer, scene, camera }; // pour le débogage
+    const actions = new ActionBar(container, doAction);
+
+    const toys = [];
+    function spawnToy(item) {
+        const isBall = item.id === 'ball';
+        const mesh = isBall
+            ? new THREE.Mesh(new THREE.SphereGeometry(0.045, 24, 16), new THREE.MeshStandardMaterial({ color: 0xe24a5a, roughness: 0.4 }))
+            : (() => { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.9 })); body.scale.set(1.4, 0.8, 1); const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.005, 0.09, 6), new THREE.MeshStandardMaterial({ color: 0xd08a8a })); tail.rotation.z = Math.PI / 2; tail.position.x = -0.08; g.add(body, tail); return g; })();
+        // Devant le chat, dans sa zone
+        const ahead = [behavior.pos[0] + Math.sin(behavior.heading) * 0.8, behavior.pos[1] + Math.cos(behavior.heading) * 0.8];
+        const pos = nav.isWalkable(ahead) ? ahead : nav.randomPoint(rng, nav.zoneAt(behavior.pos) || 'house');
+        mesh.position.set(pos[0], isBall ? 0.045 : 0.03, pos[1]);
+        mesh.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+        scene.add(mesh);
+        toys.push({ mesh, born: performance.now(), isBall });
+        spots.toy = pos;
+        requestAction(behavior, 'play', spots);
+        effects.text(catHead(), isBall ? 'Une balle !' : 'Une souris !');
+    }
+    const shop = new Shop(container, wallet, (item) => {
+        applyEffect(needs, item.effect);
+        if (item.kind === 'toy') spawnToy(item);
+        else if (item.id === 'fish') { requestAction(behavior, 'eat', spots); effects.text(catHead(), 'Un poisson ! 🐟'); }
+        else if (item.kind === 'accessory') { cat.setAccessories(wallet.owned); effects.burst(catHead(), '✨', 6); }
+        else if (item.id === 'cushion_lux') { house.upgradeBed?.(); effects.burst(catHead(), '✨', 6); }
+        hud.update(needs, wallet.coins);
+        save();
+    });
+    cat.setAccessories(wallet.owned);
+    if (wallet.owned.includes('cushion_lux')) house.upgradeBed?.();
+
+    window.__chat2 = { cat, behavior, needs, wallet, lighting, doAction, quality, renderer, scene, camera, nav, spots }; // débogage
     let saveTimer = 0;
-    function save() { state.needs = needs; state.wallet = wallet; state.coat = cat.coat; state.dayTime = lighting.cycle.t; storage.save(state); }
+    function save() { if (uiLocked) return; state.needs = needs; state.wallet = wallet; state.coat = cat.coat; state.dayTime = lighting.cycle.t; storage.save(state); }
     window.addEventListener('beforeunload', save);
+
+    // Premier lancement : choix de la robe (le chat tourne sur lui-même pendant ce temps)
+    let pickerSpin = false;
+    if (isNewGame && !params.has('coat')) {
+        pickerSpin = true;
+        behavior.state = 'idle'; behavior.timer = 1e9; // le chat reste posé pendant le choix
+        rig.follow = null;
+        rig.setInitial(new THREE.Vector3(behavior.pos[0], 0.25, behavior.pos[1]), 1.6, 1.0, 0.35);
+        showColorPicker(container, {
+            initial: cat.coat, canImportV1: storage.hasV1(),
+            onPreview: (id) => cat.setCoat(id),
+            onConfirm: (id) => { cat.setCoat(id); state.coat = id; finishPicker(); },
+            onImportV1: () => { const v1 = storage.loadV1(); if (v1) { Object.assign(state, v1); Object.assign(needs, v1.needs); Object.assign(wallet, v1.wallet); cat.setCoat(v1.coat); cat.setAccessories(wallet.owned); hud.update(needs, wallet.coins); shop.refresh(); } finishPicker(); },
+        });
+    }
+    function finishPicker() { pickerSpin = false; uiLocked = false; behavior.timer = 1; rig.follow = cat.group; save(); effects.text(catHead(), 'Miaou ! 💕'); }
 
     const debugEl = debug ? Object.assign(document.createElement('div'), { id: 'debug' }) : null;
     if (debugEl) container.appendChild(debugEl);
@@ -122,7 +190,7 @@ async function boot() {
     setLoading(1, 'C\'est prêt !');
     loadingEl.classList.add('hidden');
     const clock = new THREE.Clock();
-    let time = 0, frames = 0, fpsAcc = 0, fpsShown = 0;
+    let time = 0, frames = 0, fpsAcc = 0, fpsShown = 0, hudTimer = 0;
     const lookAt = new THREE.Vector3();
     renderer.setAnimationLoop(() => {
         const dt = Math.min(clock.getDelta(), 0.1);
@@ -130,18 +198,23 @@ async function boot() {
         lighting.update(dt);
         garden.update(dt, time);
         house.update(dt);
-        tickNeeds(needs, dt);
-        tickWallet(wallet, dt);
+        if (!uiLocked) { tickNeeds(needs, dt); if (tickWallet(wallet, dt)) { hud.update(needs, wallet.coins); shop.refresh(); effects.text(catHead(), '+1 🪙', '#ffd66b'); } }
         stepBehavior(behavior, needs, dt, rng, spots);
+        if (pickerSpin) { behavior.heading += dt * 0.5; }
         cat.update(dt, behavior, { time, lightLevel: lighting.lightLevel, lookAt: lookAt.copy(camera.position) });
+        // Jouets : la balle roule un peu quand le chat joue à côté
+        for (const t of toys) if (t.isBall && behavior.state === 'play') { t.mesh.position.x += Math.sin(time * 3) * dt * 0.05; t.mesh.rotation.z -= dt; }
         rig.update(dt);
+        house.updateWalls(camera.position, rig.controls.target);
+        actions.update(dt);
         quality.tick(dt);
+        hudTimer += dt; if (hudTimer > 0.5) { hudTimer = 0; hud.update(needs, wallet.coins); }
         saveTimer += dt; if (saveTimer > 30) { saveTimer = 0; save(); }
         composer.render();
         if (debugEl) {
             frames++; fpsAcc += dt;
             if (fpsAcc > 0.5) { fpsShown = frames / fpsAcc; frames = 0; fpsAcc = 0; }
-            debugEl.textContent = `${fpsShown.toFixed(0)} fps | ${quality.preset} | draw ${renderer.info.render.calls} tri ${(renderer.info.render.triangles / 1000).toFixed(0)}k | chat ${behavior.state} ${behavior.pos.map((v) => v.toFixed(1))} | t=${lighting.cycle.t.toFixed(3)} | gen ${cat.stats.ms.toFixed(0)} ms ${cat.stats.triangles} tri`;
+            debugEl.textContent = `${fpsShown.toFixed(0)} fps | ${quality.preset} | chat ${behavior.state} ${behavior.pos.map((v) => v.toFixed(1))} | t=${lighting.cycle.t.toFixed(3)} | gen ${cat.stats.ms.toFixed(0)} ms ${cat.stats.triangles} tri`;
         }
     });
 

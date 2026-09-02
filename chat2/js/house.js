@@ -78,20 +78,21 @@ export async function buildHouse(scene, assets, settings) {
     group.add(floor);
 
     // Murs (avec ouvertures porte / fenêtre)
-    const wall = (w, h, d, x, y, z) => { const m = box(w, h, d, wallMat, 1.6); m.position.set(x, y, z); group.add(m); return m; };
-    wall(W + wallT, wallH, wallT, cx, wallH / 2, minZ - wallT / 2);                  // nord
-    wall(W + wallT, wallH, wallT, cx, wallH / 2, maxZ + wallT / 2);                  // sud
+    const walls = { north: [], south: [], east: [], west: [] };
+    const wall = (side, w, h, d, x, y, z) => { const m = box(w, h, d, wallMat, 1.6); m.position.set(x, y, z); group.add(m); walls[side].push(m); return m; };
+    wall('north', W + wallT, wallH, wallT, cx, wallH / 2, minZ - wallT / 2);
+    wall('south', W + wallT, wallH, wallT, cx, wallH / 2, maxZ + wallT / 2);
     // Est (porte) : deux segments + linteau
     const dz1 = DOOR.zMin - minZ, dz2 = maxZ - DOOR.zMax;
-    wall(wallT, wallH, dz1, maxX + wallT / 2, wallH / 2, minZ + dz1 / 2);
-    wall(wallT, wallH, dz2, maxX + wallT / 2, wallH / 2, maxZ - dz2 / 2);
-    wall(wallT, wallH - DOOR.height, DOOR.zMax - DOOR.zMin, maxX + wallT / 2, DOOR.height + (wallH - DOOR.height) / 2, (DOOR.zMin + DOOR.zMax) / 2);
+    wall('east', wallT, wallH, dz1, maxX + wallT / 2, wallH / 2, minZ + dz1 / 2);
+    wall('east', wallT, wallH, dz2, maxX + wallT / 2, wallH / 2, maxZ - dz2 / 2);
+    wall('east', wallT, wallH - DOOR.height, DOOR.zMax - DOOR.zMin, maxX + wallT / 2, DOOR.height + (wallH - DOOR.height) / 2, (DOOR.zMin + DOOR.zMax) / 2);
     // Ouest (fenêtre) : côtés, allège, imposte
     const wz1 = WINDOW.zMin - minZ, wz2 = maxZ - WINDOW.zMax, ww = WINDOW.zMax - WINDOW.zMin;
-    wall(wallT, wallH, wz1, minX - wallT / 2, wallH / 2, minZ + wz1 / 2);
-    wall(wallT, wallH, wz2, minX - wallT / 2, wallH / 2, maxZ - wz2 / 2);
-    wall(wallT, WINDOW.yMin, ww, minX - wallT / 2, WINDOW.yMin / 2, (WINDOW.zMin + WINDOW.zMax) / 2);
-    wall(wallT, wallH - WINDOW.yMax, ww, minX - wallT / 2, WINDOW.yMax + (wallH - WINDOW.yMax) / 2, (WINDOW.zMin + WINDOW.zMax) / 2);
+    wall('west', wallT, wallH, wz1, minX - wallT / 2, wallH / 2, minZ + wz1 / 2);
+    wall('west', wallT, wallH, wz2, minX - wallT / 2, wallH / 2, maxZ - wz2 / 2);
+    wall('west', wallT, WINDOW.yMin, ww, minX - wallT / 2, WINDOW.yMin / 2, (WINDOW.zMin + WINDOW.zMax) / 2);
+    wall('west', wallT, wallH - WINDOW.yMax, ww, minX - wallT / 2, WINDOW.yMax + (wallH - WINDOW.yMax) / 2, (WINDOW.zMin + WINDOW.zMax) / 2);
 
     // Plinthes et encadrements (bois peint)
     const trimMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.5 });
@@ -117,7 +118,7 @@ export async function buildHouse(scene, assets, settings) {
         : new THREE.MeshPhysicalMaterial({ color: 0xcfe4f2, transparent: true, opacity: 0.22, roughness: 0.03, metalness: 0, clearcoat: 1 });
     const glass = new THREE.Mesh(new THREE.PlaneGeometry(ww, wh), glassMat);
     glass.rotation.y = Math.PI / 2; glass.position.set(minX, wy, (WINDOW.zMin + WINDOW.zMax) / 2);
-    group.add(glass);
+    group.add(glass); walls.west.push(glass);
 
     // Tapis
     const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.9), rugMat);
@@ -125,17 +126,15 @@ export async function buildHouse(scene, assets, settings) {
     group.add(rug);
 
     // Meubles glTF
-    const [sofa, table, plant, ottoman, lamp, bowlA, bowlB] = await Promise.all([
+    const [sofa, table, plant, ottoman, bowlA, bowlB] = await Promise.all([
         assets.loadModel('Sofa_01'), assets.loadModel('CoffeeTable_01'), assets.loadModel('potted_plant_02'),
-        assets.loadModel('Ottoman_01'), assets.loadModel('desk_lamp_arm_01'), assets.loadModel('wooden_bowl_01'), assets.loadModel('wooden_bowl_01'),
+        assets.loadModel('Ottoman_01'), assets.loadModel('wooden_bowl_01'), assets.loadModel('wooden_bowl_01'),
     ]);
     placeModel(sofa, -4.2, -2.05, 0, { floorY });
     placeModel(table, -4.2, -0.9, 0, { floorY });
     placeModel(plant, -6.45, -2.05, 0.4, { floorY });
     placeModel(ottoman, -2.6, 0.9, 0.3, { floorY });
-    const tableBB = new THREE.Box3().setFromObject(table);
-    placeModel(lamp, -4.65, -0.9, -0.6, { floorY: tableBB.max.y, targetSize: 0.32, axis: 'y' });
-    for (const m of [sofa, table, plant, ottoman, lamp]) group.add(m);
+    for (const m of [sofa, table, plant, ottoman]) group.add(m);
 
     // Gamelles : bols en bois réduits (Ø 16 cm) + croquettes + eau
     const bowls = {};
@@ -207,7 +206,22 @@ export async function buildHouse(scene, assets, settings) {
     const lampPosition = new THREE.Vector3(-5.9, floorY + 1.5, -1.4);
 
     return {
-        group, lampPosition, bulbMaterial, bowls, plankMat,
+        group, lampPosition, bulbMaterial, bowls, plankMat, walls,
         update(_dt) { /* rien d'animé pour l'instant */ },
+        /** Coussin luxe : panier plus douillet (velours pourpre, coussin épais). */
+        upgradeBed() {
+            ring.material = new THREE.MeshStandardMaterial({ color: 0x6b2f6e, roughness: 0.95 });
+            cushion.material = new THREE.MeshStandardMaterial({ color: 0xf0d6e8, roughness: 1 });
+            cushion.scale.y = 1.6; cushion.position.y = 0.048;
+        },
+        /** Masque le mur situé entre la caméra et la cible quand celle-ci est dans la maison. */
+        updateWalls(camPos, targetPos) {
+            const inside = targetPos.x > minX - 0.3 && targetPos.x < maxX + 0.3 && targetPos.z > minZ - 0.3 && targetPos.z < maxZ + 0.3;
+            const hide = {
+                north: inside && camPos.z < minZ, south: inside && camPos.z > maxZ,
+                east: inside && camPos.x > maxX, west: inside && camPos.x < minX,
+            };
+            for (const [side, list] of Object.entries(walls)) for (const m of list) m.visible = !hide[side];
+        },
     };
 }

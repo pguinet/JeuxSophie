@@ -64,6 +64,7 @@ export class Assets {
                             for (const m of mats) { for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap']) if (m[k]) m[k].anisotropy = this.anisotropy; }
                         }
                     });
+                    g.scene.name = id;
                     resolve(g.scene);
                 }, undefined, reject);
             }));
