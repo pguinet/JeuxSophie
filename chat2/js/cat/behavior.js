@@ -17,9 +17,9 @@ function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
 
 /** Choisit un état autonome selon les jauges (0..100) ; `spots` = { bowl:[x,z], water:[x,z], bed:[x,z], litter:[x,z] }. */
 export function chooseAutonomous(b, needs, rng, spots) {
-    if (needs.fatigue > 75 && rng() < 0.6) return { state: 'goto', target: spots.bed, next: 'sleep', duration: rand(rng, 18, 35) };
-    if (needs.hunger < 30 && rng() < 0.6) return { state: 'goto', target: spots.bowl, next: 'eat', duration: rand(rng, 5, 8) };
-    if (needs.thirst < 30 && rng() < 0.5) return { state: 'goto', target: spots.water, next: 'drink', duration: rand(rng, 4, 6) };
+    if (needs.fatigue > 75 && rng() < 0.6) return { state: 'goto', target: spots.bed, next: 'sleep', duration: rand(rng, 18, 35), face: spots.bedFace };
+    if (needs.hunger < 30 && rng() < 0.6) return { state: 'goto', target: spots.bowl, next: 'eat', duration: rand(rng, 5, 8), face: spots.bowlFace };
+    if (needs.thirst < 30 && rng() < 0.5) return { state: 'goto', target: spots.water, next: 'drink', duration: rand(rng, 4, 6), face: spots.waterFace };
     if (needs.hygiene < 35 && rng() < 0.5) return { state: 'groom', duration: rand(rng, 5, 9) };
     if (needs.happiness < 30 && rng() < 0.7) return { state: 'sad', duration: rand(rng, 6, 10) };
     const r = rng();
@@ -31,10 +31,16 @@ export function chooseAutonomous(b, needs, rng, spots) {
 }
 
 /** Applique une transition. */
-export function enter(b, t) {
+export function enter(b, t, spots = null) {
     b.state = t.state;
     b.timer = t.duration ?? 0;
-    b.target = t.target ? [t.target[0], t.target[1]] : null;
+    b.path = [];
+    if (t.target) {
+        const route = spots && spots.route ? spots.route(b.pos, t.target) : [t.target];
+        b.path = route.map((p) => [p[0], p[1]]);
+        b.target = b.path.shift();
+    } else b.target = null;
+    b.face = t.face ? [t.face[0], t.face[1]] : null;
     b.next = t.next ?? null;
     b.nextDuration = t.nextDuration ?? t.duration;
     b.event = `enter:${t.state}`;
@@ -46,13 +52,13 @@ export function enter(b, t) {
  * kind ∈ eat | drink | sleep | groom | pet | play. Retourne b.
  */
 export function requestAction(b, kind, spots) {
-    const gotoThen = (target, next, duration) => (dist(b.pos, target) > 0.15
-        ? enter(b, { state: 'goto', target, next, nextDuration: duration, duration: 0 })
-        : enter(b, { state: next, duration }));
+    const gotoThen = (target, next, duration, face) => (dist(b.pos, target) > 0.15
+        ? enter(b, { state: 'goto', target, next, nextDuration: duration, duration: 0, face }, spots)
+        : (faceToward(b, face), enter(b, { state: next, duration })));
     switch (kind) {
-        case 'eat': return gotoThen(spots.bowl, 'eat', 6);
-        case 'drink': return gotoThen(spots.water, 'drink', 5);
-        case 'sleep': return gotoThen(spots.bed, 'sleep', 14);
+        case 'eat': return gotoThen(spots.bowl, 'eat', 6, spots.bowlFace);
+        case 'drink': return gotoThen(spots.water, 'drink', 5, spots.waterFace);
+        case 'sleep': return gotoThen(spots.bed, 'sleep', 14, spots.bedFace);
         case 'groom': return enter(b, { state: 'groom', duration: 6 });
         case 'pet': return enter(b, { state: 'pet', duration: 4 });
         case 'play': return enter(b, { state: 'play', duration: 6, target: spots.toy || null });
@@ -73,12 +79,20 @@ export function stepBehavior(b, needs, dt, rng, spots) {
     b.moodSad = needs.happiness < 30;
     switch (b.state) {
         case 'wander':
-            if (!b.target) b.target = spots.randomPoint(rng);
-            if (moveToward(b, dt, b.wantSpeed, spots)) enter(b, { state: 'idle', duration: rand(rng, 1.5, 4) });
+            if (!b.target && !(b.path && b.path.length)) {
+                const route = spots.route ? spots.route(b.pos, spots.randomPoint(rng)) : [spots.randomPoint(rng)];
+                b.path = route.map((p) => [p[0], p[1]]); b.target = b.path.shift();
+            }
+            if (moveToward(b, dt, b.wantSpeed, spots)) {
+                if (b.path && b.path.length) b.target = b.path.shift();
+                else enter(b, { state: 'idle', duration: rand(rng, 1.5, 4) });
+            }
             break;
         case 'goto':
             if (moveToward(b, dt, b.wantSpeed * 1.15, spots)) {
+                if (b.path && b.path.length) { b.target = b.path.shift(); break; }
                 const next = b.next || 'idle';
+                faceToward(b, b.face);
                 enter(b, { state: next, duration: b.nextDuration ?? rand(rng, 4, 8) });
                 b.event = `arrive:${next}`;
             }
@@ -88,10 +102,17 @@ export function stepBehavior(b, needs, dt, rng, spots) {
             b.timer -= dt;
             if (b.timer <= 0) {
                 if (b.state === 'sleep' && needs.fatigue > 60 && rng() < 0.5) { b.timer = rand(rng, 8, 15); break; } // se rendort
-                enter(b, chooseAutonomous(b, needs, rng, spots));
+                enter(b, chooseAutonomous(b, needs, rng, spots), spots);
             }
     }
     return b;
+}
+
+/** Oriente le chat vers un point (à l'arrivée devant la gamelle, le panier…). */
+export function faceToward(b, face) {
+    if (!face) return;
+    const dx = face[0] - b.pos[0], dz = face[1] - b.pos[1];
+    if (Math.hypot(dx, dz) > 1e-3) b.heading = Math.atan2(dx, dz);
 }
 
 /** Déplace vers b.target ; retourne true à l'arrivée. Met à jour heading et speed. */
@@ -109,8 +130,9 @@ export function moveToward(b, dt, speed, spots) {
     b.speed = aligned ? Math.min(speed, d / Math.max(dt, 1e-3)) : 0;
     const step = b.speed * dt;
     const nx = b.pos[0] + Math.sin(b.heading) * step, nz = b.pos[1] + Math.cos(b.heading) * step;
-    const c = spots.clamp ? spots.clamp([nx, nz]) : [nx, nz];
+    const c = spots.clamp ? spots.clamp([nx, nz], b.pos) : [nx, nz];
+    const blocked = c[0] !== nx || c[1] !== nz;
     b.pos[0] = c[0]; b.pos[1] = c[1];
-    if (c[0] !== nx || c[1] !== nz) { b.target = null; b.speed = 0; return true; } // bloqué : on abandonne
+    if (blocked) { b.target = null; b.path = []; b.speed = 0; return true; } // bloqué : on abandonne
     return false;
 }

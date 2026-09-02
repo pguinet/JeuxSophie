@@ -54,3 +54,22 @@ test('un déplacement bloqué par les limites se termine proprement', () => {
     assert.ok(b.pos[0] <= 2.0001);
     assert.notEqual(b.state, 'wander');
 });
+
+test('un trajet qui change de zone passe par les jalons de la porte', async () => {
+    const { Nav } = await import('../js/nav.js');
+    const nav = new Nav({
+        zones: [{ name: 'house', min: [-6, -2], max: [-1.4, 2] }, { name: 'garden', min: [-0.6, -6], max: [6, 6] }],
+        door: { pos: [-1.0, 0], radius: 0.6, zones: ['house', 'garden'], dir: [1, 0] },
+    });
+    const sp = { bowl: [3, 2], water: [3, 2.3], bed: [-4, 1], randomPoint: (r) => nav.randomPoint(r), clamp: (n, p) => nav.clamp(n, p), route: (a, b) => nav.route(a, b) };
+    const b = createBehavior(-4, 1);
+    requestAction(b, 'eat', sp);
+    assert.equal(b.path.length, 2, 'deux jalons restants après le premier');
+    let passedDoor = false;
+    for (let i = 0; i < 60 * 40 && b.state !== 'eat'; i++) {
+        stepBehavior(b, okNeeds, 1 / 60, seq([0.5]), sp);
+        if (Math.abs(b.pos[0] + 1.0) < 0.1 && Math.abs(b.pos[1]) < 0.3) passedDoor = true;
+    }
+    assert.equal(b.state, 'eat');
+    assert.ok(passedDoor, 'est passé par la porte');
+});
