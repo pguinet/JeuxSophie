@@ -17,8 +17,10 @@ export class Nav {
         return null;
     }
 
-    inObstacle(p) {
+    inObstacle(p, zone = undefined) {
+        if (zone === undefined) zone = this.zoneAt(p);
         for (const o of this.obstacles) {
+            if (o.onlyZone && o.onlyZone !== zone) continue;
             if (o.type === 'circle') { if (Math.hypot(p[0] - o.c[0], p[1] - o.c[1]) < o.r + this.margin) return true; }
             else if (p[0] > o.min[0] - this.margin && p[0] < o.max[0] + this.margin && p[1] > o.min[1] - this.margin && p[1] < o.max[1] + this.margin) return true;
         }
@@ -27,7 +29,8 @@ export class Nav {
 
     isWalkable(p) {
         if (this.door && Math.hypot(p[0] - this.door.pos[0], p[1] - this.door.pos[1]) < (this.door.radius ?? 0.5)) return true;
-        return this.zoneAt(p) !== null && !this.inObstacle(p);
+        const z = this.zoneAt(p);
+        return z !== null && !this.inObstacle(p, z);
     }
 
     /** Point praticable aléatoire ; `zoneName` optionnel pour rester dans une zone. */
@@ -36,7 +39,7 @@ export class Nav {
         for (let i = 0; i < 60; i++) {
             const z = candidates[Math.floor(rng() * candidates.length)];
             const p = [z.min[0] + this.margin + rng() * (z.max[0] - z.min[0] - 2 * this.margin), z.min[1] + this.margin + rng() * (z.max[1] - z.min[1] - 2 * this.margin)];
-            if (!this.inObstacle(p)) return p;
+            if (!this.inObstacle(p, z.name)) return p;
         }
         return [(candidates[0].min[0] + candidates[0].max[0]) / 2, (candidates[0].min[1] + candidates[0].max[1]) / 2];
     }

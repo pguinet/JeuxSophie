@@ -16,3 +16,33 @@ body { font-family: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif; 
 .loading-bar { height: 12px; border-radius: 8px; background: rgba(255,255,255,.15); overflow: hidden; }
 #loading-fill { height: 100%; width: 0%; border-radius: 8px; background: linear-gradient(90deg, #ffb35c, #ff7ab6); transition: width .25s ease; }
 #loading-text { margin-top: 10px; font-size: 15px; opacity: .8; }
+
+/* ---------- Interface « verre » ---------- */
+.glass {
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(12px) saturate(1.3);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.round-btn {
+    width: 52px; height: 52px; border-radius: 50%; font-size: 24px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    transition: transform .12s ease, background .12s ease;
+}
+.round-btn:hover { background: rgba(255, 255, 255, 0.28); }
+.round-btn:active { transform: scale(0.92); }
+.quality-btn { position: absolute; top: 12px; right: 12px; z-index: 30; }
+.panel { position: absolute; border-radius: 18px; padding: 14px 16px; z-index: 40; }
+.quality-panel { top: 72px; right: 12px; width: 220px; display: flex; flex-direction: column; gap: 8px; }
+.panel-title { font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+.choice {
+    border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #fff; border-radius: 12px;
+    padding: 8px 12px; font: inherit; font-size: 15px; cursor: pointer; text-align: left;
+}
+.choice:hover { background: rgba(255,255,255,.24); }
+.choice.active { background: rgba(255, 179, 92, 0.55); border-color: rgba(255, 220, 160, 0.9); font-weight: 700; }
+.hint { font-size: 12px; opacity: .8; margin-top: 4px; }
+#debug { position: absolute; left: 8px; bottom: 8px; font: 12px monospace; color: #fff; background: rgba(0,0,0,.45); padding: 4px 8px; border-radius: 6px; z-index: 50; white-space: pre; pointer-events: none; }
