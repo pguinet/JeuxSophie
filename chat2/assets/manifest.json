@@ -1,0 +1,28 @@
+{
+  "_comment": "Assets Poly Haven (licence CC0). Téléchargés par `node chat2/tools/fetch-assets.mjs`. Le champ `usage` est purement documentaire.",
+  "textures": [
+    { "id": "wood_floor_deck",       "res": "1k", "maps": ["Diffuse", "nor_gl", "arm"], "usage": "parquet du salon" },
+    { "id": "beige_wall_001",        "res": "1k", "maps": ["Diffuse", "nor_gl", "arm"], "usage": "mur plâtre clair" },
+    { "id": "leafy_grass",           "res": "1k", "maps": ["Diffuse", "nor_gl", "arm"], "usage": "pelouse du jardin" },
+    { "id": "curly_teddy_checkered", "res": "1k", "maps": ["Diffuse", "nor_gl", "arm"], "usage": "tapis en tissu peluche" },
+    { "id": "cobblestone_02",        "res": "1k", "maps": ["Diffuse", "nor_gl", "arm"], "usage": "allée en pierre du jardin" },
+    { "id": "weathered_planks",      "res": "1k", "maps": ["Diffuse", "nor_gl", "arm"], "usage": "planches de la clôture" }
+  ],
+  "hdris": [
+    { "id": "kloofendal_48d_partly_cloudy_puresky", "res": "2k", "usage": "ciel de jour" },
+    { "id": "moonless_golf",                        "res": "1k", "usage": "ciel de nuit" }
+  ],
+  "models": [
+    { "id": "Sofa_01",          "res": "1k", "usage": "canapé" },
+    { "id": "CoffeeTable_01",   "res": "1k", "usage": "table basse" },
+    { "id": "potted_plant_02",  "res": "1k", "usage": "plante en pot" },
+    { "id": "wooden_bowl_01",   "res": "1k", "usage": "gamelle (eau et nourriture)" },
+    { "id": "Ottoman_01",       "res": "1k", "usage": "pouf / panier du chat" },
+    { "id": "desk_lamp_arm_01", "res": "1k", "usage": "lampe" },
+    { "id": "quiver_tree_02",   "res": "1k", "usage": "arbre du jardin" },
+    { "id": "shrub_02",         "res": "1k", "usage": "arbuste" },
+    { "id": "flower_gazania",   "res": "1k", "usage": "fleurs" },
+    { "id": "dandelion_01",     "res": "1k", "usage": "pissenlits" },
+    { "id": "grass_medium_01",  "res": "1k", "usage": "touffes d'herbe" }
+  ]
+}
