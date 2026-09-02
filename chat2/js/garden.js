@@ -50,7 +50,7 @@ function rockGeometry(r, seed) {
     return g;
 }
 
-const inHouseFootprint = (x, z) => x > HOUSE.minX - 0.4 && x < HOUSE.maxX + 0.4 && z > HOUSE.minZ - 0.4 && z < HOUSE.maxZ + 0.4;
+const inHouseFootprint = (x, z, m = 0.4) => x > HOUSE.minX - m && x < HOUSE.maxX + m && z > HOUSE.minZ - m && z < HOUSE.maxZ + m;
 const inPath = (x, z) => x > PATH.xMin - 0.1 && x < PATH.xMax + 0.1 && z > PATH.zMin - 0.1 && z < PATH.zMax + 0.1;
 const inPond = (x, z) => ((x - POND.x) / (POND.rx + 0.35)) ** 2 + ((z - POND.z) / (POND.rz + 0.35)) ** 2 < 1;
 
@@ -165,7 +165,7 @@ export async function buildGarden(scene, assets, settings) {
     const waterNormals = normalNoiseTexture();
     waterNormals.repeat.set(3, 2);
     const waterMat = new THREE.MeshPhysicalMaterial({
-        color: 0x2c5d66, roughness: 0.06, metalness: 0.0, transparent: true, opacity: 0.86,
+        color: 0x3f8496, roughness: 0.05, metalness: 0.0, transparent: true, opacity: 0.78,
         normalMap: waterNormals, normalScale: new THREE.Vector2(0.35, 0.35), clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.3,
     });
     const water = new THREE.Mesh(new THREE.CircleGeometry(1, 64), waterMat);
@@ -192,16 +192,18 @@ export async function buildGarden(scene, assets, settings) {
     put(tree, 3.8, -4.2, 0.3, { targetSize: 3.4, axis: 'y' });
     put(tree, -4.5, 5.2, 2.1, { targetSize: 3.0, axis: 'y' });
     for (const [x, z] of [[6.6, -6.4], [-6.6, 6.5], [6.5, 6.3], [1.5, -6.6], [-6.4, -6.2]]) put(shrub, x, z, Math.random() * 6, { targetSize: 0.9 + Math.random() * 0.4, axis: 'y' });
-    for (let i = 0; i < 10; i++) {
-        let x, z, k = 0;
-        do { x = GARDEN.min + 1 + Math.random() * (size - 2); z = GARDEN.min + 1 + Math.random() * (size - 2); k++; } while ((inHouseFootprint(x, z) || inPath(x, z) || inPond(x, z)) && k < 50);
-        put(i % 2 ? gazania : dandelion, x, z, Math.random() * 6, { targetSize: 0.22 + Math.random() * 0.1, axis: 'y' });
-    }
-    for (let i = 0; i < 14; i++) {
-        let x, z, k = 0;
-        do { x = GARDEN.min + 0.8 + Math.random() * (size - 1.6); z = GARDEN.min + 0.8 + Math.random() * (size - 1.6); k++; } while ((inHouseFootprint(x, z) || inPath(x, z) || inPond(x, z)) && k < 50);
-        put(tuft, x, z, Math.random() * 6, { targetSize: 0.3 + Math.random() * 0.15, axis: 'y' });
-    }
+    // Lots dispersés (pissenlits ~5 m, touffes ~6 m d'étendue) : centre loin de la maison, de l'allée et du bassin
+    const farFromAll = (x, z, m) => !inHouseFootprint(x, z, m) && !(x > PATH.xMin - m && x < PATH.xMax + m && Math.abs(z) < m) && Math.hypot(x - POND.x, z - POND.z) > m + 1.2;
+    const scatter = (model, n, margin, opts) => {
+        for (let i = 0; i < n; i++) {
+            let x, z, k = 0, ok = false;
+            while (k++ < 200 && !ok) { x = GARDEN.min + 1 + Math.random() * (size - 2); z = GARDEN.min + 1 + Math.random() * (size - 2); ok = farFromAll(x, z, margin); }
+            if (ok) put(model, x, z, Math.random() * 6, opts);
+        }
+    };
+    scatter(dandelion, 3, 3.2, {});
+    scatter(tuft, 3, 3.6, {});
+    scatter(gazania, 6, 1.0, { targetSize: 0.3, axis: 'y' });
 
     return {
         group,

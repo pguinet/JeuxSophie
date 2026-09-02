@@ -189,10 +189,6 @@ async function boot() {
     }
     function finishPicker() { pickerSpin = false; uiLocked = false; uiRoot.hidden = false; behavior.timer = 1; rig.follow = cat.group; rig.setInitial(new THREE.Vector3(behavior.pos[0], 0.28, behavior.pos[1]), 3.2, 1.25, 0.55); save(); effects.text(catHead(), 'Miaou ! 💕'); }
 
-    if (debug) {
-        const inHouse = (o) => o.position.x > -7.4 && o.position.x < -0.6 && o.position.z > -2.9 && o.position.z < 2.9;
-        for (const o of garden.group.children) if (o.name && inHouse(o)) console.log('[debug] objet du jardin dans la maison :', o.name, o.position.toArray().map((v) => v.toFixed(2)).join(','));
-    }
     const debugEl = debug ? Object.assign(document.createElement('div'), { id: 'debug' }) : null;
     if (debugEl) container.appendChild(debugEl);
 
