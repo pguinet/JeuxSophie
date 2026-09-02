@@ -35,20 +35,20 @@ test('ellipsoïde : signe correct et surface aux extrémités des axes', () => {
 test('le chat : intérieur du tronc négatif, très au-dessus positif, tête attribuée à un os head', () => {
     const shapes = buildCatShapes();
     assert.ok(shapes.length > 25);
-    assert.ok(unionDistance(shapes, [0.0, 0.19, 0]).d < 0, 'centre du tronc');
+    assert.ok(unionDistance(shapes, [0.0, 0.21, 0]).d < 0, 'centre du tronc');
     assert.ok(unionDistance(shapes, [0.0, 1.0, 0]).d > 0.5, 'un mètre au-dessus');
     assert.ok(unionDistance(shapes, [0.0, 0.005, 0]).d > 0, 'sous le ventre, entre les pattes');
-    const head = unionDistance(shapes, [0.265, 0.31, 0]);
+    const head = unionDistance(shapes, [0.255, 0.315, 0]);
     assert.ok(head.d < 0);
     assert.equal(shapes[head.nearest].bone, 'head');
-    const paw = unionDistance(shapes, [0.112, 0.018, 0.055]);
+    const paw = unionDistance(shapes, [0.109, 0.018, 0.05]);
     assert.ok(paw.d < 0, 'intérieur de la patte avant gauche');
     assert.equal(shapes[paw.nearest].bone, 'legFL_foot');
 });
 
 test('les pattes touchent le sol (y≈0) et rien ne passe sous le sol de plus de 2 mm', () => {
     const shapes = buildCatShapes();
-    assert.ok(unionDistance(shapes, [0.112, 0.0, 0.055]).d < 0.003);
+    assert.ok(unionDistance(shapes, [0.109, 0.0, 0.05]).d < 0.003);
     // Rien sous le sol : le champ est positif partout dans le plan y = -4 mm
     let minBelow = Infinity;
     for (let x = -0.5; x <= 0.4; x += 0.01) for (let z = -0.15; z <= 0.15; z += 0.01) minBelow = Math.min(minBelow, unionDistance(shapes, [x, -0.004, z]).d);

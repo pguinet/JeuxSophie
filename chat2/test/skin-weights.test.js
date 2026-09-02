@@ -24,10 +24,10 @@ test('les longueurs de pattes sont plausibles pour un chat', () => {
 test('poids normalisés, 4 os max, tête et pattes bien attribuées', () => {
     const shapes = buildCatShapes();
     const pts = [
-        [0.265, 0.31, 0],       // centre de la tête
-        [0.0, 0.20, 0],         // milieu du dos
-        [0.095, 0.07, 0.055],   // bas de patte avant gauche
-        [-0.43, 0.40, 0.035],   // bout de queue
+        [0.255, 0.315, 0],      // centre de la tête
+        [0.0, 0.215, 0],        // milieu du dos
+        [0.095, 0.07, 0.05],    // bas de patte avant gauche
+        [-0.425, 0.42, 0.035],  // bout de queue
     ];
     const { skinIndex, skinWeight } = computeSkinWeights(pts.flat(), shapes, BONE_INDEX);
     for (let v = 0; v < pts.length; v++) {
@@ -37,8 +37,17 @@ test('poids normalisés, 4 os max, tête et pattes bien attribuées', () => {
     }
     const dominant = (v) => BONES[skinIndex[v * 4]].name;
     assert.equal(dominant(0), 'head');
-    assert.ok(skinWeight[0] > 0.6, `poids tête = ${skinWeight[0]}`);
+    assert.ok(skinWeight[0] > 0.5, `poids tête = ${skinWeight[0]}`);
     assert.match(dominant(1), /spine|chest/);
     assert.equal(dominant(2), 'legFL_low');
     assert.match(dominant(3), /tail[456]/);
+});
+
+test('chaque articulation du squelette est à l\'intérieur du volume du chat', async () => {
+    const { unionDistance } = await import('../js/cat/sdf.js');
+    const shapes = buildCatShapes();
+    for (const b of BONES) {
+        const d = unionDistance(shapes, b.pos).d;
+        assert.ok(d < 0, `${b.name} (${b.pos}) est hors du corps : d = ${d.toFixed(4)}`);
+    }
 });

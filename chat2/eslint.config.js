@@ -8,7 +8,7 @@ const browserGlobals = {
     fetch: 'readonly', Worker: 'readonly', ImageData: 'readonly', OffscreenCanvas: 'readonly',
     HTMLCanvasElement: 'readonly', TextDecoder: 'readonly', Blob: 'readonly', location: 'readonly',
     devicePixelRatio: 'readonly', innerWidth: 'readonly', innerHeight: 'readonly', self: 'readonly',
-    postMessage: 'readonly', onmessage: 'writable', AudioContext: 'readonly', CustomEvent: 'readonly',
+    postMessage: 'readonly', onmessage: 'writable', URLSearchParams: 'readonly', history: 'readonly', AudioContext: 'readonly', CustomEvent: 'readonly',
 };
 const nodeGlobals = { process: 'readonly', Buffer: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly', performance: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly' };
 

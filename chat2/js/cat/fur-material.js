@@ -36,25 +36,28 @@ float furNoise(vec3 x) {
 }
 float furFbm(vec3 p) {
     float v = 0.0, a = 0.5;
-    for (int i = 0; i < 4; i++) { v += a * furNoise(p); p = p * 2.03 + 11.7; a *= 0.5; }
+    for (int i = 0; i < 3; i++) { v += a * furNoise(p); p = p * 2.03 + 11.7; a *= 0.5; }
     return v;
 }
-vec3 coatColor(vec3 p, vec3 n) {
+vec3 coatColor(vec3 p, vec3 n, float fbm) {
     // Ventre / menton / intérieur des pattes : normales vers le bas → couleur claire
     float down = smoothstep(-0.1, 0.9, -n.y);
     float bellyMask = down * smoothstep(0.30, 0.10, p.y + 0.06 * n.y);
-    // Masque du museau et des chaussettes
+    // Chaussettes et museau clairs
     bellyMask = max(bellyMask, smoothstep(0.02, 0.0, p.y - 0.035));
-    bellyMask = max(bellyMask, smoothstep(0.30, 0.34, p.x) * smoothstep(0.31, 0.27, p.y) * 0.8);
-    // Rayures tabby : bandes verticales ondulées le long du corps, fondues sur le ventre, anneaux sur la queue
-    float warp = furFbm(p * 9.0) * 0.5;
-    float body = sin(p.x * 95.0 + warp * 6.0 + sin(p.z * 40.0) * 0.4);
-    float tail = sin((p.x + p.y) * 110.0 + warp * 4.0);
+    bellyMask = max(bellyMask, smoothstep(0.29, 0.33, p.x) * smoothstep(0.31, 0.27, p.y) * 0.8);
+    // Rayures « mackerel » : fines bandes verticales irrégulières descendant de la ligne dorsale,
+    // interrompues par le bruit, absentes du ventre ; anneaux sur la queue ; ligne dorsale sombre.
+    float warp = (fbm - 0.5) * 4.0;
+    float body = sin(p.x * 150.0 + warp * 1.5 + p.y * 18.0);
+    float tail = sin((p.x + p.y * 0.7) * 160.0 + warp);
     float isTail = smoothstep(-0.2, -0.3, p.x);
-    float stripes = smoothstep(0.35, 0.75, mix(body, tail, isTail)) * (1.0 - bellyMask * 0.9);
-    // Bruit de marbrure fin sur la couleur de base
-    float mottle = furFbm(p * 30.0) - 0.5;
-    vec3 base = uBaseColor * (1.0 + mottle * 0.18);
+    float bands = smoothstep(0.55, 0.9, mix(body, tail, isTail));
+    float breakup = smoothstep(0.35, 0.6, furNoise(p * 55.0 + 3.1));
+    float upper = smoothstep(0.12, 0.26, p.y) * (1.0 - bellyMask);
+    float dorsal = smoothstep(0.045, 0.0, abs(p.z)) * smoothstep(0.18, 0.26, p.y) * (1.0 - isTail) * 0.7;
+    float stripes = max(bands * breakup * upper, dorsal) * (0.6 + 0.4 * n.y * n.y);
+    vec3 base = uBaseColor * (1.0 + (fbm - 0.5) * 0.25);
     vec3 col = mix(base, uBellyColor, bellyMask);
     col = mix(col, uStripeColor, stripes * uStripeContrast);
     return col;
@@ -69,17 +72,19 @@ export const FUR_VERTEX_MAIN = /* glsl */`
 
 export const FUR_FRAGMENT_MAIN = /* glsl */`
     {
-        vec3 furCol = coatColor(vFurPos, vFurNormal);
         if (uIsShell > 0.5) {
-            // Densité des brins : bruit fin ; les brins s'affinent vers la pointe
-            float strand = furNoise(vFurPos * uFurScale) * 0.65 + furNoise(vFurPos * uFurScale * 2.7) * 0.35;
-            float taper = uShellH * uShellH * 0.35;
-            if (strand - taper < uShellH * 0.92 + 0.05) discard;
-            // Ombrage de racine : les couches basses sont dans l'ombre des brins
-            furCol *= mix(uRootShade, 1.0, uShellH);
-        } else {
-            furCol *= uRootShade * 0.95;
+            // Brins : une cellule 3D = un brin ; hauteur aléatoire par cellule, section qui s'affine vers la pointe.
+            vec3 cell = vFurPos * uFurScale;
+            float rnd = furHash(floor(cell));
+            vec2 local = fract(cell.xz + cell.y * 0.37) - 0.5;
+            float radial = length(local) * 2.0;
+            float thickness = 1.0 - uShellH * 0.6;
+            if (rnd < uShellH || radial > thickness) discard;
         }
+        float fbm = furFbm(vFurPos * 12.0);
+        vec3 furCol = coatColor(vFurPos, vFurNormal, fbm);
+        // Ombrage de racine : les couches basses sont dans l'ombre des brins
+        furCol *= (uIsShell > 0.5) ? mix(uRootShade, 1.0, uShellH) : uRootShade * 0.95;
         diffuseColor.rgb *= furCol;
     }
 `;
@@ -124,7 +129,7 @@ export function createFurMaterials(coatId, shellCount) {
             ...shared,
             uShellH: { value: h },
             uShellCount: { value: shellCount },
-            uFurScale: { value: 420.0 },
+            uFurScale: { value: 380.0 },
             uRootShade: { value: 0.55 },
             uIsShell: { value: isShell ? 1 : 0 },
         };

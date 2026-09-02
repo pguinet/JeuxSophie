@@ -79,19 +79,12 @@ export function shapeDistance(s, p) {
  * Retourne { d, nearest } où nearest = index de la forme la plus proche (pour le skinning).
  * `shapes` = tableau plat de formes avec { bone, blend } ; `cuts` = formes soustraites (optionnel).
  */
+const preparedUnions = new WeakMap();
 export function unionDistance(shapes, p, cuts = []) {
-    // smin n'est pas associatif : on fixe l'ordre (forme la plus proche d'abord, puis l'ordre du tableau)
-    // pour obtenir exactement le même champ que createUnionSDF.
-    const dist = new Array(shapes.length);
-    let nearest = -1, best = Infinity;
-    for (let i = 0; i < shapes.length; i++) {
-        dist[i] = shapeDistance(shapes[i], p);
-        if (dist[i] < best) { best = dist[i]; nearest = i; }
-    }
-    let d = best;
-    for (let i = 0; i < shapes.length; i++) if (i !== nearest) d = smin(d, dist[i], shapes[i].blend);
-    for (const c of cuts) d = smax(d, -shapeDistance(c, p), c.blend);
-    return { d, nearest };
+    // Même algorithme que createUnionSDF (mémoïsé par tableau de formes) : résultats bit-à-bit identiques.
+    let u = preparedUnions.get(shapes);
+    if (!u || u.cuts !== cuts) { u = createUnionSDF(shapes, cuts); u.cuts = cuts; preparedUnions.set(shapes, u); }
+    return { d: u.distance(p[0], p[1], p[2]), nearest: u.nearest(p[0], p[1], p[2]) };
 }
 
 /**
@@ -105,49 +98,53 @@ export function buildCatShapes(opts = {}) {
     const sh = [];
     const add = (type, bone, blend, params) => sh.push({ type, bone, blend: blend * s, ...params });
 
-    // Tronc : bassin (arrière, x négatif) → poitrail (avant). Le dos est légèrement plus haut à l'arrière.
-    add('cone', 'spine1', 0.05, { a: S([-0.17, 0.19, 0]), b: S([-0.02, 0.20, 0]), r1: 0.085 * s, r2: 0.095 * s });
-    add('cone', 'chest', 0.05, { a: S([-0.02, 0.20, 0]), b: S([0.12, 0.205, 0]), r1: 0.095 * s, r2: 0.088 * s });
-    add('ellipsoid', 'root', 0.05, { c: S([-0.19, 0.19, 0]), radii: S([0.075, 0.085, 0.082]) });           // croupe
-    add('ellipsoid', 'chest', 0.04, { c: S([0.14, 0.17, 0]), radii: S([0.06, 0.075, 0.07]) });             // poitrail bas
-    add('ellipsoid', 'spine2', 0.05, { c: S([-0.05, 0.14, 0]), radii: S([0.14, 0.06, 0.085]) });           // ventre
+    // Tronc : bassin (arrière, x négatif) → poitrail (avant). Chat debout, hauteur d'épaule ≈ 0.27 m.
+    add('cone', 'spine1', 0.045, { a: S([-0.17, 0.215, 0]), b: S([-0.02, 0.222, 0]), r1: 0.070 * s, r2: 0.076 * s });
+    add('cone', 'chest', 0.045, { a: S([-0.02, 0.222, 0]), b: S([0.11, 0.225, 0]), r1: 0.076 * s, r2: 0.070 * s });
+    add('ellipsoid', 'root', 0.045, { c: S([-0.19, 0.205, 0]), radii: S([0.062, 0.074, 0.068]) });          // croupe
+    add('ellipsoid', 'chest', 0.04, { c: S([0.12, 0.185, 0]), radii: S([0.048, 0.062, 0.056]) });           // poitrail bas
+    add('ellipsoid', 'spine2', 0.05, { c: S([-0.03, 0.175, 0]), radii: S([0.125, 0.052, 0.068]) });         // ventre
 
-    // Cou et tête (le chat regarde vers +X, tête légèrement au-dessus du dos)
-    add('cone', 'neck', 0.045, { a: S([0.14, 0.23, 0]), b: S([0.235, 0.29, 0]), r1: 0.06 * s, r2: 0.05 * s });
-    add('ellipsoid', 'head', 0.03, { c: S([0.265, 0.31, 0]), radii: S([0.066, 0.062, 0.064]) });           // crâne
-    add('ellipsoid', 'head', 0.025, { c: S([0.305, 0.285, 0]), radii: S([0.045, 0.036, 0.048]) });         // museau / joues
-    add('ellipsoid', 'head', 0.02, { c: S([0.328, 0.29, 0]), radii: S([0.022, 0.02, 0.026]) });            // truffe / bout du museau
-    add('ellipsoid', 'head', 0.02, { c: S([0.31, 0.262, 0]), radii: S([0.03, 0.02, 0.03]) });              // menton
-    add('ellipsoid', 'head', 0.015, { c: S([0.29, 0.30, 0.04]), radii: S([0.028, 0.026, 0.022]) });        // joue gauche
-    add('ellipsoid', 'head', 0.015, { c: S([0.29, 0.30, -0.04]), radii: S([0.028, 0.026, 0.022]) });       // joue droite
-    // Oreilles : cônes arrondis, écartés et légèrement tournés vers l'extérieur
-    add('cone', 'earL', 0.012, { a: S([0.245, 0.345, 0.035]), b: S([0.24, 0.415, 0.052]), r1: 0.028 * s, r2: 0.006 * s });
-    add('cone', 'earR', 0.012, { a: S([0.245, 0.345, -0.035]), b: S([0.24, 0.415, -0.052]), r1: 0.028 * s, r2: 0.006 * s });
+    // Cou et tête (le chat regarde vers +X)
+    add('cone', 'neck', 0.04, { a: S([0.13, 0.245, 0]), b: S([0.22, 0.30, 0]), r1: 0.052 * s, r2: 0.04 * s });
+    add('ellipsoid', 'head', 0.028, { c: S([0.255, 0.315, 0]), radii: S([0.058, 0.055, 0.06]) });           // crâne
+    add('ellipsoid', 'head', 0.022, { c: S([0.288, 0.287, 0]), radii: S([0.036, 0.03, 0.042]) });           // museau (court)
+    add('ellipsoid', 'head', 0.016, { c: S([0.308, 0.294, 0]), radii: S([0.016, 0.015, 0.02]) });           // bout du museau
+    add('ellipsoid', 'head', 0.016, { c: S([0.293, 0.268, 0]), radii: S([0.026, 0.017, 0.026]) });          // menton
+    add('ellipsoid', 'head', 0.014, { c: S([0.282, 0.288, 0.036]), radii: S([0.026, 0.02, 0.02]) });        // joue gauche
+    add('ellipsoid', 'head', 0.014, { c: S([0.282, 0.288, -0.036]), radii: S([0.026, 0.02, 0.02]) });       // joue droite
+    // Oreilles : cônes arrondis sur le haut arrière du crâne, pointant vers le haut et l'extérieur
+    add('cone', 'earL', 0.012, { a: S([0.24, 0.35, 0.03]), b: S([0.235, 0.415, 0.048]), r1: 0.026 * s, r2: 0.005 * s });
+    add('cone', 'earR', 0.012, { a: S([0.24, 0.35, -0.03]), b: S([0.235, 0.415, -0.048]), r1: 0.026 * s, r2: 0.005 * s });
 
-    // Pattes (avant : FL/FR sous les épaules ; arrière : BL/BR sous les hanches). Z>0 = gauche.
-    const leg = (prefix, x, z, upperR, lowerR) => {
-        const hipY = prefix.startsWith('legB') ? 0.20 : 0.19;
-        const kneeX = prefix.startsWith('legB') ? x + 0.045 : x - 0.005;
-        add('cone', `${prefix}_up`, 0.035, { a: S([x, hipY, z]), b: S([kneeX, 0.11, z]), r1: upperR * s, r2: lowerR * s });
-        add('cone', `${prefix}_low`, 0.02, { a: S([kneeX, 0.11, z]), b: S([kneeX - (prefix.startsWith('legB') ? 0.03 : 0.0), 0.03, z]), r1: lowerR * s, r2: (lowerR * 0.85) * s });
-        const footX = kneeX - (prefix.startsWith('legB') ? 0.03 : 0.0);
-        add('ellipsoid', `${prefix}_foot`, 0.015, { c: S([footX + 0.012, 0.018, z]), radii: S([0.034, 0.02, 0.026]) });
-    };
-    leg('legFL', 0.10, 0.055, 0.038, 0.024);
-    leg('legFR', 0.10, -0.055, 0.038, 0.024);
-    leg('legBL', -0.19, 0.06, 0.05, 0.026);
-    leg('legBR', -0.19, -0.06, 0.05, 0.026);
+    // Pattes : positions des articulations partagées avec skeleton-def.js (LEG_JOINTS). Z>0 = gauche.
+    for (const [prefix, j] of Object.entries(LEG_JOINTS)) {
+        const back = prefix.startsWith('legB');
+        add('cone', `${prefix}_up`, 0.03, { a: S(j.hip), b: S(j.knee), r1: (back ? 0.044 : 0.03) * s, r2: (back ? 0.026 : 0.022) * s });
+        add('cone', `${prefix}_low`, 0.018, { a: S(j.knee), b: S(j.foot), r1: (back ? 0.024 : 0.022) * s, r2: 0.019 * s });
+        add('ellipsoid', `${prefix}_foot`, 0.014, { c: S([j.foot[0] + 0.014, 0.018, j.foot[2]]), radii: S([0.032, 0.018, 0.024]) });
+    }
 
-    // Queue : 6 segments partant de la croupe, courbe douce vers le haut puis l'arrière
-    const tail = [
-        [-0.25, 0.22, 0], [-0.31, 0.25, 0.005], [-0.365, 0.285, 0.012], [-0.405, 0.33, 0.02], [-0.43, 0.38, 0.03], [-0.44, 0.43, 0.04], [-0.44, 0.475, 0.05],
-    ];
+    // Queue : 6 segments partant de la croupe (articulations partagées : TAIL_JOINTS)
     for (let i = 0; i < 6; i++) {
-        const r1 = 0.026 - i * 0.0025, r2 = 0.026 - (i + 1) * 0.0025;
-        add('cone', `tail${i + 1}`, 0.02, { a: S(tail[i]), b: S(tail[i + 1]), r1: r1 * s, r2: r2 * s });
+        const r1 = 0.024 - i * 0.0024, r2 = 0.024 - (i + 1) * 0.0024;
+        add('cone', `tail${i + 1}`, 0.018, { a: S(TAIL_JOINTS[i]), b: S(TAIL_JOINTS[i + 1]), r1: r1 * s, r2: r2 * s });
     }
     return sh;
 }
+
+/** Articulations des pattes (hanche/épaule, genou/coude, pied) — source unique pour le SDF et le squelette. */
+export const LEG_JOINTS = {
+    legFL: { hip: [0.095, 0.20, 0.05], knee: [0.095, 0.115, 0.05], foot: [0.095, 0.03, 0.05] },
+    legFR: { hip: [0.095, 0.20, -0.05], knee: [0.095, 0.115, -0.05], foot: [0.095, 0.03, -0.05] },
+    legBL: { hip: [-0.19, 0.21, 0.055], knee: [-0.15, 0.125, 0.055], foot: [-0.18, 0.03, 0.055] },
+    legBR: { hip: [-0.19, 0.21, -0.055], knee: [-0.15, 0.125, -0.055], foot: [-0.18, 0.03, -0.055] },
+};
+
+/** Articulations de la queue (7 points = 6 segments), de la croupe vers la pointe. */
+export const TAIL_JOINTS = [
+    [-0.24, 0.235, 0], [-0.30, 0.26, 0.005], [-0.355, 0.295, 0.012], [-0.395, 0.34, 0.02], [-0.42, 0.39, 0.03], [-0.43, 0.44, 0.04], [-0.43, 0.485, 0.05],
+];
 
 /** Boîte englobante (avec marge) d'un ensemble de formes. */
 export function shapesBounds(shapes, margin = 0.04) {
@@ -177,23 +174,18 @@ export function shapeBoundingSphere(s) {
 export function createUnionSDF(shapes, cuts = []) {
     const n = shapes.length;
     const cx = new Float64Array(n), cy = new Float64Array(n), cz = new Float64Array(n), cr = new Float64Array(n), blend = new Float64Array(n);
-    let maxBlend = 0;
-    shapes.forEach((s, i) => { const b = shapeBoundingSphere(s); cx[i] = b.c[0]; cy[i] = b.c[1]; cz[i] = b.c[2]; cr[i] = b.r; blend[i] = s.blend; maxBlend = Math.max(maxBlend, s.blend); });
-    const lb = new Float64Array(n);
+    shapes.forEach((s, i) => { const b = shapeBoundingSphere(s); cx[i] = b.c[0]; cy[i] = b.c[1]; cz[i] = b.c[2]; cr[i] = b.r; blend[i] = s.blend; });
     const p = [0, 0, 0];
     function distance(x, y, z) {
         p[0] = x; p[1] = y; p[2] = z;
-        let best = Infinity, bi = -1;
-        for (let i = 0; i < n; i++) {
+        // Ordre du tableau (identique à unionDistance). Une forme dont la borne inférieure de distance
+        // dépasse d + blend ne modifie pas smin : on la saute, le résultat est bit-à-bit identique.
+        let d = shapeDistance(shapes[0], p);
+        for (let i = 1; i < n; i++) {
             const dx = x - cx[i], dy = y - cy[i], dz = z - cz[i];
-            lb[i] = Math.sqrt(dx * dx + dy * dy + dz * dz) - cr[i];
-            if (lb[i] < best) { best = lb[i]; bi = i; }
-        }
-        let d = shapeDistance(shapes[bi], p);
-        for (let i = 0; i < n; i++) {
-            if (i === bi || lb[i] > d + maxBlend) continue;
-            const di = shapeDistance(shapes[i], p);
-            d = smin(d, di, blend[i]);
+            const lb = Math.sqrt(dx * dx + dy * dy + dz * dz) - cr[i];
+            if (lb >= d + blend[i]) continue;
+            d = smin(d, shapeDistance(shapes[i], p), blend[i]);
         }
         for (const c of cuts) d = smax(d, -shapeDistance(c, p), c.blend);
         return d;

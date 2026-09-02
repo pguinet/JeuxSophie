@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Chat 2 — visionneuse</title>
+    <style>
+        body { margin: 0; background: #cfd3d8; font-family: monospace; overflow: hidden; }
+        canvas { display: block; }
+        #info { position: absolute; top: 6px; left: 8px; font-size: 12px; color: #222; white-space: pre; background: rgba(255,255,255,.6); padding: 4px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div id="info">…</div>
+    <script type="importmap">
+    { "imports": { "three": "/vendor/three@0.170.0/three.module.js", "three/addons/": "/vendor/three@0.170.0/examples/jsm/" } }
+    </script>
+    <script type="module" src="js/viewer.js"></script>
+</body>
+</html>
