@@ -61,3 +61,30 @@ test('le chat complet se polygonise en une surface fermée de taille raisonnable
     assert.ok(signedVolume(positions, indices) > 0.003, 'volume plausible (> 3 litres)');
     assert.ok(dt < 5000, `polygonisation basse résolution en ${dt.toFixed(0)} ms`);
 });
+
+test('createUnionSDF donne la même distance que unionDistance près de la surface', async () => {
+    const { createUnionSDF } = await import('../js/cat/sdf.js');
+    const shapes = buildCatShapes();
+    const fast = createUnionSDF(shapes);
+    let maxErr = 0;
+    for (let x = -0.5; x <= 0.4; x += 0.023) for (let y = -0.05; y <= 0.5; y += 0.021) for (let z = -0.17; z <= 0.17; z += 0.019) {
+        const a = unionDistance(shapes, [x, y, z]).d, b = fast.distance(x, y, z);
+        if (Math.abs(a) < 0.03) maxErr = Math.max(maxErr, Math.abs(a - b));
+    }
+    assert.ok(maxErr < 1e-9, `écart max ${maxErr}`);
+});
+
+test('le chat à 6 mm de voxel se génère en moins de 1,5 s (élagage + saut de lignes)', async () => {
+    const { createUnionSDF } = await import('../js/cat/sdf.js');
+    const shapes = buildCatShapes();
+    const fast = createUnionSDF(shapes);
+    const b = shapesBounds(shapes, 0.03);
+    const res = [0, 1, 2].map((i) => Math.ceil((b.max[i] - b.min[i]) / 0.006));
+    const t0 = performance.now();
+    const { indices } = polygonize(fast.distance, { min: b.min, max: b.max, res });
+    const dt = performance.now() - t0;
+    const st = edgeStats(indices);
+    assert.equal(st.open, 0);
+    assert.ok(dt < 1500, `${dt.toFixed(0)} ms pour ${indices.length / 3} triangles (grille ${res.join('x')})`);
+    console.log(`  chat 6 mm : ${indices.length / 3} triangles en ${dt.toFixed(0)} ms (grille ${res.join('x')})`);
+});

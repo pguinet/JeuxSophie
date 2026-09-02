@@ -80,13 +80,16 @@ export function shapeDistance(s, p) {
  * `shapes` = tableau plat de formes avec { bone, blend } ; `cuts` = formes soustraites (optionnel).
  */
 export function unionDistance(shapes, p, cuts = []) {
-    let d = Infinity, nearest = -1, best = Infinity;
+    // smin n'est pas associatif : on fixe l'ordre (forme la plus proche d'abord, puis l'ordre du tableau)
+    // pour obtenir exactement le même champ que createUnionSDF.
+    const dist = new Array(shapes.length);
+    let nearest = -1, best = Infinity;
     for (let i = 0; i < shapes.length; i++) {
-        const s = shapes[i];
-        const di = shapeDistance(s, p);
-        d = (d === Infinity) ? di : smin(d, di, s.blend);
-        if (di < best) { best = di; nearest = i; }
+        dist[i] = shapeDistance(shapes[i], p);
+        if (dist[i] < best) { best = dist[i]; nearest = i; }
     }
+    let d = best;
+    for (let i = 0; i < shapes.length; i++) if (i !== nearest) d = smin(d, dist[i], shapes[i].blend);
     for (const c of cuts) d = smax(d, -shapeDistance(c, p), c.blend);
     return { d, nearest };
 }
@@ -156,4 +159,50 @@ export function shapesBounds(shapes, margin = 0.04) {
         else grow(s.c, Math.max(...s.radii));
     }
     return { min: min.map((v) => v - margin), max: max.map((v) => v + margin) };
+}
+
+/** Sphère englobante d'une forme : { c, r }. */
+export function shapeBoundingSphere(s) {
+    if (s.type === 'capsule') return { c: vlerp(s.a, s.b, 0.5), r: vlen(vsub(s.b, s.a)) / 2 + s.r };
+    if (s.type === 'cone') return { c: vlerp(s.a, s.b, 0.5), r: vlen(vsub(s.b, s.a)) / 2 + Math.max(s.r1, s.r2) };
+    return { c: s.c, r: Math.max(...s.radii) };
+}
+
+/**
+ * Prépare une fonction de distance rapide pour l'union lisse des formes :
+ * on n'évalue exactement que les formes dont la borne inférieure (sphère englobante)
+ * peut influencer le résultat (à `blend` près).
+ * Retourne { distance(x, y, z), nearest(x, y, z) }.
+ */
+export function createUnionSDF(shapes, cuts = []) {
+    const n = shapes.length;
+    const cx = new Float64Array(n), cy = new Float64Array(n), cz = new Float64Array(n), cr = new Float64Array(n), blend = new Float64Array(n);
+    let maxBlend = 0;
+    shapes.forEach((s, i) => { const b = shapeBoundingSphere(s); cx[i] = b.c[0]; cy[i] = b.c[1]; cz[i] = b.c[2]; cr[i] = b.r; blend[i] = s.blend; maxBlend = Math.max(maxBlend, s.blend); });
+    const lb = new Float64Array(n);
+    const p = [0, 0, 0];
+    function distance(x, y, z) {
+        p[0] = x; p[1] = y; p[2] = z;
+        let best = Infinity, bi = -1;
+        for (let i = 0; i < n; i++) {
+            const dx = x - cx[i], dy = y - cy[i], dz = z - cz[i];
+            lb[i] = Math.sqrt(dx * dx + dy * dy + dz * dz) - cr[i];
+            if (lb[i] < best) { best = lb[i]; bi = i; }
+        }
+        let d = shapeDistance(shapes[bi], p);
+        for (let i = 0; i < n; i++) {
+            if (i === bi || lb[i] > d + maxBlend) continue;
+            const di = shapeDistance(shapes[i], p);
+            d = smin(d, di, blend[i]);
+        }
+        for (const c of cuts) d = smax(d, -shapeDistance(c, p), c.blend);
+        return d;
+    }
+    function nearest(x, y, z) {
+        p[0] = x; p[1] = y; p[2] = z;
+        let best = Infinity, bi = -1;
+        for (let i = 0; i < n; i++) { const di = shapeDistance(shapes[i], p); if (di < best) { best = di; bi = i; } }
+        return bi;
+    }
+    return { distance, nearest };
 }

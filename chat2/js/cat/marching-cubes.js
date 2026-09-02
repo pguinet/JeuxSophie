@@ -20,11 +20,20 @@ export function polygonize(sdf, opts) {
     // 1. Échantillonnage du champ (inversé : intérieur positif)
     const field = new Float32Array(NX * NY * NZ);
     const idx = (i, j, k) => (i * NY + j) * NZ + k;
+    // Le SDF étant 1-Lipschitz, un échantillon à distance |d| garantit qu'aucune traversée de surface
+    // n'a lieu dans les floor(|d|/sz) - 1 échantillons suivants : on les remplit avec la même valeur (même signe).
     for (let i = 0; i < NX; i++) {
         const x = min[0] + i * sx;
         for (let j = 0; j < NY; j++) {
             const y = min[1] + j * sy;
-            for (let k = 0; k < NZ; k++) field[idx(i, j, k)] = -sdf(x, y, min[2] + k * sz);
+            for (let k = 0; k < NZ;) {
+                const d = sdf(x, y, min[2] + k * sz);
+                const base = idx(i, j, k);
+                field[base] = -d;
+                const skip = Math.min(Math.floor(Math.abs(d) / sz) - 1, NZ - 1 - k);
+                for (let s = 1; s <= skip; s++) field[base + s] = -d;
+                k += 1 + Math.max(skip, 0);
+            }
         }
     }
 
