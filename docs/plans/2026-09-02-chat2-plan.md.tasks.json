@@ -158,11 +158,11 @@
     {
       "id": 20,
       "subject": "Task 20: Documentation, qualité, déploiement",
-      "status": "in_progress",
+      "status": "completed",
       "blockedBy": [
         19
       ]
     }
   ],
-  "lastUpdated": "2026-09-02T20:37:58.961777"
+  "lastUpdated": "2026-09-02T20:44:20.196934"
 }
