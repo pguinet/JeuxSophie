@@ -10,7 +10,7 @@ const browserGlobals = {
     devicePixelRatio: 'readonly', innerWidth: 'readonly', innerHeight: 'readonly', self: 'readonly',
     postMessage: 'readonly', onmessage: 'writable', AudioContext: 'readonly', CustomEvent: 'readonly',
 };
-const nodeGlobals = { process: 'readonly', Buffer: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly' };
+const nodeGlobals = { process: 'readonly', Buffer: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly', performance: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly' };
 
 const rules = {
     'no-undef': 'error',

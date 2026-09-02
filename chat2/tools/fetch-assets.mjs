@@ -17,7 +17,7 @@
  *
  * Node >= 18 (fetch natif), aucune dépendance.
  */
-import { mkdir, readFile, writeFile, stat, rename, rm } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, stat, rename } from 'node:fs/promises';
 import { dirname, join, resolve, basename, relative, isAbsolute, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
