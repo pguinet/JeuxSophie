@@ -9,13 +9,44 @@ import { createFurMaterials } from './fur-material.js';
 import { DEFAULT_COAT, COATS } from './coats.js';
 import { createEye } from './eyes.js';
 import { createNose, createWhiskers } from './details.js';
+import { CatAnimator } from './animator.js';
 import { BONES } from './skeleton-def.js';
 
 /** Génère la géométrie skinnée du chat. Pur calcul, ~250 ms à 6 mm. */
+export const EYE_RADIUS = 0.0125;
+const SKULL_CENTER = [0.255, 0.315, 0];
+
+/** Direction unitaire du regard de chaque œil depuis le centre du crâne (avant, un peu haut, vers l'extérieur). */
+export function eyeDirection(side) {
+    const v = [0.70, 0.20, side * 0.62];
+    const l = Math.hypot(...v);
+    return v.map((c) => c / l);
+}
+
+/**
+ * Trouve le centre des yeux : on marche depuis le centre du crâne le long de la direction du regard
+ * jusqu'à la surface, puis on recule d'une fraction du rayon pour que l'œil soit enchâssé.
+ */
+export function computeEyePlacement(distance) {
+    const eyes = [];
+    for (const side of [1, -1]) {
+        const dir = eyeDirection(side);
+        let t = 0.02, d = -1;
+        while (d < 0 && t < 0.2) { d = distance(SKULL_CENTER[0] + dir[0] * t, SKULL_CENTER[1] + dir[1] * t, SKULL_CENTER[2] + dir[2] * t); t += 0.0005; }
+        const surf = t - 0.0005;
+        const depth = surf - EYE_RADIUS * 0.62;
+        eyes.push({ side, dir, center: [SKULL_CENTER[0] + dir[0] * depth, SKULL_CENTER[1] + dir[1] * depth, SKULL_CENTER[2] + dir[2] * depth] });
+    }
+    return eyes;
+}
+
 export function generateCatGeometry({ voxel = 0.006, smoothIterations = 3 } = {}) {
     const t0 = performance.now();
     const shapes = buildCatShapes();
-    const sdf = createUnionSDF(shapes);
+    const eyes = computeEyePlacement(createUnionSDF(shapes).distance);
+    // Orbites : on soustrait une sphère à peine plus grande que le globe
+    const cuts = eyes.map((e) => ({ type: 'ellipsoid', c: e.center, radii: [EYE_RADIUS * 1.03, EYE_RADIUS * 1.03, EYE_RADIUS * 1.03], blend: 0.006 }));
+    const sdf = createUnionSDF(shapes, cuts);
     const b = shapesBounds(shapes, 0.03);
     const res = [0, 1, 2].map((i) => Math.ceil((b.max[i] - b.min[i]) / voxel));
     const { positions, indices } = polygonize(sdf.distance, { min: b.min, max: b.max, res });
@@ -30,6 +61,7 @@ export function generateCatGeometry({ voxel = 0.006, smoothIterations = 3 } = {}
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));
     geometry.computeBoundingSphere();
     geometry.userData.stats = { triangles: indices.length / 3, vertices: positions.length / 3, ms: performance.now() - t0, res };
+    geometry.userData.eyes = eyes;
     return geometry;
 }
 
@@ -51,7 +83,8 @@ export class Cat {
         const { bones, root, byName } = buildBones();
         this.bones = bones; this.rootBone = root; this.bone = byName;
 
-        this.materials = createFurMaterials(this.coat, this.shellCount);
+        const eyes = this.geometry.userData.eyes;
+        this.materials = createFurMaterials(this.coat, this.shellCount, { eyeL: eyes[0].center, eyeR: eyes[1].center, nose: [0.322, 0.296, 0] });
         this.mesh = new THREE.SkinnedMesh(this.geometry, this.materials.base);
         this.mesh.name = 'cat-skin';
         this.mesh.castShadow = true;
@@ -75,6 +108,8 @@ export class Cat {
         }
 
         this._buildFace();
+        this.animator = new CatAnimator(this);
+        this.hitMesh = this.mesh;
     }
 
     /** Yeux, truffe et moustaches attachés à l'os de la tête (coordonnées de repos → locales à l'os). */
@@ -84,17 +119,18 @@ export class Cat {
         const local = (x, y, z) => new THREE.Vector3(x - headPos[0], y - headPos[1], z - headPos[2]);
         const coat = COATS[this.coat] || COATS.tabby;
         this.eyes = [];
-        for (const side of [1, -1]) {
-            const eye = createEye({ radius: 0.0125, iris: coat.eye, lidColor: coat.base });
-            eye.group.position.copy(local(0.2965, 0.323, side * 0.0365));
-            // Regarde vers l'avant (+X) avec une ouverture de ~22° vers l'extérieur et un peu vers le bas
-            eye.group.rotation.set(0, Math.PI / 2 - side * 0.38, 0, 'YXZ');
-            eye.group.rotateX(0.08);
+        for (const e of this.geometry.userData.eyes) {
+            const eye = createEye({ radius: EYE_RADIUS, iris: coat.eye, lidColor: coat.base });
+            eye.group.position.copy(local(...e.center));
+            // L'axe +Z de l'œil regarde vers l'avant (+X), ouvert de ~20° vers l'extérieur, horizontal
+            const flatDir = new THREE.Vector3(e.dir[0], 0, e.dir[2]).normalize();
+            const yaw = Math.atan2(flatDir.x, flatDir.z);
+            eye.group.rotation.set(0, yaw, 0);
             head.add(eye.group);
             this.eyes.push(eye);
         }
         this.nose = createNose();
-        this.nose.position.copy(local(0.3235, 0.296, 0));
+        this.nose.position.copy(local(0.322, 0.296, 0));
         head.add(this.nose);
         this.whiskers = createWhiskers({ color: this.coat === 'black' ? 0x444444 : 0xf5f0e8 });
         this.whiskers.position.copy(local(0.306, 0.284, 0));
@@ -114,7 +150,19 @@ export class Cat {
         this.shells.forEach((s, i) => { s.visible = i < n; });
     }
 
-    update(_dt) { /* animations : Task 9 */ }
+    /**
+     * @param {number} dt secondes
+     * @param {object} behavior état de behavior.js (state, pos, heading, speed)
+     * @param {{time:number, lightLevel?:number, lookAt?:THREE.Vector3}} ctx
+     */
+    update(dt, behavior, ctx = {}) {
+        if (behavior) {
+            this.group.position.x = behavior.pos[0];
+            this.group.position.z = behavior.pos[1];
+            this.group.rotation.y = behavior.heading - Math.PI / 2;
+        }
+        this.animator.update(dt, behavior, ctx);
+    }
 
     dispose() {
         this.geometry.dispose();

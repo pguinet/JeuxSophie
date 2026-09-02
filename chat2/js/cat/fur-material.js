@@ -8,6 +8,19 @@ varying vec3 vFurPos;
 varying vec3 vFurNormal;
 uniform float uShellH;
 uniform float uFurLength;
+uniform vec3 uEyeL;
+uniform vec3 uEyeR;
+uniform vec3 uNose;
+// Longueur relative du poil selon la zone : nulle sur les yeux, courte sur le museau, les oreilles et les pattes.
+float furLengthFactor(vec3 p) {
+    float f = 1.0;
+    f *= smoothstep(0.013, 0.024, distance(p, uEyeL));
+    f *= smoothstep(0.013, 0.024, distance(p, uEyeR));
+    f *= mix(0.35, 1.0, smoothstep(0.015, 0.06, distance(p, uNose)));
+    f *= mix(0.45, 1.0, smoothstep(0.40, 0.35, p.y));     // oreilles
+    f *= mix(0.55, 1.0, smoothstep(0.03, 0.07, p.y));     // pattes
+    return f;
+}
 `;
 
 export const FUR_FRAGMENT_PARS = /* glsl */`
@@ -67,7 +80,7 @@ vec3 coatColor(vec3 p, vec3 n, float fbm) {
 export const FUR_VERTEX_MAIN = /* glsl */`
     vFurPos = position.xyz;
     vFurNormal = normal.xyz;
-    transformed += objectNormal * (uShellH * uFurLength);
+    transformed += objectNormal * (uShellH * uFurLength * furLengthFactor(position.xyz));
 `;
 
 export const FUR_FRAGMENT_MAIN = /* glsl */`
@@ -120,8 +133,13 @@ function coatUniforms(coat) {
  * Crée le matériau de peau (base) et les N matériaux de couches partageant le même programme.
  * @returns {{ base: THREE.MeshStandardMaterial, shells: THREE.MeshStandardMaterial[], setCoat(id), setShellCount(n) }}
  */
-export function createFurMaterials(coatId, shellCount) {
-    const shared = coatUniforms(coatId);
+export function createFurMaterials(coatId, shellCount, mask = {}) {
+    const shared = {
+        ...coatUniforms(coatId),
+        uEyeL: { value: new THREE.Vector3(...(mask.eyeL || [0.29, 0.32, 0.035])) },
+        uEyeR: { value: new THREE.Vector3(...(mask.eyeR || [0.29, 0.32, -0.035])) },
+        uNose: { value: new THREE.Vector3(...(mask.nose || [0.32, 0.296, 0])) },
+    };
     const all = [];
     const make = (isShell, h) => {
         const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.78, metalness: 0.0 });
