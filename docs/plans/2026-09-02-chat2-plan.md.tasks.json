@@ -4,12 +4,12 @@
     {
       "id": 1,
       "subject": "Task 1: Vendoriser les addons Three.js",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": 2,
       "subject": "Task 2: Squelette de chat2/ + outillage",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ]
@@ -17,12 +17,12 @@
     {
       "id": 3,
       "subject": "Task 3: Téléchargement des assets Poly Haven",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": 4,
       "subject": "Task 4: SDF du chat",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ]
@@ -30,7 +30,7 @@
     {
       "id": 5,
       "subject": "Task 5: Marching cubes",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1,
         2
@@ -39,7 +39,7 @@
     {
       "id": 6,
       "subject": "Task 6: Squelette et poids de skinning",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         4,
         5
@@ -48,7 +48,7 @@
     {
       "id": 7,
       "subject": "Task 7: Matériau fourrure",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ]
@@ -56,7 +56,7 @@
     {
       "id": 8,
       "subject": "Task 8: Yeux, moustaches, truffe, coussinets",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ]
@@ -64,7 +64,7 @@
     {
       "id": 9,
       "subject": "Task 9: Entité chat, animations, comportement",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         6,
         7,
@@ -74,7 +74,7 @@
     {
       "id": 10,
       "subject": "Task 10: Visionneuse et itération visuelle",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         9
       ]
@@ -82,7 +82,7 @@
     {
       "id": 11,
       "subject": "Task 11: Chargement d'assets et qualité",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         3
       ]
@@ -90,7 +90,7 @@
     {
       "id": 12,
       "subject": "Task 12: Lumière et cycle jour/nuit",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         11
       ]
@@ -98,7 +98,7 @@
     {
       "id": 13,
       "subject": "Task 13: Maison",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         11
       ]
@@ -106,7 +106,7 @@
     {
       "id": 14,
       "subject": "Task 14: Jardin",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         11
       ]
@@ -114,7 +114,7 @@
     {
       "id": 15,
       "subject": "Task 15: main.js complet, caméra, post-traitement",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         12,
         13,
@@ -124,7 +124,7 @@
     {
       "id": 16,
       "subject": "Task 16: Logique pure jauges/sauvegarde/boutique",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ]
@@ -132,7 +132,7 @@
     {
       "id": 17,
       "subject": "Task 17: HUD, actions, boutique, choix de robe",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         16
       ]
@@ -140,7 +140,7 @@
     {
       "id": 18,
       "subject": "Task 18: Intégration gameplay",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         10,
         15,
@@ -150,7 +150,7 @@
     {
       "id": 19,
       "subject": "Task 19: Performance et réglages",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         18
       ]
@@ -158,11 +158,11 @@
     {
       "id": 20,
       "subject": "Task 20: Documentation, qualité, déploiement",
-      "status": "pending",
+      "status": "in_progress",
       "blockedBy": [
         19
       ]
     }
   ],
-  "lastUpdated": "2026-09-02T19:22:12.066609"
+  "lastUpdated": "2026-09-02T20:37:58.961777"
 }

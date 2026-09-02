@@ -8,6 +8,7 @@ Collection de petits jeux web 3D faits pour Sophie (la fille de Pascal), jouable
 
 - **`aventure/`** — *Aventure Jungle* : jeu d'action 3D à la troisième personne (personnage visible, caméra derrière/au-dessus). Le joueur explore une jungle, combat des monstres (serpent, araignée, crocodile, singe) à l'épée et au projectile, gagne des pièces et progresse via un système de quêtes.
 - **`chat/`** — *Mon Chat* : tamagotchi 3D. Sophie s'occupe d'un chat dans une maison avec jardin (5 jauges : faim, soif, bonheur, propreté, fatigue), avec boutique de meubles et sauvegarde locale.
+- **`chat2/`** — *Mon Chat 2* : version 2 **réaliste** du tamagotchi (même principe de jeu, `chat/` reste intact). Chat procédural (SDF → marching cubes → skinning → fourrure en couches), environnement PBR Poly Haven (textures, HDRI, modèles glTF), cycle jour/nuit, post-traitement. Design : `docs/plans/2026-09-02-chat2-design.md`.
 
 ## À qui tu parles
 
@@ -28,7 +29,7 @@ Collection de petits jeux web 3D faits pour Sophie (la fille de Pascal), jouable
 
 ## Lancer / tester
 
-Il n'y a **aucun test automatisé ni outil de lint** dans ce dépôt — la vérification se fait en jouant dans le navigateur. Comme les jeux utilisent des ES modules, ils doivent être servis par HTTP (pas d'ouverture `file://`).
+Il n'y a **aucun test automatisé ni outil de lint** pour les jeux historiques — la vérification se fait en jouant dans le navigateur. **Exception : `chat2/`** dispose de tests unitaires (`node --test chat2/test/`), d'ESLint via Docker (`chat2/tools/lint.sh`) et d'un outil de capture headless (`chat2/tools/screenshot.sh <url> <out.png> [w h budget_ms]`, variable `CHROME_LOG=<fichier>` pour récupérer la console JS). Voir la section *Spécificités chat2/* plus bas. Comme les jeux utilisent des ES modules, ils doivent être servis par HTTP (pas d'ouverture `file://`).
 
 ```bash
 # Servir tout le dépôt à la racine
@@ -83,6 +84,15 @@ Chaque jeu suit le même squelette :
 ### Spécificités *aventure/*
 - Monstres (`snake.js`, `spider.js`, `crocodile.js`, `monkey.js`) partagent une interface commune : propriétés `hp`/`maxHp`/`speed`/`damage`/`detectionRange`/`attackRange`/`dead`, IA de patrouille puis poursuite (`chasing`), et flash de dégâts.
 - `terrain.js`/`vegetation.js` génèrent le sol et la végétation procédurale. `player.js` gère le joueur, `sword.js` l'arme, `camera-controls.js` + `joystick.js` les contrôles tactiles, `hud.js` l'overlay, `quests.js` la progression.
+
+### Spécificités *chat2/*
+- **Addons Three.js vendorisés** dans `vendor/three@0.170.0/examples/jsm/` (importmap `three/addons/` → ce dossier). Script : `node chat2/tools/vendor-addons.mjs` (idempotent, résout les imports relatifs).
+- **Assets Poly Haven (CC0)** dans `chat2/assets/` (textures 1K `diff/nor_gl/arm`, HDRI jour 2K / nuit 1K, modèles glTF 1K), listés dans `assets/manifest.json`, téléchargés par `node chat2/tools/fetch-assets.mjs`, crédités dans `assets/CREDITS.md`. Budget ~44 Mo.
+- **Le chat** (`js/cat/`) : `sdf.js` (anatomie = union lisse de capsules/ellipsoïdes, articulations partagées `LEG_JOINTS`/`TAIL_JOINTS`), `marching-cubes.js` (tables dans `mc-tables.js`), `skin-weights.js` (poids automatiques), `skeleton-def.js`/`skeleton.js` (26 os), `fur-material.js` (shells via `onBeforeCompile`, robes dans `coats.js`), `eyes.js`, `details.js`, `animator.js` (poses par état, marche IK via `ik.js`), `behavior.js` (machine d'états pure), `cat.js` (entité). Les modules purs sont testés sous Node.
+- **Monde** : `world-layout.js` (dimensions, emplacements, définition de navigation), `house.js`, `garden.js`, `nav.js` (zones/obstacles/porte), `lighting.js` + `sky.js` (cycle jour/nuit ~12 min, HDRI mélangés), `quality-presets.js`/`quality.js` (Faible/Moyen/Élevé, détection + baisse automatique), `assets.js`.
+- **Interface** : `hud.js`, `actions.js`, `shop.js` (UI) + `shop-logic.js` (pur), `needs.js` (pur), `save.js` (clé `monchat2_save`, migration depuis `monchat_save` v1), `color-picker.js`, `effects.js`, `camera.js`.
+- **Paramètres d'URL utiles** : `?debug=1` (FPS/état), `?q=low|medium|high`, `?nofx=1` (sans ombres ni bloom, pour les captures headless), `?time=0.62&pause=1` (heure du cycle figée), `?cam=x,y,z&look=x,y,z`, `?coat=tabby|black|grey|white|ginger`. Visionneuse du chat seul : `chat2/viewer.html?view=3q|side|face&state=sit|sleep|walk|eat&shells=N`.
+- Les captures headless (SwiftShader) sont **lentes** (1 à 3 min par image avec fourrure et ombres) : utiliser `q=low&nofx=1` pour vérifier la mise en page, réserver la qualité moyenne aux vérifications finales.
 
 ### Spécificités *chat/*
 - `cat.js` (le plus gros module) : modèle 3D du chat, fourrure, animations (marche, dort, mange, ronronne, joue, se lave) et comportement autonome piloté par les jauges.

@@ -133,7 +133,7 @@ export async function buildHouse(scene, assets, settings) {
     placeModel(sofa, -4.2, -2.05, 0, { floorY });
     placeModel(table, -4.2, -0.9, 0, { floorY });
     placeModel(plant, -6.45, -2.05, 0.4, { floorY });
-    placeModel(ottoman, -2.6, 0.9, 0.3, { floorY });
+    placeModel(ottoman, -2.5, 1.35, 0.3, { floorY });
     for (const m of [sofa, table, plant, ottoman]) group.add(m);
 
     // Gamelles : bols en bois réduits (Ø 16 cm) + croquettes + eau

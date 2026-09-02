@@ -77,7 +77,7 @@ async function boot() {
 
     const cat = new Cat(scene, { coat: state.coat, shellCount: settings.shells, voxel: settings.voxel });
     const nav = new Nav(NAV_DEF);
-    const behavior = createBehavior(-3.2, 0.4);
+    const behavior = createBehavior(-4.6, 0.75);
     behavior.heading = Math.PI / 2;
     const spots = {
         bowl: SPOTS.bowl.at, bowlFace: SPOTS.bowl.face, water: SPOTS.water.at, waterFace: SPOTS.water.face,
@@ -107,7 +107,7 @@ async function boot() {
     }
     buildComposer();
     quality.onChange((s) => { settings = s; buildComposer(); cat.setShellCount(s.shells); lighting.sun.shadow.mapSize.set(s.shadowMapSize, s.shadowMapSize); lighting.sun.shadow.map?.dispose(); lighting.sun.shadow.map = null; });
-    quality.buildMenu(container);
+    // (menu qualité ajouté après la création de uiRoot, plus bas)
 
     // ---------- Jeu ----------
     const needs = state.needs || createNeeds();
@@ -115,7 +115,9 @@ async function boot() {
     const rng = Math.random;
     const catHead = () => cat.bone.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.12, 0));
     const effects = new Effects(container, camera);
-    const hud = new HUD(container);
+    const uiRoot = document.createElement('div'); uiRoot.id = 'ui'; container.appendChild(uiRoot);
+    quality.buildMenu(uiRoot);
+    const hud = new HUD(uiRoot);
     hud.update(needs, wallet.coins);
     let uiLocked = isNewGame;
 
@@ -131,7 +133,7 @@ async function boot() {
         hud.update(needs, wallet.coins);
         void changed;
     }
-    const actions = new ActionBar(container, doAction);
+    const actions = new ActionBar(uiRoot, doAction);
 
     const toys = [];
     function spawnToy(item) {
@@ -150,7 +152,7 @@ async function boot() {
         requestAction(behavior, 'play', spots);
         effects.text(catHead(), isBall ? 'Une balle !' : 'Une souris !');
     }
-    const shop = new Shop(container, wallet, (item) => {
+    const shop = new Shop(uiRoot, wallet, (item) => {
         applyEffect(needs, item.effect);
         if (item.kind === 'toy') spawnToy(item);
         else if (item.id === 'fish') { requestAction(behavior, 'eat', spots); effects.text(catHead(), 'Un poisson ! 🐟'); }
@@ -173,7 +175,11 @@ async function boot() {
         pickerSpin = true;
         behavior.state = 'idle'; behavior.timer = 1e9; // le chat reste posé pendant le choix
         rig.follow = null;
-        rig.setInitial(new THREE.Vector3(behavior.pos[0], 0.25, behavior.pos[1]), 1.6, 1.0, 0.35);
+        uiRoot.hidden = true;
+        // Caméra basse, de face-côté, rien entre elle et le chat
+        rig.controls.target.set(behavior.pos[0], 0.22, behavior.pos[1]);
+        camera.position.set(behavior.pos[0] + 0.95, 0.62, behavior.pos[1] + 1.15);
+        rig.controls.update();
         showColorPicker(container, {
             initial: cat.coat, canImportV1: storage.hasV1(),
             onPreview: (id) => cat.setCoat(id),
@@ -181,8 +187,12 @@ async function boot() {
             onImportV1: () => { const v1 = storage.loadV1(); if (v1) { Object.assign(state, v1); Object.assign(needs, v1.needs); Object.assign(wallet, v1.wallet); cat.setCoat(v1.coat); cat.setAccessories(wallet.owned); hud.update(needs, wallet.coins); shop.refresh(); } finishPicker(); },
         });
     }
-    function finishPicker() { pickerSpin = false; uiLocked = false; behavior.timer = 1; rig.follow = cat.group; save(); effects.text(catHead(), 'Miaou ! 💕'); }
+    function finishPicker() { pickerSpin = false; uiLocked = false; uiRoot.hidden = false; behavior.timer = 1; rig.follow = cat.group; rig.setInitial(new THREE.Vector3(behavior.pos[0], 0.28, behavior.pos[1]), 3.2, 1.25, 0.55); save(); effects.text(catHead(), 'Miaou ! 💕'); }
 
+    if (debug) {
+        const inHouse = (o) => o.position.x > -7.4 && o.position.x < -0.6 && o.position.z > -2.9 && o.position.z < 2.9;
+        for (const o of garden.group.children) if (o.name && inHouse(o)) console.log('[debug] objet du jardin dans la maison :', o.name, o.position.toArray().map((v) => v.toFixed(2)).join(','));
+    }
     const debugEl = debug ? Object.assign(document.createElement('div'), { id: 'debug' }) : null;
     if (debugEl) container.appendChild(debugEl);
 

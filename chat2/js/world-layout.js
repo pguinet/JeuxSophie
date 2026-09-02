@@ -31,6 +31,7 @@ export const NAV_DEF = {
         { type: 'circle', c: [-6.45, -2.05], r: 0.35 },            // plante
         { type: 'rect', min: [-1.95, -2.5], max: [-1.25, -1.9] },  // arbre à chat (pied)
         { type: 'circle', c: [-5.9, -1.4], r: 0.3 },               // lampadaire
+        { type: 'rect', min: [-2.95, 0.95], max: [-2.05, 1.75] },   // pouf
     ],
     door: { pos: [DOOR.x, 0], radius: 0.55, zones: ['house', 'garden'], dir: [1, 0] },
     margin: 0.12,
