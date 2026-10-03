@@ -27,7 +27,7 @@ const rules = {
 
 export default [
     {
-        files: ['shared/*.js', 'habille/js/**/*.js', 'etoiles3d/js/**/*.js', 'defile/js/**/*.js'],
+        files: ['shared/*.js', 'habille/js/**/*.js', 'etoiles3d/js/**/*.js', 'defile/js/**/*.js', 'monde/atelier/js/**/*.js'],
         languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: browserGlobals },
         rules,
     },

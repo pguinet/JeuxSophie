@@ -7,7 +7,7 @@
 // le cube arrondi a un demi-côté de 0.36 autour de (0, 1.5, 0).
 
 import * as THREE from 'three';
-import { TETE_ANCIENNE, geoTeteCube } from './corps3d.js';
+import { TETE_ANCIENNE, geoTeteCube, rayonTete } from './corps3d.js';
 
 // Les visages proposés (l'ordre est celui des boutons)
 export { FACES as VISAGES } from './avatar.js';
@@ -159,8 +159,19 @@ export function construireTete(tete, s, peau) {
     const face = VISAGES.includes(s.face) ? s.face : 'sourire';
     const tex = textures(face);
     const mat = new THREE.MeshBasicMaterial({ map: tex.ouverts, transparent: true, depthWrite: false });
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(LARGEUR, LARGEUR), mat);
-    m.position.set(0, TETE_ANCIENNE.Y, TETE_ANCIENNE.CUBE + 0.003);
+    // le visage est collé sur le devant de la tête (un morceau de cylindre qui
+    // suit exactement sa forme, un poil devant)
+    const R = TETE_ANCIENNE.CUBE;
+    const angle = LARGEUR / R;
+    const geo = new THREE.CylinderGeometry(R, R, LARGEUR, 48, 24, true, -angle / 2, angle);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i), k = (rayonTete(y) + 0.003) / R;
+        p.setXYZ(i, p.getX(i) * k, y, p.getZ(i) * k);
+    }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(0, TETE_ANCIENNE.Y, 0);
     m.renderOrder = 1;
     tete.add(m);
     // les visages aux yeux déjà fermés ne clignent pas

@@ -94,19 +94,21 @@ export function geoJupe(largeur, yHaut, yBas, rBas, opts = {}) {
     const { vagues = 0.03, profil = (t) => Math.sqrt(t), nbVagues = 9, nFin = 2 } = opts;
     const A = largeur / 2 + 0.012, B = D.TORSE.d / 2 + 0.012;
     const N = 48, M = 16;
-    const pos = [], idx = [];
+    const pos = [], idx = [], uv = [];
     for (let j = 0; j <= M; j++) {
         const t = j / M;
         const y = yHaut + (yBas - yHaut) * t;
         const n = 8 - (8 - nFin) * Math.min(1, t * 1.6);   // carré → rond (nFin = 2) ou carré arrondi
         const e = profil(t);
         for (let i = 0; i <= N; i++) {
-            const a = (i / N) * Math.PI * 2;
+            // la couture est derrière : le milieu de la texture (u = 0,5) est devant
+            const a = (i / N) * Math.PI * 2 - Math.PI;
             const c = Math.cos(a), sn = Math.sin(a);
             const sup = Math.pow(Math.pow(Math.abs(c), n) + Math.pow(Math.abs(sn), n), -1 / n);
             const ondule = 1 + Math.sin(a * nbVagues) * vagues * t * t;
             const rx = (A + (rBas - A) * e) * ondule, rz = (B + (rBas * 0.8 - B) * e) * ondule;
             pos.push(sn * sup * rx, y, c * sup * rz);
+            uv.push(i / N, 1 - t);
         }
     }
     for (let j = 0; j < M; j++) {
@@ -117,6 +119,7 @@ export function geoJupe(largeur, yHaut, yBas, rBas, opts = {}) {
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     geo.setIndex(idx);
     geo.computeVertexNormals();
     return geo;
@@ -126,6 +129,9 @@ function jupe(corps, mat, yBas, rBas, opts) {
     m.side = THREE.DoubleSide;
     const j = mesh(geoJupe(D.TORSE.w, BAS_TORSE + 0.1, yBas, rBas, opts), m);
     corps.racine.add(j);
+    // pour y poser un motif ou un dessin (créations) ; le tutu en a plusieurs
+    corps.blocs.jupe = j;
+    (corps.blocs.jupes ||= []).push(j);
     return j;
 }
 
@@ -133,10 +139,12 @@ function jupe(corps, mat, yBas, rBas, opts) {
 //  LES HAUTS
 // ===========================================================================
 
-export function construireHaut(corps, id, color) {
+// `matPerso` (facultatif) : la matière du tissu (motif d'une création) à la
+// place de la couleur unie.
+export function construireHaut(corps, id, color, matPerso = null) {
     if (!id || id === 'aucun') return;
 
-    const m = id === 'paillettes' ? matPaillettes(color) : matiere(color);
+    const m = matPerso || (id === 'paillettes' ? matPaillettes(color) : matiere(color));
     const R = corps.racine;
     const blanc = matiere('#ffffff');
 
@@ -226,10 +234,10 @@ export function construireHaut(corps, id, color) {
 //  LES BAS (pantalons, jupes…)
 // ===========================================================================
 
-export function construireBas(corps, id, color) {
+export function construireBas(corps, id, color, matPerso = null) {
     if (!id || id === 'aucun') return;
 
-    const m = matiere(color);
+    const m = matPerso || matiere(color);
     const ceinture = (c = assombrir(color)) => bande(corps, matiere(c), BAS_TORSE + 0.1, 0.05, 0.012);
 
     switch (id) {
@@ -290,9 +298,9 @@ export function construireBas(corps, id, color) {
 //  LES ROBES (elles remplacent le haut ET le bas)
 // ===========================================================================
 
-export function construireRobe(corps, id, color) {
+export function construireRobe(corps, id, color, matPerso = null) {
     const brillante = id === 'robe_paillettes';
-    const m = brillante ? matPaillettes(color) : matiere(color);
+    const m = matPerso || (brillante ? matPaillettes(color) : matiere(color));
     const ceinture = (c) => bande(corps, typeof c === 'string' ? matiere(c) : c, BAS_TORSE + 0.1, 0.05, 0.016);
     corps.peindre('torse', m);
 
@@ -425,11 +433,11 @@ export function construireChaussures(corps, id, color) {
 //  LES CHAPEAUX (dans le repère de l'ancienne tête : rayon 0.42, y = 1.5)
 // ===========================================================================
 
-export function construireChapeau(corps, id, color) {
+export function construireChapeau(corps, id, color, matPerso = null) {
     if (!id || id === 'aucun') return;
     const g = corps.tete;
-    const m = matiere(color);
-    const brillant = matiere(color, { metal: 0.6, rough: 0.3 });
+    const m = matPerso || matiere(color);
+    const brillant = matPerso || matiere(color, { metal: 0.6, rough: 0.3 });
 
     switch (id) {
         case 'couronne': {
@@ -455,7 +463,7 @@ export function construireChapeau(corps, id, color) {
             break;
         }
         case 'paille': {
-            const paille = matiere('#e8c07d', { rough: 1 });
+            const paille = matPerso || matiere('#e8c07d', { rough: 1 });
             g.add(mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.035, 32), paille, 0, 1.82, -0.02));
             const dome = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), paille);
             dome.position.set(0, 1.81, -0.02);

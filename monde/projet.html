@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mon projet</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Comic Sans MS', 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4vmin;
+            padding: 6vmin 4vmin;
+            text-align: center;
+            user-select: none;
+        }
+        h1 { font-size: clamp(34px, 9vmin, 80px); color: #ff922b; text-shadow: 2px 2px 0 rgba(0, 0, 0, .55); }
+        p { font-size: clamp(18px, 3.6vmin, 30px); opacity: .9; max-width: 640px; }
+        .choix { display: flex; flex-direction: column; gap: 3vmin; width: min(480px, 88vw); }
+        .choix a, .choix button {
+            font-family: inherit; text-decoration: none; color: #fff; border: none; cursor: pointer;
+            border-radius: 28px; padding: 4vmin 3vmin; display: flex; align-items: center; justify-content: center;
+            gap: 2.5vmin; font-size: clamp(20px, 4.2vmin, 32px); font-weight: bold;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, .3); box-shadow: 0 6px 0 rgba(0, 0, 0, .35);
+        }
+        .choix .ico { font-size: clamp(30px, 7vmin, 52px); }
+        .choix a:active, .choix button:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
+        .habits { background: #e64980; }
+        .jeux { background: #868e96; }
+        #bientot { min-height: 1.4em; color: #ffd43b; }
+        a.retour {
+            margin-top: 2vmin;
+            text-decoration: none;
+            color: #fff;
+            background: #4dabf7;
+            border-radius: 24px;
+            padding: 2.6vmin 5vmin;
+            font-weight: bold;
+            font-size: clamp(18px, 3.6vmin, 28px);
+            box-shadow: 0 5px 0 rgba(0, 0, 0, .35);
+        }
+        a.retour:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
+    </style>
+    <script>
+        // même couleur de fond que le menu « Mon monde »
+        try { const f = localStorage.getItem('monde_fond'); if (f) document.documentElement.style.background = f; } catch (e) {}
+    </script>
+</head>
+<body>
+    <h1>Mon projet 🚀</h1>
+    <p>Qu'est-ce que tu veux créer aujourd'hui ? ✨</p>
+    <div class="choix">
+        <a class="habits" href="atelier/"><span class="ico">👕</span><span>Créer mes habits</span></a>
+        <button class="jeux" type="button" id="btn-jeux"><span class="ico">🔒</span><span>Créer mes mini-jeux</span></button>
+    </div>
+    <p id="bientot"></p>
+    <a class="retour" href="./">⬅️ Retour au menu</a>
+    <script>
+        try { const f = localStorage.getItem('monde_fond'); if (f) document.body.style.background = f; } catch (e) {}
+        document.getElementById('btn-jeux').addEventListener('click', function () {
+            document.getElementById('bientot').textContent = 'Bientôt ! 🎮 Ce sera la prochaine étape de ton projet. 😊';
+        });
+    </script>
+</body>
+</html>

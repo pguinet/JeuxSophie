@@ -4,4 +4,4 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 docker run --rm -v "$PWD":/app -w /app -v chat2-npm-cache:/root/.npm node:20 \
-  npx -y eslint@9 -c shared/eslint.config.js shared habille/js etoiles3d/js defile/js "$@"
+  npx -y eslint@9 -c shared/eslint.config.js shared habille/js etoiles3d/js defile/js monde/atelier/js "$@"

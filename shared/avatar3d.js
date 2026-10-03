@@ -20,6 +20,8 @@ import { construireCheveux, finirCheveux } from './cheveux3d.js';
 import { construireCorps, projeterSurCube } from './corps3d.js';
 import { construireTete } from './visage3d.js';
 import { lookDepuisTenueSimple } from './avatar.js';
+import { habillerCreation, habillerChapeau } from './creation3d.js';
+import { TYPES } from './createur.js';
 
 export function buildAvatar3D(s) {
     const g = new THREE.Group();
@@ -36,7 +38,20 @@ export function buildAvatar3D(s) {
     const corps = construireCorps(g, gender, peau);
 
     // --- Vêtements et chaussures ---
-    if (look.robe && look.robe !== 'aucune') {
+    // les créations de l'atelier (s.porte = { haut, bas }) passent avant la tenue
+    const porte = s.porte || {};
+    const recompositions = [];
+    const creer = (c) => recompositions.push(...habillerCreation(corps, c));
+    if (porte.haut && TYPES[porte.haut.type]?.categorie === 'robe') {
+        creer(porte.haut);
+    } else if (porte.haut || porte.bas) {
+        // une création en haut ou en bas : l'autre moitié vient de la tenue (ou un basique)
+        const robeTenue = look.robe && look.robe !== 'aucune';
+        if (porte.bas) creer(porte.bas);
+        else construireBas(corps, robeTenue ? 'jean' : look.bottom, robeTenue ? '#3b5b92' : look.bottomColor);
+        if (porte.haut) creer(porte.haut);
+        else construireHaut(corps, robeTenue ? 'tshirt' : look.top, robeTenue ? '#ffffff' : look.topColor);
+    } else if (look.robe && look.robe !== 'aucune') {
         construireRobe(corps, look.robe, look.robeColor);
     } else {
         construireBas(corps, look.bottom, look.bottomColor);
@@ -54,7 +69,8 @@ export function buildAvatar3D(s) {
     const cheveux = construireCheveux(tete, s.hairStyle, s.hairColor, gender);
 
     // --- Chapeau / lunettes / accessoires ---
-    construireChapeau(corps, look.hat, look.hatColor);
+    if (porte.chapeau) habillerChapeau(corps, porte.chapeau);
+    else construireChapeau(corps, look.hat, look.hatColor);
     construireAccessoire(corps, look.accessoire, look.accColor, animes);
     // cheveux, chapeau (et auréole) ont été faits pour une tête ronde : on les
     // plaque sur une coque arrondie autour du cube…
@@ -73,6 +89,8 @@ export function buildAvatar3D(s) {
         head: corps.teteGroupe,
     };
     g.userData.visage = visage;
+    // à appeler quand le dessin d'une création change (atelier : dessin en direct)
+    g.userData.recomposer = () => recompositions.forEach((f) => f());
     g.userData.animes = animes;
     return g;
 }

@@ -28,10 +28,13 @@ test('corps en cubes : les jambes touchent le sol, les bras sont collés au tors
     assert.ok(Math.abs(D.EPAULE_X - bw / 2 - D.TORSE.w / 2) < 1e-9, 'bras contre le torse');
 });
 
-test('la tête cubique : la projection plaque la sphère sur le cube', () => {
+test('la tête en cylindre arrondi : la projection plaque la sphère dessus', () => {
     const a = TETE_ANCIENNE.CUBE;
     assert.ok(Math.abs(distanceCube(new THREE.Vector3(0, 0, 1)) - a) < 1e-9, 'face avant');
-    assert.ok(distanceCube(new THREE.Vector3(1, 1, 1).normalize()) > a * 1.5, 'coins');
+    // cylindre : rond vu de dessus (même distance devant et en diagonale) ; arêtes du haut arrondies
+    assert.ok(Math.abs(distanceCube(new THREE.Vector3(1, 0, 1).normalize()) - a) < 1e-9, 'rond vu de dessus');
+    const arete = distanceCube(new THREE.Vector3(1, 1, 0).normalize());
+    assert.ok(arete > a * 1.1 && arete < a * Math.SQRT2, `arête arrondie (${arete})`);
     // un point posé sur l'ancienne sphère, devant, arrive sur la face du cube
     const tete = new THREE.Group();
     const o = new THREE.Mesh(new THREE.SphereGeometry(0.01), new THREE.MeshBasicMaterial());

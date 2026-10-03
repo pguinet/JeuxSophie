@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mon atelier</title>
+    <link rel="stylesheet" href="css/atelier.css">
+    <script type="importmap">
+    { "imports": { "three": "/vendor/three@0.170.0/three.module.js" } }
+    </script>
+</head>
+<body>
+    <header class="barre">
+        <a class="rond" href="../projet.html" title="Retour">⬅️</a>
+        <h1>Mon atelier de création 🧵</h1>
+        <button class="rond" id="btn-collection" title="Mes créations">👕</button>
+    </header>
+
+    <main class="principal">
+        <section class="scene" id="scene">
+            <div class="astuce">👆 Fais-moi tourner !</div>
+        </section>
+
+        <!-- Le petit assistant -->
+        <section class="panneau" id="panneau-chat">
+            <div class="chat" id="chat"></div>
+            <div class="idees" id="idees"></div>
+            <form class="ecrire" id="form-chat" autocomplete="off">
+                <input id="saisie" type="text" placeholder="Décris ton habit… ex : une robe rose avec des étoiles" maxlength="120">
+                <button type="submit" class="envoyer" title="Envoyer">➤</button>
+            </form>
+            <div class="actions">
+                <button id="btn-dessiner" class="action dessiner">🖌️ Dessiner</button>
+                <button id="btn-enregistrer" class="action enregistrer">💾 Enregistrer</button>
+                <button id="btn-porter" class="action porter">🧍 Porter</button>
+                <button id="btn-nouveau" class="action nouveau">✨ Nouveau</button>
+            </div>
+        </section>
+
+        <!-- Le dessin -->
+        <section class="panneau cache" id="panneau-dessin">
+            <div class="feuille" id="feuille">
+                <canvas id="fond" width="512" height="512"></canvas>
+                <canvas id="dessin" width="512" height="512"></canvas>
+            </div>
+            <div class="outils" id="couleurs"></div>
+            <div class="outils" id="outils"></div>
+            <div class="outils" id="tampons"></div>
+            <div class="outils texte">
+                <input id="texte" type="text" placeholder="Ton texte (ex : SOPHIE)" maxlength="16">
+                <button id="btn-texte" class="outil">🔤 Poser</button>
+            </div>
+            <div class="actions">
+                <button id="btn-annuler" class="action nouveau">↩️ Annuler</button>
+                <button id="btn-effacer" class="action nouveau">🗑️ Tout effacer</button>
+                <button id="btn-fini" class="action enregistrer">✔️ Fini</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Mes créations -->
+    <div class="fenetre cache" id="collection">
+        <div class="boite">
+            <div class="haut-fenetre">
+                <h2>👕 Mes créations</h2>
+                <button class="rond" id="btn-fermer" title="Fermer">✖️</button>
+            </div>
+            <div class="grille" id="grille"></div>
+        </div>
+    </div>
+
+    <div class="bulle cache" id="bulle"></div>
+
+    <script type="module" src="js/atelier.js"></script>
+</body>
+</html>

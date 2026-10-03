@@ -76,26 +76,45 @@ export function geoBloc(nom, marge = 0) {
 // ---------------------------------------------------------------------------
 //  La tête cubique et la projection des cheveux / chapeaux sur le cube
 // ---------------------------------------------------------------------------
-// Le cube arrondi est une « super-sphère » : |x|^n + |y|^n + |z|^n = a^n
-// (n grand = cube aux arêtes vives ; n = 2 = sphère)
-const N_CUBE = 8;
-function superSphere(d, a, n) {
-    return a / Math.pow(Math.abs(d.x) ** n + Math.abs(d.y) ** n + Math.abs(d.z) ** n, 1 / n);
+// La tête est un cylindre aux bords arrondis, comme la tête des personnages
+// Roblox : ronde vue de dessus, avec un dessus et un dessous plats aux arêtes
+// bien arrondies. C'est une « super-ellipse » entre le rayon horizontal
+// (√(x² + z²)) et la hauteur : (rh / a)^n + (|y| / b)^n = 1.
+const N_TETE = 5;
+const A_TETE = TETE_ANCIENNE.CUBE;          // rayon du cylindre
+const B_TETE = TETE_ANCIENNE.CUBE;          // demi-hauteur
+function superCylindre(d, a, b, n) {
+    const h = Math.hypot(d.x, d.z);
+    return 1 / Math.pow((h / a) ** n + (Math.abs(d.y) / b) ** n, 1 / n);
 }
-// Distance du centre au bord du cube, dans la direction (unitaire) d
-export function distanceCube(d, a = TETE_ANCIENNE.CUBE) {
-    return superSphere(d, a, N_CUBE);
+// Distance du centre au bord de la tête, dans la direction (unitaire) d
+// (le nom date de la tête cubique : c'est désormais un cylindre arrondi)
+export function distanceCube(d) {
+    return superCylindre(d, A_TETE, B_TETE, N_TETE);
 }
-// La « coque » des cheveux et des chapeaux : une forme plus ronde que la tête
-// (n = 5), juste assez grande pour toucher les coins du cube sans les traverser.
-// Elle donne du volume sur les faces et des bords bien arrondis.
-const N_COQUE = 5;
-const A_COQUE = TETE_ANCIENNE.CUBE * Math.pow(3, (1 / 2 - 1 / N_CUBE) - (1 / 2 - 1 / N_COQUE)) * 1.01;
+// Rayon horizontal de la tête à la hauteur y (relative au centre)
+export function rayonTete(y) {
+    const t = Math.min(1, Math.abs(y) / B_TETE);
+    return A_TETE * Math.pow(1 - t ** N_TETE, 1 / N_TETE);
+}
+// La « coque » des cheveux et des chapeaux : une forme un peu plus ronde que
+// la tête (n = 3,2), agrandie juste assez pour ne jamais rentrer dedans.
+// Elle donne du volume et des bords bien arrondis.
+const N_COQUE = 3.2;
+const K_COQUE = (() => {
+    let k = 0;
+    for (let i = 0; i <= 90; i++) {
+        const e = (i / 90) * (Math.PI / 2);
+        const d = { x: Math.cos(e), y: Math.sin(e), z: 0 };
+        k = Math.max(k, distanceCube(d) / superCylindre(d, A_TETE, B_TETE, N_COQUE));
+    }
+    return k * 1.01;
+})();
 export function distanceCoque(d) {
-    return superSphere(d, A_COQUE, N_COQUE);
+    return superCylindre(d, A_TETE * K_COQUE, B_TETE * K_COQUE, N_COQUE);
 }
 
-// La tête : une sphère déformée en cube arrondi (repère ancien)
+// La tête : une sphère déformée en cylindre arrondi (repère ancien)
 export function geoTeteCube() {
     const g = new THREE.SphereGeometry(1, 64, 48);
     const p = g.attributes.position, v = new THREE.Vector3();

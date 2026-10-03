@@ -11,6 +11,7 @@ import {
 } from '../../shared/avatar.js';
 import { buildAvatar3D, animerVie } from '../../shared/avatar3d.js';
 import { animerAccessoires } from '../../shared/garderobe3d.js';
+import { chargerCreations, porter, TYPES } from '../../shared/createur.js';
 
 const app = document.getElementById('app');
 
@@ -56,11 +57,14 @@ function renderOptions() {
     if (styleList) {
         for (const st of styleList) {
             const b = document.createElement('button');
-            b.className = 'opt' + (state[cat.styleKey] === st ? ' active' : '');
             b.textContent = LABELS[st] || st;
+            const choisie = state[cat.styleKey] === st && !(cat.id === 'outfit' && aDesCreations()) && !(cat.id === 'hat' && state.porte && state.porte.chapeau);
+            b.className = 'opt' + (choisie ? ' active' : '');
             b.addEventListener('click', () => {
                 if (cat.id === 'gender') applyGender(st);
                 else state[cat.styleKey] = st;
+                if (cat.id === 'outfit' && state.porte) { delete state.porte.haut; delete state.porte.bas; }   // une tenue simple enlève les habits créés
+                if (cat.id === 'hat' && state.porte) delete state.porte.chapeau;
                 changed();
             });
             optsEl.appendChild(b);
@@ -71,9 +75,43 @@ function renderOptions() {
             const b = document.createElement('button');
             b.className = 'swatch' + (state[cat.colorKey] === col ? ' active' : '');
             b.style.background = col;
-            b.addEventListener('click', () => { state[cat.colorKey] = col; changed(); });
+            b.addEventListener('click', () => {
+                state[cat.colorKey] = col;
+                if (cat.id === 'outfit' && state.porte) { delete state.porte.haut; delete state.porte.bas; }
+                changed();
+            });
             optsEl.appendChild(b);
         }
+    }
+    // l'onglet Tenue propose aussi les habits créés dans l'atelier
+    if (cat.id === 'outfit') afficherCreations((c) => TYPES[c.type]?.categorie !== 'chapeau');
+    if (cat.id === 'hat') afficherCreations((c) => TYPES[c.type]?.categorie === 'chapeau');
+}
+
+function aDesCreations() { return !!(state.porte && (state.porte.haut || state.porte.bas)); }
+function estPortee(c) {
+    return !!state.porte && ['haut', 'bas', 'chapeau'].some((cle) => state.porte[cle] && state.porte[cle].id === c.id);
+}
+function afficherCreations(garder) {
+    const liste = chargerCreations().filter(garder);
+    const titre = document.createElement('div');
+    titre.className = 'sous-titre';
+    titre.textContent = liste.length ? '🧵 Mes créations :' : '🧵 Crée tes propres habits dans Mon monde → 🚀 Projet !';
+    optsEl.appendChild(titre);
+    for (const c of liste) {
+        const b = document.createElement('button');
+        b.className = 'opt creation' + (estPortee(c) ? ' active' : '');
+        b.textContent = c.nom;
+        b.style.borderLeft = `14px solid ${c.couleur}`;
+        b.addEventListener('click', () => {
+            if (estPortee(c)) {
+                for (const cle of ['haut', 'bas', 'chapeau']) if (state.porte[cle] && state.porte[cle].id === c.id) delete state.porte[cle];
+            } else {
+                Object.assign(state, porter(state, c));
+            }
+            changed();
+        });
+        optsEl.appendChild(b);
     }
 }
 
