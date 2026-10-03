@@ -124,3 +124,31 @@ Sur la tablette de Sophie, ouvrir :
 | `rsync: permission denied` | Le docroot n'appartient pas à l'utilisateur SSH : `sudo chown -R sophie:sophie /var/www/jeux`. |
 | `jeux.local` introuvable | Installer `avahi-daemon` sur le Pi, ou utiliser l'IP directement. |
 | Page pas à jour après déploiement | Les en-têtes `no-cache` sont actifs ; forcer un rafraîchissement (Ctrl/Cmd+Maj+R) sur la tablette. |
+
+## Mises à jour automatiques du Pi (depuis le 2026-10-03)
+
+Paquets : `unattended-upgrades`, `msmtp`, `msmtp-mta`, `bsd-mailx`.
+
+- `/etc/apt/apt.conf.d/52unattended-upgrades-local` : **tous** les paquets des dépôts
+  `Raspbian` et `Raspberry Pi Foundation` (pas de dépôt sécurité séparé sous Raspbian),
+  `--force-confold` (une conf modifiée à la main, ex. lighttpd, n'est jamais écrasée),
+  nettoyage des vieux noyaux / dépendances, **reboot automatique** immédiat si nécessaire,
+  rapport par mail à `pascal.guinet@free.fr` (`MailReport "on-change"` : quand quelque
+  chose est installé ou en cas d'erreur).
+- `/etc/apt/apt.conf.d/20auto-upgrades` : mise à jour quotidienne + autoclean hebdomadaire.
+- Horaires (drop-ins systemd `/etc/systemd/system/apt-daily{,-upgrade}.timer.d/override.conf`) :
+  liste des paquets vers 2 h (± 30 min), installation à 3 h 30.
+- Mail : `/etc/msmtprc` → `smtp.free.fr:25`, STARTTLS, **sans authentification** (accepté
+  depuis une connexion Freebox). `mx1.free.fr` refuse (IP de la box dans Spamhaus PBL) et
+  `smtp.free.fr:587` exige un mot de passe. `/etc/aliases` redirige `root`/`sophie` vers Pascal.
+- Anciennes versions des fichiers : `/var/backups/`.
+
+Vérifier :
+
+```bash
+ssh sophie@jeux.local 'systemctl list-timers "apt*"'                      # prochains passages
+ssh sophie@jeux.local 'sudo unattended-upgrade --dry-run --debug'         # simulation (lent : plusieurs minutes)
+ssh sophie@jeux.local 'echo test | sudo mail -s "test" root'              # mail de test
+ssh sophie@jeux.local 'sudo journalctl -t msmtp -n 5'                     # journal d'envoi
+ssh sophie@jeux.local 'sudo tail -50 /var/log/unattended-upgrades/unattended-upgrades.log'
+```
