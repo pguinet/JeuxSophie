@@ -8,7 +8,8 @@ export const SAVE_KEY = 'habille_save';
 // --- Palettes ---
 export const SKINS = ['#ffe0bd', '#f1c27d', '#e0ac69', '#c68642', '#8d5524'];
 export const HAIR_COLORS = ['#2b1b0e', '#5b3a1a', '#a0522d', '#e6b800', '#d9d9d9', '#ff5fa2', '#6a4fb5'];
-export const OUTFIT_COLORS = ['#e84aa0', '#4dabf7', '#51cf66', '#ffd43b', '#ff6b6b', '#cc5de8', '#20c997', '#ffffff'];
+export const OUTFIT_COLORS = ['#e84aa0', '#4dabf7', '#51cf66', '#ffd43b', '#ff6b6b', '#cc5de8', '#20c997', '#ffffff', '#212529'];
+export const EYE_COLORS = ['#6b3f1d', '#a0702a', '#3d7fd6', '#3c9a5f', '#7b8794', '#8a5cd6'];
 export const BG_COLORS = ['#ffe0ec', '#dff3ff', '#e6ffe0', '#fff6d6', '#f0e6ff', '#ffe9d6'];
 
 // Cheveux et tenues proposés selon fille / garçon
@@ -17,8 +18,8 @@ export const HAIR_BY_GENDER = {
     garcon: ['courts', 'crete', 'boucles'],
 };
 export const OUTFIT_BY_GENDER = {
-    fille: ['robe', 'jupe', 'pantalon', 'tshirt', 'pull'],
-    garcon: ['tshirt', 'pull', 'pantalon', 'salopette', 'costume'],
+    fille: ['robe', 'jupe', 'pantalon', 'tshirt', 'pull', 'moulant'],
+    garcon: ['tshirt', 'pull', 'pantalon', 'moulant', 'salopette', 'costume'],
 };
 
 // --- État par défaut ---
@@ -26,11 +27,14 @@ export const DEFAULT_AVATAR = {
     gender: 'fille',
     skin: '#f1c27d',
     hairStyle: 'longs', hairColor: '#5b3a1a',
-    outfit: 'robe', outfitColor: '#e84aa0',
+    outfit: 'moulant', outfitColor: '#212529',
     hat: 'aucun',
     glasses: 'aucune',
     accessoire: 'aucun',
+    eyeColor: '#6b3f1d',
+    face: 'sourire',
     bg: '#ffe0ec',
+    v: 2,
 };
 
 // Libellés lisibles pour les boutons
@@ -39,15 +43,37 @@ export const LABELS = {
     fille: 'Fille 👧', garcon: 'Garçon 👦',
     courts: 'Courts', longs: 'Longs', couettes: 'Couettes', boucles: 'Bouclés', chignon: 'Chignon', crete: 'Crête',
     robe: 'Robe 👗', tshirt: 'T-shirt 👕', salopette: 'Salopette', pull: 'Pull 🧶', jupe: 'Jupe', pantalon: 'Pantalon 👖', costume: 'Costume 🤵',
+    moulant: 'Manches longues + pantalon 👚',
     couronne: 'Couronne 👑', chapeau: 'Chapeau 🎩', casquette: 'Casquette 🧢', noeud: 'Nœud 🎀', bonnet: 'Bonnet', fleur: 'Fleur 🌸',
     rondes: 'Rondes 👓', soleil: 'Soleil 🕶️', coeur: 'Cœur 😍', etoile: 'Étoiles ⭐',
     cape: 'Cape 🦸', ailes: 'Ailes 🧚', baguette: 'Baguette 🪄', collier: 'Collier 📿',
+    sourire: 'Sourire 🙂', grand_sourire: 'Grand sourire 😁', content: 'Content 😊', clin_oeil: 'Clin d\'œil 😉',
+    langue: 'Langue 😛', etonne: 'Étonné 😮', malin: 'Malin 😏', mignon: 'Mignon 🥺',
 };
 
+// Les visages (dessinés façon Roblox dans shared/visage3d.js)
+export const FACES = ['sourire', 'grand_sourire', 'content', 'clin_oeil', 'langue', 'etonne', 'malin', 'mignon'];
+
 // --- Sauvegarde / chargement ---
+// Version 2 (2026-10-03) : Sophie a demandé que son personnage porte d'office
+// la tenue noire (t-shirt à manches longues + pantalon). On l'applique une
+// seule fois aux sauvegardes plus anciennes ; ses choix suivants sont gardés.
+export function migrerAvatar(sauvegarde) {
+    const etat = Object.assign({}, DEFAULT_AVATAR, sauvegarde || {});
+    if (sauvegarde && !(sauvegarde.v >= 2)) {
+        etat.outfit = 'moulant';
+        etat.outfitColor = '#212529';
+        etat.v = 2;
+    }
+    return etat;
+}
+
 export function loadAvatar() {
-    try { return Object.assign({}, DEFAULT_AVATAR, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); }
-    catch { return Object.assign({}, DEFAULT_AVATAR); }
+    let brut = null;
+    try { brut = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { /* indisponible ou abîmée */ }
+    const etat = migrerAvatar(brut);
+    if (!brut || brut.v !== etat.v) saveAvatar(etat);
+    return etat;
 }
 export function saveAvatar(state) {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* indisponible */ }
@@ -161,6 +187,13 @@ function outfit(style, color) {
             + `<rect x="51" y="176" width="17" height="56" rx="8" fill="${color}"/>`
             + `<rect x="132" y="176" width="17" height="56" rx="8" fill="${color}"/>`
             + `<path d="M86,168 Q100,182 114,168" stroke="rgba(0,0,0,.12)" stroke-width="3" fill="none"/>`;
+    if (style === 'moulant')
+        // t-shirt à manches longues + pantalon, tout près du corps
+        return `<rect x="68" y="170" width="64" height="44" rx="12" fill="${color}"/>`
+            + `<rect x="52" y="176" width="16" height="56" rx="8" fill="${color}"/>`
+            + `<rect x="132" y="176" width="16" height="56" rx="8" fill="${color}"/>`
+            + `<rect x="80" y="204" width="18" height="62" rx="7" fill="${color}"/>`
+            + `<rect x="102" y="204" width="18" height="62" rx="7" fill="${color}"/>`;
     if (style === 'jupe')
         return `<rect x="68" y="168" width="64" height="36" rx="10" fill="${color}"/>`
             + `<path d="M68,202 L132,202 L150,242 L50,242 Z" fill="${color}"/>` + shoulders;
@@ -283,4 +316,37 @@ export function buildAvatarSVG(s, opts = {}) {
         ${accessoryFront(s.accessoire)}
         ${hat(s.hat)}
     </svg>`;
+}
+
+// ===========================================================================
+//  Tenue simple → « look » de la grande garde-robe (pour l'avatar 3D)
+// ===========================================================================
+// Le jeu d'habillage garde une tenue simple (`outfit` + `outfitColor`) ; en 3D
+// on la traduit en haut / bas / robe / chaussures du catalogue garde-robe.
+const CHAPEAU_COULEUR = { couronne: '#ffd43b', chapeau: '#e74c3c', casquette: '#1d72c4', bonnet: '#8e44ad', noeud: '#ff5fa2', fleur: '#ff8cc8' };
+const LUNETTES_COULEUR = { rondes: '#3a2e2e', soleil: '#222222', coeur: '#ff5fa2', etoile: '#f59f00' };
+const ACCESSOIRE_COULEUR = { cape: '#c0392b', ailes: '#ffffff', baguette: '#ffd43b', collier: '#ffd43b' };
+
+export function lookDepuisTenueSimple(s) {
+    const c = s.outfitColor || '#e84aa0';
+    const look = {
+        top: 'aucun', topColor: '#ffffff',
+        bottom: 'aucun', bottomColor: c,
+        robe: 'aucune', robeColor: c,
+        shoes: 'baskets', shoesColor: '#f8f9fa',
+        hat: s.hat || 'aucun', hatColor: CHAPEAU_COULEUR[s.hat] || '#ffd43b',
+        glasses: s.glasses || 'aucune', glassesColor: LUNETTES_COULEUR[s.glasses] || '#3a2e2e',
+        accessoire: s.accessoire || 'aucun', accColor: ACCESSOIRE_COULEUR[s.accessoire] || '#ffd43b',
+    };
+    switch (s.outfit) {
+        case 'robe': look.robe = 'robe'; look.shoes = 'ballerines'; look.shoesColor = c; break;
+        case 'jupe': look.top = 'tshirt'; look.bottom = 'jupe'; break;
+        case 'pantalon': look.top = 'tshirt'; look.bottom = 'pantalon'; break;
+        case 'moulant': look.top = 'manches_longues'; look.topColor = c; look.bottom = 'pantalon'; break;
+        case 'pull': look.top = 'pull'; look.topColor = c; look.bottom = 'jean'; look.bottomColor = '#3b5b92'; break;
+        case 'salopette': look.robe = 'combinaison'; break;
+        case 'costume': look.robe = 'costume'; look.shoes = 'bottes'; look.shoesColor = '#2b2b2b'; break;
+        default: look.top = 'tshirt'; look.topColor = c; look.bottom = 'short'; look.bottomColor = '#3b5b92'; break;
+    }
+    return look;
 }

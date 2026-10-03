@@ -29,7 +29,7 @@ Collection de petits jeux web 3D faits pour Sophie (la fille de Pascal), jouable
 
 ## Lancer / tester
 
-Il n'y a **aucun test automatisé ni outil de lint** pour les jeux historiques — la vérification se fait en jouant dans le navigateur. **Exception : `chat2/`** dispose de tests unitaires (`node --test chat2/test/`), d'ESLint via Docker (`chat2/tools/lint.sh`) et d'un outil de capture headless (`chat2/tools/screenshot.sh <url> <out.png> [w h budget_ms]`, variable `CHROME_LOG=<fichier>` pour récupérer la console JS). Voir la section *Spécificités chat2/* plus bas. Comme les jeux utilisent des ES modules, ils doivent être servis par HTTP (pas d'ouverture `file://`).
+Il n'y a **aucun test automatisé ni outil de lint** pour les jeux historiques — la vérification se fait en jouant dans le navigateur. **Exception : le personnage 3D partagé (`shared/`)** : tests `node --import ./shared/test/register.mjs --test shared/test/*.test.mjs` (le crochet fait pointer `three` vers `vendor/`) et ESLint via Docker (`shared/tools/lint.sh`, couvre aussi `habille/`, `etoiles3d/`, `defile/`). **Autre exception : `chat2/`** dispose de tests unitaires (`node --test chat2/test/`), d'ESLint via Docker (`chat2/tools/lint.sh`) et d'un outil de capture headless (`chat2/tools/screenshot.sh <url> <out.png> [w h budget_ms]`, variable `CHROME_LOG=<fichier>` pour récupérer la console JS). Voir la section *Spécificités chat2/* plus bas. Comme les jeux utilisent des ES modules, ils doivent être servis par HTTP (pas d'ouverture `file://`).
 
 ```bash
 # Servir tout le dépôt à la racine
@@ -97,6 +97,11 @@ Chaque jeu suit le même squelette :
 ### Spécificités *chat/*
 - `cat.js` (le plus gros module) : modèle 3D du chat, fourrure, animations (marche, dort, mange, ronronne, joue, se lave) et comportement autonome piloté par les jauges.
 - `hud.js` définit les 5 jauges et leurs taux de décroissance (`rate`, par seconde) ainsi que les pièces. `actions.js` la barre d'actions, `shop.js` la boutique, `furniture.js` les meubles, `scene.js` la maison/jardin, `color-picker.js` le choix de couleur au démarrage, `save.js` la sauvegarde.
+
+### Personnage partagé (*shared/*, *habille/*)
+- Le personnage de Sophie est **jouable dans tous les jeux**. État sauvegardé sous `habille_save` (`shared/avatar.js` : palettes, `loadAvatar`/`saveAvatar`, dessin SVG 2D pour `etoiles/`, et `lookDepuisTenueSimple()` qui traduit la tenue simple en habits de la grande garde-robe).
+- **3D, façon Roblox classique, tout en cubes** (demande de Sophie, 2026-10-03) : `shared/corps3d.js` (proportions R6 en studs `STUD`, repères `D`/`BLOCS`, blocs `boiteRonde`, squelette épaule/hanche, `corps.peindre('torse'|'bras'|'jambes', matière)`, tête cubique `geoTeteCube` + `projeterSurCube` qui plaque sur le cube ce qui a été fait pour une tête ronde), `visage3d.js` (visages Roblox dessinés à plat sur la face avant, liste `FACES` dans `avatar.js`, version yeux fermés pour cligner, `YEUX` pour les lunettes), `avatar3d.js` (`buildAvatar3D`, `animerMarche` bras/jambes raides, `animerVie`), `garderobe3d.js` (les habits **peignent les blocs** + pièces par-dessus : jupes `geoJupe`, bandes, coques de chaussures…), `cheveux3d.js` (forme par coiffure + shader de mèches et reflet anisotrope ; les coiffures **lisses** n'ont qu'une surface, seuls bouclés/ondulés/crête gardent des **couches de brins** comme la fourrure de `chat2/` ; `finirCheveux` calcule volume `aVolume` et sens `aFlux` après projection). Sophie veut des cheveux lisses, sans bosse, frange courte d'un seul morceau. Cheveux, chapeaux et lunettes sont construits dans le repère de l'**ancienne tête ronde** (rayon 0.42, centre y = 1.5) puis projetés sur le cube (demi-côté 0.36).
+- `habille/` (« Mon personnage ») affiche ce personnage en 3D sur un podium qu'on fait tourner au doigt ; la caméra zoome sur le visage pour les onglets de la tête.
 
 ## Documentation de conception
 

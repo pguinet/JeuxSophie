@@ -73,6 +73,7 @@ export const RAYONS = {
             { id: 'aucun', nom: 'Rien', emoji: '🙅' },
             { id: 'tshirt', nom: 'T-shirt', emoji: '👕' },
             { id: 'pull', nom: 'Pull', emoji: '🧶' },
+            { id: 'manches_longues', nom: 'T-shirt manches longues', emoji: '👚' },
             { id: 'chemise', nom: 'Chemise', emoji: '👔' },
             { id: 'debardeur', nom: 'Débardeur', emoji: '🎽' },
             { id: 'sweat', nom: 'Sweat à capuche', emoji: '🧥' },

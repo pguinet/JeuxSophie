@@ -4,7 +4,8 @@
 
 import * as THREE from 'three';
 import { loadAvatar } from '../../shared/avatar.js';
-import { buildAvatar3D } from '../../shared/avatar3d.js';
+import { buildAvatar3D, animerMarche, animerVie } from '../../shared/avatar3d.js';
+import { animerAccessoires } from '../../shared/garderobe3d.js';
 import { charger, sauver, renaitre } from './save.js';
 import { initMagasin } from './shop.js';
 import { ANIMAUX } from './catalogue.js';
@@ -89,7 +90,6 @@ function ajouterDeco(id) {
 // --- Personnage ---
 const player = buildAvatar3D(loadAvatar());
 scene.add(player);
-const parts = player.userData.parts;
 let heading = 0;              // orientation (radians)
 
 // Ombre douce sous le personnage (disque sombre)
@@ -318,6 +318,7 @@ const TRAIL_MAX = 260;
 const ESPACE = 16;             // écart (en images) entre chaque animal qui suit
 let last = performance.now();
 let walkPhase = 0;
+let forceMarche = 0;          // 0 = immobile, 1 = marche franche
 
 function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -365,19 +366,15 @@ function frame(now) {
     // animation de marche + petit rebond
     if (moving) {
         walkPhase += dt * 10;
-        const sw = Math.sin(walkPhase) * 0.5;
-        if (parts.leftLeg) parts.leftLeg.rotation.x = sw;
-        if (parts.rightLeg) parts.rightLeg.rotation.x = -sw;
-        if (parts.leftArm) parts.leftArm.rotation.x = -sw;
-        if (parts.rightArm) parts.rightArm.rotation.x = sw;
+        forceMarche = Math.min(1, forceMarche + dt * 6);
         player.position.y = Math.abs(Math.sin(walkPhase)) * 0.05;
     } else {
-        if (parts.leftLeg) parts.leftLeg.rotation.x *= 0.8;
-        if (parts.rightLeg) parts.rightLeg.rotation.x *= 0.8;
-        if (parts.leftArm) parts.leftArm.rotation.x *= 0.8;
-        if (parts.rightArm) parts.rightArm.rotation.x *= 0.8;
+        forceMarche *= 0.8;
         player.position.y = 0;
     }
+    animerMarche(player, walkPhase, forceMarche);
+    animerVie(player, performance.now() / 1000, dt);
+    animerAccessoires(player.userData.animes, performance.now() / 1000);
 
     // ombre suit le personnage
     shadow.position.set(player.position.x, 0.02, player.position.z);

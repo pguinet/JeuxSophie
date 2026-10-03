@@ -22,7 +22,7 @@ export function charger() {
             petXp: Number(data.petXp) || 0,
             renaissances: Number(data.renaissances) || 0,
         };
-    } catch (e) {
+    } catch {
         return vide();
     }
 }
@@ -39,10 +39,10 @@ export function renaitre(renaissancesActuelles) {
 export function sauver(data) {
     try {
         localStorage.setItem(CLE, JSON.stringify(data));
-    } catch (e) { /* pas grave si le navigateur refuse */ }
+    } catch { /* pas grave si le navigateur refuse */ }
 }
 
 // Efface complètement la sauvegarde (pour tout recommencer à zéro).
 export function reinitialiser() {
-    try { localStorage.removeItem(CLE); } catch (e) { /* rien */ }
+    try { localStorage.removeItem(CLE); } catch { /* rien */ }
 }

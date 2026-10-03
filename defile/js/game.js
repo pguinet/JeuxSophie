@@ -3,7 +3,7 @@
 // défiler sur le podium devant trois juges qui te donnent des étoiles.
 
 import * as THREE from 'three';
-import { buildAvatar3D } from '../../shared/avatar3d.js';
+import { buildAvatar3D, animerMarche, animerVie } from '../../shared/avatar3d.js';
 import { animerAccessoires } from '../../shared/garderobe3d.js';
 import { construireSalle, animerSalle, SALLE } from './salle.js';
 import { construirePodium, animerPodium, montrerNotes, cacherNotes, PODIUM } from './podium.js';
@@ -283,12 +283,7 @@ const LIM_Z = SALLE.profondeur / 2 - 1.6;
 let dernier = performance.now();
 let pasDeMarche = 0;
 
-function balancerBras(sw) {
-    if (parts.leftLeg) parts.leftLeg.rotation.x = sw;
-    if (parts.rightLeg) parts.rightLeg.rotation.x = -sw;
-    if (parts.leftArm) parts.leftArm.rotation.x = -sw;
-    if (parts.rightArm) parts.rightArm.rotation.x = sw;
-}
+let forceMarche = 0;    // 0 = immobile, 1 = marche franche
 
 function frame(now) {
     const dt = Math.min(0.05, (now - dernier) / 1000);
@@ -376,10 +371,9 @@ function frame(now) {
         // il tourne sur lui-même pour montrer sa tenue
         tempsPhase += dt;
         player.rotation.y = tempsPhase * 1.8;
-        balancerBras(0);
-        // petit salut avec les bras
-        if (parts.leftArm) parts.leftArm.rotation.z = 0.2 + Math.sin(tempsPhase * 3) * 0.35;
-        if (parts.rightArm) parts.rightArm.rotation.z = -0.2 - Math.sin(tempsPhase * 3) * 0.35;
+        // petit salut avec les bras (ils s'écartent et se rapprochent)
+        parts.leftArm.rotation.z = -0.4 - Math.sin(tempsPhase * 3) * 0.35;
+        parts.rightArm.rotation.z = 0.4 + Math.sin(tempsPhase * 3) * 0.35;
 
         // la caméra tourne autour de lui
         const a = tempsPhase * 0.5;
@@ -398,12 +392,15 @@ function frame(now) {
     const solY = phase === 'habillage' ? 0 : HAUT_PODIUM;
     if (bouge) {
         pasDeMarche += dt * 10;
-        balancerBras(Math.sin(pasDeMarche) * 0.5);
+        forceMarche = Math.min(1, forceMarche + dt * 6);
         player.position.y = solY + Math.abs(Math.sin(pasDeMarche)) * 0.05;
-    } else if (phase !== 'pose') {
-        balancerBras(0);
+    } else {
+        forceMarche *= 0.8;
         player.position.y = solY;
     }
+    animerMarche(player, pasDeMarche, forceMarche);
+    animerVie(player, t, dt);
+    if (phase !== 'pose') { parts.leftArm.rotation.z = 0; parts.rightArm.rotation.z = 0; }
 
     // --- Décors vivants ---
     ombre.position.set(player.position.x, 0.02, player.position.z);

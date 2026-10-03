@@ -1,568 +1,543 @@
-// Les cheveux en 3D — de vraies mèches, pas des boules.
+// Les cheveux en 3D — une forme lisse « à la Roblox » (calotte, frange, masse,
+// queue, tresses…) recouverte de vrais petits brins, avec la même technique que
+// la fourrure du chat de Mon Chat 2 : des couches (« shells ») empilées, chacune
+// un peu plus loin du crâne, où l'on ne garde que la section des brins. Les
+// brins sont étirés vers le bas (cheveux peignés), plus foncés à la racine et
+// plus clairs aux pointes, et retombent un peu avec la gravité.
 //
-// Chaque coiffure est faite de dizaines de mèches : un tube qui part du crâne,
-// épouse la tête, puis retombe en ondulant, et qui s'affine vers la pointe.
-// Toutes les mèches d'une coiffure sont fusionnées en UN SEUL objet 3D, donc
-// c'est joli sans ralentir le jeu.
-//
-// Bonus : la couleur va de la racine (foncée) vers la pointe (plus claire),
-// et une bande de lumière court sur le dessus de la tête.
+// Tout est construit dans le repère de l'ancienne tête (voir corps3d.js) :
+// sphère de rayon 0.42 centrée en y = 1.5. Les yeux dessinés sont en y ≈ 1.515
+// et les sourcils montent jusqu'à y ≈ 1.62 : la frange s'arrête au-dessus.
 
 import * as THREE from 'three';
 
-// La tête du personnage (voir `avatar3d.js`)
 const TETE = new THREE.Vector3(0, 1.5, 0);
 const R = 0.42;
+export const NB_COUCHES = 20;
 
 // ---------------------------------------------------------------------------
-//  Le fabricant de mèches : il empile tout dans une seule géométrie
+//  Le shader des brins (injecté dans un MeshStandardMaterial)
 // ---------------------------------------------------------------------------
-class Meches {
-    constructor(couleur) {
-        this.pos = []; this.nor = []; this.col = []; this.idx = [];
-        this.racine = new THREE.Color(couleur);
-        this.pointe = this.racine.clone().offsetHSL(0, -0.04, 0.13);   // pointes plus claires
-        this.n = 0;
-    }
-
-    // `points` : la ligne que suit la mèche ; r0/r1 : épaisseur racine/pointe ;
-    // `plat` : 1 = ronde, 0.45 = ruban (plus joli pour les cheveux lisses)
-    ajouter(points, r0, r1, plat = 0.6, tub = 14, rad = 6) {
-        const courbe = new THREE.CatmullRomCurve3(points);
-        const frames = courbe.computeFrenetFrames(tub, false);
-        const debut = this.n;
-        const teinte = (Math.random() - 0.5) * 0.06;   // chaque mèche a sa nuance
-
-        for (let i = 0; i <= tub; i++) {
-            const t = i / tub;
-            const p = courbe.getPointAt(t);
-            const N = frames.normals[i], B = frames.binormals[i];
-            const r = r0 + (r1 - r0) * t;
-            const c = this.racine.clone().lerp(this.pointe, t * 0.92).offsetHSL(0, 0, teinte);
-
-            for (let j = 0; j <= rad; j++) {
-                const a = (j / rad) * Math.PI * 2;
-                const cs = Math.cos(a) * r, sn = Math.sin(a) * r * plat;
-                const nx = N.x * cs + B.x * sn, ny = N.y * cs + B.y * sn, nz = N.z * cs + B.z * sn;
-                this.pos.push(p.x + nx, p.y + ny, p.z + nz);
-                const l = Math.hypot(nx, ny, nz) || 1;
-                this.nor.push(nx / l, ny / l, nz / l);
-                this.col.push(c.r, c.g, c.b);
-                this.n++;
-            }
+const VERTEX_PARS = /* glsl */`
+uniform float uShellH;
+uniform float uLongueur;
+uniform float uLisse;
+attribute float aVolume;
+attribute vec3 aFlux;
+varying vec3 vCheveuPos;
+varying vec3 vCheveuNor;
+varying vec3 vFlux;
+varying vec3 vFluxVue;
+varying float vVolume;
+`;
+const VERTEX_MAIN = /* glsl */`
+    vCheveuPos = position.xyz;
+    vCheveuNor = normalize(objectNormal);
+    vFlux = aFlux;
+    vVolume = aVolume;
+    vFluxVue = normalize((modelViewMatrix * vec4(aFlux, 0.0)).xyz);
+    // chaque couche s'éloigne du crâne (plus ou moins selon le volume voulu à
+    // cet endroit), se couche dans le sens de la coiffure et retombe un peu
+    // cheveux lisses (uLisse = 1) : couches plus serrées et brins couchés à plat
+    float hc = uShellH * uLongueur * aVolume * (1.0 - 0.8 * uLisse);
+    transformed += objectNormal * hc;
+    transformed += aFlux * (uShellH * uLongueur * aVolume * mix(0.06, 0.25, uLisse));
+    transformed.y -= uShellH * hc * 0.15;
+`;
+const FRAGMENT_PARS = /* glsl */`
+uniform float uShellH;
+uniform float uLisse;
+uniform float uDensite;
+uniform float uEtirement;
+uniform float uIsShell;
+uniform vec3 uRacine;
+uniform vec3 uPointe;
+varying vec3 vCheveuPos;
+varying vec3 vCheveuNor;
+varying vec3 vFlux;
+varying vec3 vFluxVue;
+varying float vVolume;
+float cheveuHash(vec3 p) {
+    p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float cheveuBruit(vec3 x) {
+    vec3 i = floor(x), f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(cheveuHash(i), cheveuHash(i + vec3(1, 0, 0)), f.x), mix(cheveuHash(i + vec3(0, 1, 0)), cheveuHash(i + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(cheveuHash(i + vec3(0, 0, 1)), cheveuHash(i + vec3(1, 0, 1)), f.x), mix(cheveuHash(i + vec3(0, 1, 1)), cheveuHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+`;
+const FRAGMENT_MAIN = /* glsl */`
+    float rndBrin;
+    {
+        // Repère local : F = sens de la coiffure, B = en travers des brins
+        vec3 N = normalize(vCheveuNor);
+        vec3 F = vFlux - dot(vFlux, N) * N;
+        F = length(F) > 1e-4 ? normalize(F) : vec3(0.0, -1.0, 0.0);
+        vec3 B = normalize(cross(N, F));
+        // une cellule 3D = un brin, très allongée dans le sens de la coiffure :
+        // on « tasse » la position le long de F avant de la découper en cases
+        vec3 pc = vCheveuPos * uDensite;
+        pc -= F * dot(pc, F) * (1.0 - uEtirement);
+        rndBrin = cheveuHash(floor(pc));
+        if (uIsShell > 0.5) {
+            vec3 l = fract(pc) - 0.5;
+            vec2 sec = vec2(dot(l, B), dot(l, F) * uEtirement);     // section du brin dans la couche
+            // section qui s'affine vers la pointe ; brins plus fins là où il y a peu de volume
+            float epaisseur = (1.0 - uShellH * mix(0.85, 0.45, uLisse)) * mix(0.75, 1.0, clamp(vVolume, 0.0, 1.0));
+            if (rndBrin < uShellH * mix(0.88, 0.6, uLisse) || length(sec) * 2.0 > epaisseur) discard;
         }
-        for (let i = 0; i < tub; i++) {
-            for (let j = 0; j < rad; j++) {
-                const a = debut + i * (rad + 1) + j;
-                const b = a + rad + 1;
-                this.idx.push(a, b, a + 1, b, b + 1, a + 1);
-            }
-        }
+        // mèches plus ou moins claires, dans le sens de la coiffure, + racine sombre
+        vec3 pm = vCheveuPos * 30.0;
+        pm -= F * dot(pm, F) * 0.92;
+        float meche = cheveuBruit(pm);
+        // fines lignes de cheveux peignés, dessinées sur la surface lisse
+        vec3 pf = vCheveuPos * 160.0;
+        pf -= F * dot(pf, F) * 0.97;
+        meche = mix(meche, 0.5 * meche + 0.5 * cheveuBruit(pf), uLisse);
+        vec3 col = mix(uRacine, uPointe, clamp(max(uShellH * 1.1, uLisse * 0.55), 0.0, 1.0));
+        col *= 0.8 + mix(0.3, 0.2, uLisse) * meche + mix(0.14, 0.06, uLisse) * (rndBrin - 0.5);
+        col *= uIsShell > 0.5 ? mix(0.65, 1.0, uShellH) : mix(0.8, 1.0, uLisse);   // l'ombre entre les brins
+        diffuseColor.rgb *= col;
     }
+`;
+// Le reflet des cheveux (modèle de Kajiya-Kay) : une bande de lumière qui suit
+// le sens des brins, comme sur des cheveux bien brossés.
+const FRAGMENT_REFLET = /* glsl */`
+    #if NUM_DIR_LIGHTS > 0
+    {
+        vec3 T = normalize(vFluxVue);
+        vec3 V = normalize(vViewPosition);
+        vec3 L = directionalLights[0].direction;
+        vec3 H = normalize(L + V);
+        float th = dot(T, H);
+        float bande = pow(sqrt(max(0.0, 1.0 - th * th)), 60.0);
+        float large = pow(sqrt(max(0.0, 1.0 - th * th)), 14.0);
+        vec3 teinte = mix(vec3(1.0), uPointe * 1.6, 0.5);
+        outgoingLight += directionalLights[0].color * teinte * (bande * mix(0.13, 0.22, uLisse) + large * 0.035) * mix(0.3, 1.0, max(uShellH, uLisse)) * (0.7 + 0.6 * rndBrin);
+    }
+    #endif
+`;
 
-    fini() {
-        if (!this.n) return null;
+// ---------------------------------------------------------------------------
+//  Volume et sens de la coiffure, point par point
+// ---------------------------------------------------------------------------
+// aVolume : longueur des brins (plus de volume sur le dessus et derrière, des
+// cheveux fins à la lisière du visage, des pointes qui s'affinent) ;
+// aFlux : la direction des brins (ils partent du sommet de la tête et retombent).
+// À rappeler après chaque déformation de la géométrie (projection sur le cube).
+const SOMMET = new THREE.Vector3(0, 0.34, -0.1);       // le « tourbillon », relatif au centre de la tête
+const douce = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+export function finirCheveux(geo) {
+    const p = geo.attributes.position, n = geo.attributes.normal;
+    const vol = new Float32Array(p.count), flux = new Float32Array(p.count * 3);
+    const q = new THREE.Vector3(), nn = new THREE.Vector3(), f = new THREE.Vector3(), bas = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) {
+        q.fromBufferAttribute(p, i).sub(TETE);
+        nn.fromBufferAttribute(n, i);
+        const yn = q.y / R, zn = q.z / R;
+        // volume
+        let v = 1;
+        v += 0.55 * douce(0.15, 0.9, yn);                                   // dessus de la tête
+        v += 0.25 * douce(0.0, -0.8, zn) * douce(-1.2, 0.2, yn);            // l'arrière
+        v -= 0.5 * douce(0.25, 0.75, zn) * (1 - douce(0.45, 0.85, yn));     // lisière autour du visage
+        v *= 1 - 0.45 * douce(-1.0, -2.6, yn);                              // les pointes s'affinent
+        vol[i] = Math.min(1.7, Math.max(0.3, v));
+        // sens : depuis le tourbillon sur le dessus, vers le bas ailleurs
+        f.copy(q).sub(SOMMET);
+        bas.set(0, -1, 0);
+        f.normalize().lerp(bas, 1 - douce(-0.1, 0.6, yn));
+        f.addScaledVector(nn, -f.dot(nn));
+        if (f.lengthSq() < 1e-8) f.set(1, 0, 0);
+        f.normalize();
+        flux[i * 3] = f.x; flux[i * 3 + 1] = f.y; flux[i * 3 + 2] = f.z;
+    }
+    geo.setAttribute('aVolume', new THREE.Float32BufferAttribute(vol, 1));
+    geo.setAttribute('aFlux', new THREE.Float32BufferAttribute(flux, 3));
+    return geo;
+}
+
+function materiauxCheveux(couleur, opts = {}) {
+    const racine = new THREE.Color(couleur);
+    const pointe = racine.clone().offsetHSL(0, -0.03, 0.12);
+    racine.multiplyScalar(0.85);
+    const partages = {
+        uRacine: { value: racine },
+        uPointe: { value: pointe },
+        uLongueur: { value: opts.longueur ?? 0.055 },
+        uDensite: { value: opts.densite ?? ((opts.lisse ?? 1) > 0.5 ? 220 : 130) },
+        uEtirement: { value: opts.etirement ?? (opts.lisse === 0 ? 0.1 : 0.06) },
+        uLisse: { value: opts.lisse ?? 1 },
+    };
+    const fabriquer = (h, coque) => {
+        const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.62, metalness: 0.0, side: THREE.DoubleSide });
+        const u = { ...partages, uShellH: { value: h }, uIsShell: { value: coque ? 1 : 0 } };
+        m.onBeforeCompile = (shader) => {
+            Object.assign(shader.uniforms, u);
+            shader.vertexShader = shader.vertexShader
+                .replace('#include <common>', `#include <common>\n${VERTEX_PARS}`)
+                .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTEX_MAIN}`);
+            shader.fragmentShader = shader.fragmentShader
+                .replace('#include <common>', `#include <common>\n${FRAGMENT_PARS}`)
+                .replace('#include <color_fragment>', `#include <color_fragment>\n${FRAGMENT_MAIN}`)
+                .replace('#include <opaque_fragment>', `${FRAGMENT_REFLET}\n#include <opaque_fragment>`);
+        };
+        m.customProgramCacheKey = () => (coque ? 'cheveux-couche' : 'cheveux-base');
+        m.userData.uniforms = u;
+        return m;
+    };
+    const base = fabriquer(0, false);
+    const couches = [];
+    // Cheveux lisses : une seule surface toute lisse (pas de brins qui dépassent),
+    // seuls les bouclés, ondulés et la crête gardent leurs couches de brins.
+    const nb = (opts.lisse ?? 1) >= 0.9 ? 0 : NB_COUCHES;
+    for (let i = 1; i <= nb; i++) couches.push(fabriquer(i / nb, true));
+    return { base, couches };
+}
+
+// ---------------------------------------------------------------------------
+//  Assembler plusieurs formes en une seule géométrie (positions + normales)
+// ---------------------------------------------------------------------------
+class Forme {
+    constructor() { this.geos = []; }
+    // ajoute une géométrie, déplacée par la matrice de `obj` (position, rotation, échelle)
+    ajouter(geo, x = 0, y = 0, z = 0, opts = {}) {
+        const o = new THREE.Object3D();
+        o.position.set(x, y, z);
+        if (opts.rot) o.rotation.set(...opts.rot);
+        if (opts.echelle) o.scale.set(...opts.echelle);
+        o.updateMatrix();
+        const g = geo.index ? geo.clone() : geo.clone();
+        g.applyMatrix4(o.matrix);
+        this.geos.push(g);
+        return this;
+    }
+    fusionner() {
+        let n = 0;
+        const pos = [], nor = [], idx = [];
+        for (const g of this.geos) {
+            const p = g.attributes.position, q = g.attributes.normal;
+            for (let i = 0; i < p.count; i++) {
+                pos.push(p.getX(i), p.getY(i), p.getZ(i));
+                nor.push(q.getX(i), q.getY(i), q.getZ(i));
+            }
+            if (g.index) for (let i = 0; i < g.index.count; i++) idx.push(g.index.getX(i) + n);
+            else for (let i = 0; i < p.count; i++) idx.push(i + n);
+            n += p.count;
+            g.dispose();
+        }
         const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-        geo.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
-        geo.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
-        geo.setIndex(this.idx);
-        return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-            vertexColors: true,
-            roughness: 0.38,      // des cheveux qui brillent un peu
-            metalness: 0.05,
-        }));
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setIndex(idx);
+        return geo;
     }
 }
 
-// ---------------------------------------------------------------------------
-//  Les trajets des mèches
-// ---------------------------------------------------------------------------
-
-// Un point sur le crâne, repéré par l'angle autour de la tête (a) et la
-// hauteur (e). a = 0 devant, a = π derrière.
-function surCrane(a, e, rayon = R * 1.03) {
+// Un point sur le crâne : a = angle autour de la tête (0 devant, π derrière),
+// e = hauteur (0 = équateur, π/2 = sommet)
+function surCrane(a, e, rayon = R) {
     return new THREE.Vector3(
-        Math.sin(a) * Math.cos(e) * rayon,
+        TETE.x + Math.sin(a) * Math.cos(e) * rayon,
         TETE.y + Math.sin(e) * rayon,
-        Math.cos(a) * Math.cos(e) * rayon,
+        TETE.z + Math.cos(a) * Math.cos(e) * rayon,
     );
 }
 
-// Une mèche qui part du haut du crâne, le longe, puis retombe en ondulant
-function mecheLongue(a, eDepart, longueur, opts = {}) {
-    const { gonfle = 0.05, ondul = 0.035, phase = 0, vagues = 2.6, eFin = -0.3, ecart = 0 } = opts;
-    const pts = [];
-    const PAS = 3;
-    for (let i = 0; i <= PAS; i++) {
-        const e = eDepart + (eFin - eDepart) * (i / PAS);
-        pts.push(surCrane(a, e));
+// Un tube qui s'affine (mèche, queue, couette), avec une pointe arrondie
+function tubeEffile(points, r0, r1, plat = 1, tub = 40, rad = 16) {
+    const courbe = new THREE.CatmullRomCurve3(points);
+    const frames = courbe.computeFrenetFrames(tub, false);
+    const pos = [], nor = [], idx = [];
+    for (let i = 0; i <= tub; i++) {
+        const t = i / tub;
+        const p = courbe.getPointAt(t);
+        const N = frames.normals[i], B = frames.binormals[i];
+        // rayon : s'affine, avec un bout tout rond
+        const r = (r0 + (r1 - r0) * t) * (t > 0.9 ? Math.sqrt(Math.max(0.02, 1 - ((t - 0.9) / 0.1) ** 2)) : 1);
+        for (let j = 0; j <= rad; j++) {
+            const a = (j / rad) * Math.PI * 2;
+            const cs = Math.cos(a), sn = Math.sin(a) * plat;
+            const nx = N.x * cs + B.x * sn, ny = N.y * cs + B.y * sn, nz = N.z * cs + B.z * sn;
+            pos.push(p.x + nx * r, p.y + ny * r, p.z + nz * r);
+            const l = Math.hypot(nx, ny, nz) || 1;
+            nor.push(nx / l, ny / l, nz / l);
+        }
     }
-    const bas = pts[pts.length - 1];
-    const out = new THREE.Vector3(bas.x, 0, bas.z).normalize();
-    const cote = new THREE.Vector3(-out.z, 0, out.x);
-
-    const CHUTE = 4;
-    for (let i = 1; i <= CHUTE; i++) {
-        const t = i / CHUTE;
-        const p = bas.clone();
-        p.y -= longueur * t;
-        p.addScaledVector(out, Math.sin(t * Math.PI) * gonfle + t * ecart);
-        p.addScaledVector(cote, Math.sin(t * vagues * Math.PI + phase) * ondul);
-        pts.push(p);
+    for (let i = 0; i < tub; i++) {
+        for (let j = 0; j < rad; j++) {
+            const a = i * (rad + 1) + j, b = a + rad + 1;
+            idx.push(a, a + 1, b, b, a + 1, b + 1);
+        }
     }
-    return pts;
-}
-
-// Une mèche de frange : elle part du haut du front et s'arrête juste
-// au-dessus des yeux (qui sont à y = 1.55) pour ne pas cacher le visage.
-function mecheFrange(a, longueur, opts = {}) {
-    const { avance = 0.04, phase = 0 } = opts;
-    const pts = [surCrane(a, 1.15), surCrane(a, 0.96), surCrane(a, 0.78)];
-    const bas = pts[2];
-    const out = new THREE.Vector3(bas.x, 0, bas.z).normalize();
-    for (let i = 1; i <= 3; i++) {
-        const t = i / 3;
-        const p = bas.clone();
-        p.y -= longueur * t;
-        p.addScaledVector(out, Math.sin(t * Math.PI) * avance);
-        p.x += Math.sin(t * 2 + phase) * 0.014;
-        pts.push(p);
-    }
-    return pts;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setIndex(idx);
+    return geo;
 }
 
 // ---------------------------------------------------------------------------
-//  Les pièces communes
+//  Les pièces de coiffure
 // ---------------------------------------------------------------------------
 
-// La calotte : le dessus de la tête, pour qu'on ne voie jamais la peau à
-// travers les mèches.
-function calotte(couleur, ouverture = 0.62) {
-    const m = new THREE.Mesh(
-        new THREE.SphereGeometry(R * 1.05, 32, 22, 0, Math.PI * 2, 0, Math.PI * ouverture),
-        new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.55, metalness: 0.04 }),
-    );
-    m.position.set(0, TETE.y + 0.02, -0.03);
-    m.rotation.x = -0.2;
-    return m;
+// La calotte : le dessus de la tête. Inclinée vers l'arrière : le bord avant
+// passe au-dessus du front, le bord arrière descend sur la nuque.
+// `taille` : angle couvert depuis le sommet (plus petit = front plus dégagé)
+function calotte(f, epais = 1.04, nuque = 0.29, taille = 1.48) {
+    const geo = new THREE.SphereGeometry(R * epais, 56, 28, 0, Math.PI * 2, 0, taille);
+    f.ajouter(geo, TETE.x, TETE.y, TETE.z, { rot: [-nuque, 0, 0] });
 }
 
-// La masse de cheveux : une coque pleine derrière la tête qui descend jusqu'aux
-// pointes. Les mèches se posent par-dessus : ainsi on ne voit jamais au travers.
-function masseCheveux(couleur, yBas, ouverture = 0.9) {
-    const profil = [
-        new THREE.Vector2(0.10, TETE.y + 0.42),
-        new THREE.Vector2(0.28, TETE.y + 0.30),
-        new THREE.Vector2(0.40, TETE.y + 0.13),
-        new THREE.Vector2(0.445, TETE.y - 0.08),
-        new THREE.Vector2(0.44, TETE.y - 0.26),
-        new THREE.Vector2(0.42, (TETE.y - 0.26 + yBas) / 2),
-        new THREE.Vector2(0.37, yBas + 0.06),
-        new THREE.Vector2(0.20, yBas),
-    ];
-    const geo = new THREE.LatheGeometry(profil, 26, ouverture, Math.PI * 2 - ouverture * 2);
-    return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-        color: couleur, roughness: 0.5, metalness: 0.04, side: THREE.DoubleSide,
-    }));
-}
-
-// Quelques mèches plaquées sur le dessus du crâne, pour casser l'aspect « boule »
-function mechesDessus(meches, nb = 12, arriere = 0.55) {
-    for (let i = 0; i < nb; i++) {
-        const t = i / (nb - 1);
-        const a = -2.5 + t * 5;
-        const pts = [];
-        for (let j = 0; j <= 4; j++) {
-            const e = 1.42 - (j / 4) * (1.42 - arriere);
-            const p = surCrane(a * (0.35 + 0.65 * (j / 4)), e, R * 1.07);
-            p.z -= 0.02;
-            pts.push(p);
+// La frange. `style` : 'cote' (mèche sur le côté), 'droite' (frange droite),
+// 'raie' (raie au milieu, rideaux de chaque côté)
+function frange(f, style = 'cote') {
+    const lobe = new THREE.SphereGeometry(1, 28, 18);
+    const poser = (a, e, sx, sy, sz, rotZ, decol = 1.02) => {
+        const p = surCrane(a, e, R * decol);
+        f.ajouter(lobe, p.x, p.y, p.z, { rot: [-0.35, a, rotZ], echelle: [sx, sy, sz] });
+    };
+    if (style === 'droite') {
+        for (let i = 0; i < 5; i++) {
+            const a = -0.62 + i * 0.31;
+            poser(a, 0.55, 0.12, 0.09, 0.05, 0);
         }
-        meches.ajouter(pts, 0.05, 0.035, 0.45, 10, 5);
+    } else if (style === 'raie') {
+        for (const s of [-1, 1]) {
+            poser(s * 0.28, 0.66, 0.15, 0.07, 0.05, s * 0.5);
+            poser(s * 0.62, 0.5, 0.12, 0.1, 0.05, s * 0.9);
+        }
+    } else {
+        // une grande mèche plate qui balaie le front de gauche à droite (bien
+        // collée au crâne : sinon elle fait une bosse sur le dessus)
+        // (assez bas sur le front pour ne pas déborder sur l'arête du haut de la tête)
+        poser(-0.25, 0.54, 0.22, 0.055, 0.026, -0.3, 0.995);
+        poser(0.25, 0.5, 0.17, 0.055, 0.026, -0.5, 0.995);
+        poser(0.58, 0.45, 0.1, 0.065, 0.028, -0.85, 0.995);
     }
 }
 
-// La bande de lumière sur le dessus de la tête (comme dans les dessins animés)
-function reflet() {
-    const m = new THREE.Mesh(
-        new THREE.TorusGeometry(R * 0.82, 0.035, 8, 28, Math.PI * 1.25),
-        new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.16 }),
-    );
-    m.position.set(0, TETE.y + 0.19, 0.02);
-    m.rotation.set(Math.PI / 2 - 0.35, 0, Math.PI * 0.87);
-    return m;
+// La grande masse de cheveux derrière et sur les côtés, ouverte devant le visage.
+// `yBas` : hauteur des pointes ; `ouverture` : demi-angle laissé devant le visage
+function masse(f, yBas, opts = {}) {
+    const { ouverture = 0.95, ondule = 0, evase = 0, pointes = 0.03 } = opts;
+    const prof = [];
+    const N = 30;
+    const yHaut = TETE.y + R * 0.55;
+    for (let i = 0; i <= N; i++) {
+        const t = i / N;
+        const y = yHaut + (yBas - yHaut) * t;
+        const dy = y - TETE.y;
+        // épouse la tête en haut, puis tombe droit en s'affinant un peu
+        let r = Math.abs(dy) < R ? Math.sqrt(R * R - dy * dy) * 1.06 + 0.02 : 0;
+        if (dy < 0) r = Math.max(r, R * (1.02 - 0.18 * Math.min(1, -dy / (TETE.y - yBas + 0.001))) + evase * t * t);
+        r += Math.sin(t * Math.PI * 5) * ondule * t;
+        if (t > 0.94) r *= Math.sqrt(Math.max(0.03, 1 - ((t - 0.94) / 0.06) ** 2));
+        prof.push(new THREE.Vector2(Math.max(0.005, r), y));
+    }
+    prof.reverse();
+    const geo = new THREE.LatheGeometry(prof, 64, ouverture, Math.PI * 2 - ouverture * 2);
+    // pointes en dents de scie douces + un peu moins épais d'avant en arrière
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i);
+        const t = (yHaut - y) / (yHaut - yBas);
+        const a = Math.atan2(p.getX(i), p.getZ(i));
+        if (t > 0.75) p.setY(i, y + Math.sin(a * 11) * pointes * (t - 0.75) * 4);
+        p.setZ(i, p.getZ(i) * (p.getZ(i) < 0 ? 0.92 : 1));
+    }
+    geo.computeVertexNormals();
+    f.ajouter(geo);
 }
 
-// Une natte : des petits paquets de cheveux qui s'entrecroisent
-function natte(g, depart, longueur, couleur, sens) {
-    const mat = new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.42, metalness: 0.05 });
-    const N = 7;
-    for (let i = 0; i < N; i++) {
-        const t = i / (N - 1);
-        const taille = 0.095 * (1 - t * 0.55);
-        for (const cote of [-1, 1]) {
-            const b = new THREE.Mesh(new THREE.SphereGeometry(taille, 12, 10), mat);
-            b.position.set(
-                depart.x + cote * taille * 0.5 + sens * t * 0.06,
-                depart.y - t * longueur,
-                depart.z - t * 0.05,
-            );
-            b.scale.set(1.15, 0.85, 0.9);
-            b.rotation.z = cote * 0.5;
-            g.add(b);
-        }
+// Deux mèches qui encadrent le visage et tombent devant les épaules
+function mechesVisage(f, yBas, r = 0.07) {
+    for (const s of [-1, 1]) {
+        const pts = [surCrane(s * 0.75, 0.55, R * 1.02), surCrane(s * 0.95, 0.0, R * 1.08),
+            new THREE.Vector3(s * R * 0.92, (TETE.y - R + yBas) / 2, R * 0.38), new THREE.Vector3(s * R * 0.86, yBas, R * 0.36)];
+        f.ajouter(tubeEffile(pts, r, r * 0.6, 0.55));
     }
-    // le petit élastique au bout
-    const el = new THREE.Mesh(
-        new THREE.TorusGeometry(0.05, 0.018, 8, 14),
-        new THREE.MeshStandardMaterial({ color: '#ff5fa2', roughness: 0.5 }),
-    );
-    el.position.set(depart.x + sens * 0.06, depart.y - longueur - 0.03, depart.z - 0.05);
-    el.rotation.x = Math.PI / 2;
-    g.add(el);
-}
-
-// Un macaron / chignon : des mèches enroulées en boule
-function macaron(meches, centre, rayon) {
-    for (let i = 0; i < 7; i++) {
-        const a0 = (i / 7) * Math.PI * 2;
-        const pts = [];
-        for (let j = 0; j <= 6; j++) {
-            const t = j / 6;
-            const a = a0 + t * Math.PI * 1.7;
-            const r = rayon * (1 - t * 0.55);
-            pts.push(new THREE.Vector3(
-                centre.x + Math.cos(a) * r,
-                centre.y + Math.sin(a) * r * 0.95,
-                centre.z + Math.sin(t * Math.PI) * rayon * 0.5 - rayon * 0.2,
-            ));
-        }
-        meches.ajouter(pts, 0.045, 0.035, 0.9, 10, 5);
-    }
-}
-
-// Des petites boucles serrées (cheveux frisés), en un seul objet 3D
-function boucles(couleur, gender) {
-    const base = new THREE.Color(couleur);
-    const items = [];
-    function semer(nb, rayon, minT, maxT) {
-        for (let i = 0; i < nb; i++) {
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(1 - Math.random() * 1.55);
-            const v = new THREE.Vector3(Math.sin(phi) * Math.sin(theta), Math.cos(phi), Math.sin(phi) * Math.cos(theta));
-            if (v.z > 0.34 && v.y < 0.3) continue;              // pas de boucles sur le visage
-            const p = TETE.clone().addScaledVector(v, rayon + (Math.random() - 0.5) * 0.05);
-            p.y += 0.04;
-            items.push({
-                p,
-                s: minT + Math.random() * (maxT - minT),
-                c: base.clone().offsetHSL(0, (Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.08 + 0.03),
-            });
-        }
-    }
-    semer(gender === 'garcon' ? 90 : 110, 0.44, 0.085, 0.15);
-    semer(gender === 'garcon' ? 75 : 95, 0.5, 0.05, 0.09);
-
-    const mesh = new THREE.InstancedMesh(
-        new THREE.SphereGeometry(1, 8, 7),
-        new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.04 }),
-        items.length,
-    );
-    const d = new THREE.Object3D();
-    items.forEach((it, i) => {
-        d.position.copy(it.p);
-        d.scale.setScalar(it.s);
-        d.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-        d.updateMatrix();
-        mesh.setMatrixAt(i, d.matrix);
-        mesh.setColorAt(i, it.c);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    return mesh;
 }
 
 // ---------------------------------------------------------------------------
 //  Les coiffures
 // ---------------------------------------------------------------------------
-
-// Répartit des mèches autour de la tête en évitant le visage.
-// `retour` reçoit (angle, indice, position de 0 à 1)
-function autourDeLaTete(nb, ouvertureVisage, retour) {
-    for (let i = 0; i < nb; i++) {
-        const t = i / (nb - 1);
-        // on balaie de l'avant-gauche à l'avant-droite en passant derrière
-        const a = ouvertureVisage + t * (Math.PI * 2 - ouvertureVisage * 2);
-        retour(a, i, t);
-    }
-}
-
-// Une frange « rideau » : un peu plus courte au milieu, plus longue sur les côtés
-function frangeStandard(meches, nb = 9, longueur = 0.17) {
-    for (let i = 0; i < nb; i++) {
-        const t = i / (nb - 1);
-        const a = -0.82 + t * 1.64;
-        meches.ajouter(mecheFrange(a, longueur * (0.85 + 0.35 * Math.abs(Math.cos(t * Math.PI))), { phase: i }),
-            0.05, 0.02, 0.55, 10, 5);
-    }
-}
-
-export function construireCheveux(g, style, couleur, gender = 'fille') {
-    if (!style || style === 'aucun') return;
-
-    const meches = new Meches(couleur);
+// Retourne { forme, attaches: [{ geo, x, y, z }] } — les attaches (élastiques)
+// ne sont pas en cheveux.
+function coiffure(style, gender) {
+    const f = new Forme();
+    const attaches = [];
+    const elastique = (x, y, z, rot) => attaches.push({ geo: new THREE.TorusGeometry(0.075, 0.03, 10, 20), x, y, z, rot });
     const garcon = gender === 'garcon';
-    let avecCalotte = true, avecReflet = true;
+    const opts = {};
 
     switch (style) {
-
-        case 'longs': {
-            g.add(masseCheveux(couleur, 0.68, 0.86));
-            frangeStandard(meches);
-            mechesDessus(meches, 11);
-            // deux couches de mèches, décalées, pour un beau volume
-            autourDeLaTete(30, 0.86, (a, i) => {
-                const devant = Math.abs(Math.sin(a));              // plus court près du visage
-                meches.ajouter(
-                    mecheLongue(a, 0.42, 0.78 + devant * 0.16, { phase: i * 1.3, ondul: 0.045, gonfle: 0.07 }),
-                    0.085, 0.03, 0.62,
-                );
-            });
-            autourDeLaTete(18, 0.95, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.16, 0.52, { phase: i * 2.1 + 1, ondul: 0.03, gonfle: 0.03 }),
-                    0.07, 0.028, 0.6, 12, 5,
-                );
-            });
+        case 'longs':
+            // une frange courte et lisse, d'un seul morceau (pas de mèches qui font
+            // des bosses) : c'est le bord de la calotte qui s'arrête au-dessus des yeux
+            calotte(f, 1.04, 0.22, 1.41);
+            masse(f, 0.5, { ouverture: 1.1, pointes: 0.01 });
             break;
-        }
 
-        case 'ondules': {
-            g.add(masseCheveux(couleur, 0.58, 0.84));
-            frangeStandard(meches, 8, 0.17);
-            mechesDessus(meches, 11);
-            autourDeLaTete(32, 0.84, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.45, 0.95, { phase: i * 1.1, ondul: 0.085, vagues: 3.4, gonfle: 0.11, ecart: 0.05 }),
-                    0.09, 0.032, 0.7,
-                );
-            });
-            autourDeLaTete(18, 0.92, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.2, 0.66, { phase: i * 2.4 + 1, ondul: 0.06, vagues: 3, gonfle: 0.05 }),
-                    0.07, 0.028, 0.65, 12, 5,
-                );
-            });
+        case 'ondules':
+            calotte(f); frange(f, 'raie');
+            masse(f, 0.52, { ouverture: 0.95, ondule: 0.035, evase: 0.06, pointes: 0.05 });
+            mechesVisage(f, 0.8, 0.08);
+            opts.etirement = 0.14;
+            opts.lisse = 0.3;
             break;
-        }
 
-        case 'carre': {
-            g.add(masseCheveux(couleur, 1.08, 0.8));
-            frangeStandard(meches, 10, 0.18);
-            mechesDessus(meches, 11);
-            // toutes les mèches s'arrêtent à la même hauteur : la coupe est nette
-            autourDeLaTete(30, 0.8, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.4, 0.36, { phase: i, ondul: 0.02, gonfle: 0.08, vagues: 1.6 }),
-                    0.088, 0.05, 0.62, 12, 6,
-                );
-            });
+        case 'carre':
+            calotte(f); frange(f, 'droite');
+            masse(f, 1.12, { ouverture: 0.9, evase: 0.05, pointes: 0.01 });
             break;
-        }
 
-        case 'courts': {
-            g.add(masseCheveux(couleur, 1.3, 0.7));
-            frangeStandard(meches, 8, 0.15);
-            mechesDessus(meches, 13);
-            autourDeLaTete(24, 0.7, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.5, 0.13, { phase: i, ondul: 0.02, gonfle: 0.055, vagues: 1.4 }),
-                    0.08, 0.045, 0.6, 10, 5,
-                );
-            });
+        case 'courts':
+            calotte(f, 1.04, 0.38);
+            frange(f, garcon ? 'cote' : 'droite');
+            masse(f, 1.2, { ouverture: 1.25, pointes: 0.01 });
+            opts.longueur = 0.045;
             break;
-        }
 
         case 'couettes': {
-            g.add(masseCheveux(couleur, 1.3, 0.78));
-            frangeStandard(meches, 9, 0.17);
-            mechesDessus(meches, 12);
-            // les cheveux sont ramenés vers les deux attaches
-            autourDeLaTete(16, 0.78, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.5, 0.1, { phase: i, ondul: 0.015, gonfle: 0.04, vagues: 1.2 }),
-                    0.07, 0.05, 0.6, 8, 5,
-                );
-            });
-            // deux grosses couettes sur les côtés
-            for (const cote of [-1, 1]) {
-                const attache = new THREE.Vector3(cote * 0.4, TETE.y + 0.16, -0.05);
-                for (let i = 0; i < 7; i++) {
-                    const p = i / 6;
-                    const pts = [attache.clone()];
-                    for (let j = 1; j <= 4; j++) {
-                        const t = j / 4;
-                        pts.push(new THREE.Vector3(
-                            attache.x + cote * (0.06 + Math.sin(t * 2.2) * 0.1) + Math.cos(p * 6.3) * 0.05,
-                            attache.y - t * 0.46,
-                            attache.z + Math.sin(p * 6.3) * 0.06 + Math.sin(t * 3) * 0.03,
-                        ));
-                    }
-                    meches.ajouter(pts, 0.06, 0.025, 0.8, 12, 5);
-                }
-                // l'élastique
-                const el = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.09, 0.028, 8, 16),
-                    new THREE.MeshStandardMaterial({ color: '#ff5fa2', roughness: 0.5 }),
-                );
-                el.position.copy(attache);
-                el.rotation.y = Math.PI / 2;
-                g.add(el);
+            calotte(f); frange(f, 'droite');
+            masse(f, 1.2, { ouverture: 1.35, pointes: 0.005 });     // la nuque
+            for (const s of [-1, 1]) {
+                const depart = surCrane(s * 1.45, 0.45, R * 1.02);
+                const pts = [depart, depart.clone().add(new THREE.Vector3(s * 0.16, -0.02, -0.02)),
+                    depart.clone().add(new THREE.Vector3(s * 0.26, -0.35, -0.04)), depart.clone().add(new THREE.Vector3(s * 0.24, -0.72, 0))];
+                f.ajouter(tubeEffile(pts, 0.11, 0.06, 0.85));
+                elastique(depart.x + s * 0.04, depart.y, depart.z, [0, 0, s * 1.2]);
             }
             break;
         }
 
         case 'queue': {
-            g.add(masseCheveux(couleur, 1.32, 0.72));
-            frangeStandard(meches, 8, 0.17);
-            mechesDessus(meches, 13);
-            // cheveux tirés en arrière
-            autourDeLaTete(18, 0.72, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.55, 0.08, { phase: i, ondul: 0.012, gonfle: 0.035, vagues: 1 }),
-                    0.07, 0.05, 0.55, 8, 5,
-                );
-            });
-            // la grosse queue de cheval qui retombe dans le dos
-            const attache = new THREE.Vector3(0, TETE.y + 0.12, -0.44);
-            for (let i = 0; i < 16; i++) {
-                const p = (i / 16) * Math.PI * 2;
-                const r = 0.055 + (i % 2) * 0.07;          // deux couronnes de mèches
-                const pts = [attache.clone()];
-                for (let j = 1; j <= 4; j++) {
-                    const t = j / 4;
-                    pts.push(new THREE.Vector3(
-                        attache.x + Math.cos(p) * r * (0.6 + t * 1.6),
-                        attache.y - t * 0.86,
-                        attache.z - 0.12 * Math.sin(t * 1.9) + Math.sin(p) * r * (0.6 + t * 1.4),
-                    ));
-                }
-                meches.ajouter(pts, 0.075, 0.028, 0.9, 14, 5);
-            }
-            // l'élastique, bien serré autour de l'attache
-            const el = new THREE.Mesh(
-                new THREE.TorusGeometry(0.11, 0.035, 8, 20),
-                new THREE.MeshStandardMaterial({ color: '#ff5fa2', roughness: 0.5 }),
-            );
-            el.position.set(0, TETE.y + 0.06, -0.42);
-            el.rotation.x = Math.PI / 2 - 0.25;
-            g.add(el);
+            calotte(f, 1.04, 0.2); frange(f, 'raie');
+            masse(f, 1.2, { ouverture: 1.35, pointes: 0.005 });     // la nuque
+            const depart = surCrane(Math.PI, 0.5, R * 1.03);
+            const pts = [depart, depart.clone().add(new THREE.Vector3(0, 0.02, -0.15)),
+                depart.clone().add(new THREE.Vector3(0, -0.3, -0.22)), depart.clone().add(new THREE.Vector3(0.02, -0.75, -0.16))];
+            f.ajouter(tubeEffile(pts, 0.12, 0.06, 0.85));
+            elastique(depart.x, depart.y, depart.z - 0.04, [Math.PI / 2 - 0.4, 0, 0]);
             break;
         }
 
         case 'tresses': {
-            g.add(masseCheveux(couleur, 1.28, 0.72));
-            frangeStandard(meches, 9, 0.17);
-            mechesDessus(meches, 12);
-            autourDeLaTete(18, 0.72, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.5, 0.14, { phase: i, ondul: 0.015, gonfle: 0.045, vagues: 1.2 }),
-                    0.07, 0.05, 0.6, 8, 5,
-                );
-            });
-            for (const cote of [-1, 1]) {
-                natte(g, new THREE.Vector3(cote * 0.38, TETE.y - 0.04, -0.08), 0.62, couleur, cote);
+            calotte(f); frange(f, 'raie');
+            masse(f, 1.3, { ouverture: 1.1, pointes: 0.01 });
+            const perle = new THREE.SphereGeometry(1, 20, 14);
+            for (const s of [-1, 1]) {
+                const courbe = new THREE.CatmullRomCurve3([surCrane(s * 1.6, -0.1, R * 1.02),
+                    new THREE.Vector3(s * 0.44, 1.2, 0.08), new THREE.Vector3(s * 0.42, 0.85, 0.2), new THREE.Vector3(s * 0.4, 0.62, 0.22)]);
+                const n = 11;
+                for (let i = 0; i < n; i++) {
+                    const t = i / (n - 1);
+                    const p = courbe.getPointAt(t);
+                    const k = 1 - t * 0.35;
+                    f.ajouter(perle, p.x, p.y, p.z, { echelle: [0.075 * k, 0.065 * k, 0.07 * k], rot: [0, 0, (i % 2 ? 0.5 : -0.5)] });
+                }
+                const bout = courbe.getPointAt(1);
+                elastique(bout.x, bout.y - 0.04, bout.z, [Math.PI / 2, 0, 0]);
             }
+            opts.longueur = 0.04;
             break;
         }
 
         case 'chignon': {
-            g.add(masseCheveux(couleur, 1.32, 0.72));
-            frangeStandard(meches, 8, 0.17);
-            mechesDessus(meches, 13);
-            autourDeLaTete(18, 0.72, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.55, 0.09, { phase: i, ondul: 0.012, gonfle: 0.035, vagues: 1 }),
-                    0.07, 0.05, 0.55, 8, 5,
-                );
-            });
-            macaron(meches, new THREE.Vector3(0, TETE.y + 0.44, -0.1), 0.17);
+            calotte(f, 1.04, 0.15); frange(f, 'raie');
+            masse(f, 1.2, { ouverture: 1.35, pointes: 0.005 });     // la nuque
+            const c = surCrane(Math.PI, 1.0, R * 1.08);
+            f.ajouter(new THREE.SphereGeometry(0.2, 32, 20), c.x, c.y, c.z, { echelle: [1, 0.85, 1] });
             break;
         }
 
         case 'macarons': {
-            g.add(masseCheveux(couleur, 1.3, 0.75));
-            frangeStandard(meches, 8, 0.17);
-            mechesDessus(meches, 12);
-            autourDeLaTete(16, 0.75, (a, i) => {
-                meches.ajouter(
-                    mecheLongue(a, 0.5, 0.1, { phase: i, ondul: 0.015, gonfle: 0.04, vagues: 1.1 }),
-                    0.07, 0.05, 0.6, 8, 5,
-                );
-            });
-            // deux macarons en haut, comme deux petites oreilles rondes
-            for (const cote of [-1, 1]) {
-                macaron(meches, new THREE.Vector3(cote * 0.32, TETE.y + 0.42, -0.05), 0.15);
+            calotte(f, 1.04, 0.2); frange(f, 'droite');
+            masse(f, 1.2, { ouverture: 1.35, pointes: 0.005 });     // la nuque
+            for (const s of [-1, 1]) {
+                const c = surCrane(s * 0.9, 1.0, R * 1.05);
+                f.ajouter(new THREE.SphereGeometry(0.16, 28, 18), c.x, c.y, c.z);
             }
             break;
         }
 
         case 'crete': {
-            avecCalotte = true;
-            // les cheveux sont rasés sur les côtés, dressés au milieu
-            for (let i = 0; i < 11; i++) {
-                const t = i / 10;
-                const z = 0.28 - t * 0.62;
-                const h = 0.22 + Math.sin(t * Math.PI) * 0.16;
-                const pts = [
-                    new THREE.Vector3(0, TETE.y + 0.3, z),
-                    new THREE.Vector3(0, TETE.y + 0.38, z - 0.01),
-                    new THREE.Vector3(Math.sin(i) * 0.02, TETE.y + 0.36 + h * 0.6, z - 0.02),
-                    new THREE.Vector3(Math.sin(i) * 0.04, TETE.y + 0.36 + h, z - 0.05),
-                ];
-                meches.ajouter(pts, 0.055, 0.012, 0.5, 8, 5);
+            calotte(f, 1.015, 0.38);
+            const lobe = new THREE.SphereGeometry(1, 24, 16);
+            for (let i = 0; i < 7; i++) {
+                const e = 0.55 + i * 0.36;              // de l'avant du crâne jusqu'à l'arrière
+                const a = e > Math.PI / 2 ? Math.PI : 0;
+                const ee = e > Math.PI / 2 ? Math.PI - e : e;
+                const p = surCrane(a, ee, R * 1.02);
+                const haut = 0.12 + 0.06 * Math.sin((i / 6) * Math.PI);
+                f.ajouter(lobe, p.x, p.y + haut * 0.4, p.z, { echelle: [0.06, haut, 0.1], rot: [-(e - Math.PI / 2), 0, 0] });
             }
+            opts.longueur = 0.04;
+            opts.lisse = 0.3;
             break;
         }
 
         case 'boucles': {
-            g.add(boucles(couleur, garcon));
-            avecReflet = false;
-            if (!garcon) {
-                // quelques anglaises qui retombent sur les épaules
-                for (let i = 0; i < 10; i++) {
-                    const a = 0.9 + (i / 9) * (Math.PI * 2 - 1.8);
-                    const dep = surCrane(a, -0.05, R * 1.08);
-                    const out = new THREE.Vector3(dep.x, 0, dep.z).normalize();
-                    const pts = [dep];
-                    const tours = 2.2 + Math.random();
-                    for (let j = 1; j <= 8; j++) {
-                        const t = j / 8;
-                        const ang = t * tours * Math.PI * 2;
-                        pts.push(new THREE.Vector3(
-                            dep.x + Math.cos(ang) * 0.055 + out.x * 0.02,
-                            dep.y - t * 0.44,
-                            dep.z + Math.sin(ang) * 0.055 + out.z * 0.02,
-                        ));
-                    }
-                    meches.ajouter(pts, 0.05, 0.03, 0.95, 18, 5);
+            calotte(f, 1.05);
+            const boucle = new THREE.SphereGeometry(1, 20, 14);
+            // des boucles qui pavent le crâne, puis (fille) descendent sur les épaules
+            const rangs = garcon ? [[1.2, 7], [0.85, 12], [0.5, 14], [0.15, 12]] : [[1.2, 7], [0.85, 12], [0.5, 14], [0.15, 14], [-0.25, 14], [-0.6, 14], [-0.95, 12]];
+            rangs.forEach(([e, n], k) => {
+                for (let i = 0; i < n; i++) {
+                    const a = (i / n) * Math.PI * 2 + k * 0.4;
+                    // pas de boucles sur le visage
+                    const devant = Math.cos(a) > 0.45 && e < 0.62;
+                    if (devant) continue;
+                    let p = surCrane(a, Math.max(e, -0.2), R * 1.06);
+                    if (e < -0.2) p = new THREE.Vector3(Math.sin(a) * R * 1.05, TETE.y + e * R * 0.95, Math.cos(a) * R * 0.95);
+                    const taille = 0.085 + ((i * 7 + k * 3) % 5) * 0.006;
+                    f.ajouter(boucle, p.x, p.y, p.z, { echelle: [taille, taille, taille] });
                 }
-            }
-            break;
-        }
-
-        default: {   // au cas où : une coupe simple
-            frangeStandard(meches, 8, 0.22);
-            autourDeLaTete(18, 0.78, (a, i) => {
-                meches.ajouter(mecheLongue(a, 0.45, 0.3, { phase: i }), 0.075, 0.035, 0.6, 12, 5);
             });
+            opts.longueur = 0.05;
+            opts.etirement = 0.45;           // brins frisés : moins étirés
+            opts.lisse = 0;
             break;
         }
-    }
 
-    if (avecCalotte) g.add(calotte(couleur, style === 'crete' ? 0.5 : 0.62));
-    const m = meches.fini();
-    if (m) g.add(m);
-    if (avecReflet) g.add(reflet());
+        default:
+            return null;
+    }
+    return { forme: f, attaches, opts };
+}
+
+// ---------------------------------------------------------------------------
+//  Point d'entrée
+// ---------------------------------------------------------------------------
+export function construireCheveux(g, style, couleur, gender = 'fille') {
+    if (!style || style === 'aucun') return null;
+    const c = coiffure(style, gender) || coiffure('longs', gender);
+    const geo = finirCheveux(c.forme.fusionner());
+    const mats = materiauxCheveux(couleur, c.opts);
+
+    const groupe = new THREE.Group();
+    groupe.name = 'cheveux';
+    const base = new THREE.Mesh(geo, mats.base);
+    base.castShadow = true;
+    groupe.add(base);
+    mats.couches.forEach((m, i) => {
+        const couche = new THREE.Mesh(geo, m);
+        couche.renderOrder = i + 1;
+        groupe.add(couche);
+    });
+
+    // élastiques
+    const elas = new THREE.MeshStandardMaterial({ color: '#ff5fa2', roughness: 0.5 });
+    for (const a of c.attaches) {
+        const m = new THREE.Mesh(a.geo, elas);
+        m.position.set(a.x, a.y, a.z);
+        if (a.rot) m.rotation.set(...a.rot);
+        groupe.add(m);
+    }
+    g.add(groupe);
+    return groupe;
 }
