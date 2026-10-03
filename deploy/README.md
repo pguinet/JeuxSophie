@@ -152,3 +152,17 @@ ssh sophie@jeux.local 'echo test | sudo mail -s "test" root'              # mail
 ssh sophie@jeux.local 'sudo journalctl -t msmtp -n 5'                     # journal d'envoi
 ssh sophie@jeux.local 'sudo tail -50 /var/log/unattended-upgrades/unattended-upgrades.log'
 ```
+
+### Ménage du 2026-10-03 (disque 90 % → 67 %)
+
+Le Pi est un **Pi 1 B (ARMv6)** : il ne démarre que `kernel.img` (noyau `rpi-v6`). L'image
+Raspberry Pi OS installait aussi les noyaux v7 (Pi 2/3) et v8 (`arm64`, Pi 3/4/5), plus les
+headers. Retirés : noyaux v7 et v8, architecture étrangère `arm64` (`dpkg --remove-architecture`),
+tous les `linux-headers-*` (plus de compilation de modules noyau sur le Pi), `apt autoremove`
+(anciens noyaux, mesa/llvm orphelins) et `apt-get clean`. Restent : `linux-image-rpi-v6`
+(noyau courant + le précédent en secours).
+
+⚠️ Conséquence : **cette carte SD ne démarre plus sur un Pi 2/3/4/5**. Pour la réutiliser sur un
+autre modèle : `sudo apt install linux-image-rpi-v7` (Pi 2/3) ou réactiver `arm64`
+(`sudo dpkg --add-architecture arm64 && sudo apt update && sudo apt install linux-image-rpi-v8:arm64`)
+avant de déplacer la carte.
