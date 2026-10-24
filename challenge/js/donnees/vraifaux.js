@@ -114,7 +114,7 @@ export const VRAIFAUX = [
     { en: 'Mars is the closest planet to the Sun.', vrai: false, niveau: 3, explication: 'La planète la plus proche du Soleil est Mercure.' },
     { en: 'Saturn is the smallest planet.', vrai: false, niveau: 3, explication: 'Saturne est une très grosse planète.' },
     { en: 'People drive on the right in the UK.', vrai: false, niveau: 3, explication: 'Au Royaume-Uni, on conduit à gauche.' },
-    { en: 'The Union Jack is the flag of Australia.', vrai: false, niveau: 3, explication: 'L\'Union Jack est le drapeau du Royaume-Uni.' },
+    { en: 'The Union Jack is the flag of Germany.', vrai: false, niveau: 3, explication: 'Faux : l\'Union Jack est le drapeau du Royaume-Uni.' },
     { en: 'A decade is a hundred years.', vrai: false, niveau: 3, explication: 'Une décennie dure dix ans ; cent ans, c\'est un siècle.' },
     { en: 'A fortnight is four weeks.', vrai: false, niveau: 3, explication: 'Un fortnight, c\'est deux semaines.' },
     { en: 'A century is ten years.', vrai: false, niveau: 3, explication: 'Un siècle dure cent ans.' },
