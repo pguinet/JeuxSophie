@@ -4,13 +4,13 @@
     {
       "id": 1,
       "subject": "Task 1: Squelette, outils et hasard à graine",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Créer `challenge/` (page vide qui charge `main.js`), la config ESLint, le script de lint et le module pur `rng.js` testé.\n\n**Files:**\n- Create: `challenge/index.html`, `challenge/css/style.css`, `challenge/js/main.js`, `challenge/eslint.config.js`, `challenge/tools/lint.sh`, `challenge/js/rng.js`\n- Test: `challenge/test/rng.test.js`\n\n**Acceptance Criteria:**\n- [ ] `mulberry32(42)` produit deux fois la même suite ; valeurs dans `[0, 1)`.\n- [ ] `shuffle` ne modifie pas le tableau d'entrée et garde les mêmes éléments ; `sample(arr, n)` rend `n` éléments distincts.\n- [ ] `hashString('a') !== hashString('b')`, résultat entier 32 bits non signé.\n- [ ] `challenge/tools/lint.sh` passe sans erreur.\n\n**Verify:** `node --test challenge/test/ && challenge/tools/lint.sh` → `# fail 0`, aucune erreur ESLint\n\n```json:metadata\n{\"files\":[\"challenge/index.html\",\"challenge/css/style.css\",\"challenge/js/main.js\",\"challenge/eslint.config.js\",\"challenge/tools/lint.sh\",\"challenge/js/rng.js\",\"challenge/test/rng.test.js\"],\"verifyCommand\":\"node --test challenge/test/ && challenge/tools/lint.sh\",\"acceptanceCriteria\":[\"`mulberry32(42)` produit deux fois la même suite ; valeurs dans `[0, 1)`.\",\"`shuffle` ne modifie pas le tableau d'entrée et garde les mêmes éléments ; `sample(arr, n)` rend `n` éléments distincts.\",\"`hashString('a') !== hashString('b')`, résultat entier 32 bits non signé.\",\"`challenge/tools/lint.sh` passe sans erreur.\"],\"modelTier\":\"standard\"}\n```"
     },
     {
       "id": 2,
       "subject": "Task 2: Calcul des points",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
@@ -19,7 +19,7 @@
     {
       "id": 3,
       "subject": "Task 3: Avatar figurine Pop",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
@@ -28,7 +28,7 @@
     {
       "id": 4,
       "subject": "Task 4: Classement et joueurs inventés",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         3
       ],
@@ -37,7 +37,7 @@
     {
       "id": 5,
       "subject": "Task 5: Sauvegarde",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
@@ -46,7 +46,7 @@
     {
       "id": 6,
       "subject": "Task 6: Banques vocabulaire et grammaire",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
@@ -55,7 +55,7 @@
     {
       "id": 7,
       "subject": "Task 7: Banques culture et phrases",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         6
       ],
@@ -64,7 +64,7 @@
     {
       "id": 8,
       "subject": "Task 8: Génération des parties",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         7
       ],
@@ -73,7 +73,7 @@
     {
       "id": 9,
       "subject": "Task 9: Sons et prononciation",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         8
       ],
@@ -82,7 +82,7 @@
     {
       "id": 10,
       "subject": "Task 10: Contrôleur de partie",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ],
@@ -91,7 +91,7 @@
     {
       "id": 11,
       "subject": "Task 11: Écrans de jeu (QCM et phrases)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         9,
         10
@@ -101,7 +101,7 @@
     {
       "id": 12,
       "subject": "Task 12: Compte, avatar, accueil et résultat",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         4,
         5,
@@ -112,7 +112,7 @@
     {
       "id": 13,
       "subject": "Task 13: Écran du classement",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         12
       ],
@@ -121,12 +121,12 @@
     {
       "id": 14,
       "subject": "Task 14: Menu principal, documentation, validation par Sophie et déploiement",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         13
       ],
       "description": "**Goal:** Ajouter le jeu au menu racine, documenter, faire valider par Sophie, déployer sur le Pi.\n\n**Files:**\n- Modify: `index.html` (racine), `CLAUDE.md`\n- Memory: `~/.claude/projects/-home-pascal-github-JeuxSophie/memory/project_challenge_etat.md` + ligne dans `MEMORY.md`\n\n**Acceptance Criteria:**\n- [ ] Carte dans la section « 📚 Pour apprendre » de `index.html` : `<a class=\"card\" href=\"challenge/\" style=\"background:#1d4ed8\"><span class=\"emoji\">🇬🇧</span><span class=\"name\">The Biggest Challenge</span></a>`.\n- [ ] `CLAUDE.md` : `challenge/` dans la présentation + section « Spécificités *challenge/* » (modules purs, tests `node --test challenge/test/`, lint, `gen-audio.sh`, clé `biggest_save`, paramètres `?jeu=`/`?ecran=`).\n- [ ] Aucun fichier `_test*` dans `challenge/` (`git ls-files challenge | grep _test` vide).\n- [ ] Tous les tests et le lint passent.\n- [ ] Sophie a essayé le jeu (création de compte + au moins 2 jeux) et dit que ça lui plaît, ou ses retours sont corrigés.\n- [ ] `./deploy/deploy.sh` exécuté ; `curl -sI http://jeux.local/challenge/` → `200` ; `curl -sI http://jeux.local/challenge/audio/cat.ogg` → `200`.\n\n**Verify:** `node --test challenge/test/ && challenge/tools/lint.sh && curl -sI http://jeux.local/challenge/ | head -1` → tests OK, `HTTP/1.1 200 OK`\n\n```json:metadata\n{\"files\":[\"~/.claude/projects/-home-pascal-github-JeuxSophie/memory/project_challenge_etat.md\"],\"verifyCommand\":\"node --test challenge/test/ && challenge/tools/lint.sh && curl -sI http://jeux.local/challenge/ | head -1\",\"acceptanceCriteria\":[\"Carte dans la section « 📚 Pour apprendre » de `index.html` : `<a class=\\\"card\\\" href=\\\"challenge/\\\" style=\\\"background:#1d4ed8\\\"><span class=\\\"emoji\\\">🇬🇧</span><span class=\\\"name\\\">The Biggest Challenge</span></a>`.\",\"`CLAUDE.md` : `challenge/` dans la présentation + section « Spécificités *challenge/* » (modules purs, tests `node --test challenge/test/`, lint, `gen-audio.sh`, clé `biggest_save`, paramètres `?jeu=`/`?ecran=`).\",\"Aucun fichier `_test*` dans `challenge/` (`git ls-files challenge | grep _test` vide).\",\"Tous les tests et le lint passent.\",\"Sophie a essayé le jeu (création de compte + au moins 2 jeux) et dit que ça lui plaît, ou ses retours sont corrigés.\",\"`./deploy/deploy.sh` exécuté ; `curl -sI http://jeux.local/challenge/` → `200` ; `curl -sI http://jeux.local/challenge/audio/cat.ogg` → `200`.\"],\"modelTier\":\"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-10-24T11:22:58.621Z"
+  "lastUpdated": "2026-10-24T12:08:20.458Z"
 }
