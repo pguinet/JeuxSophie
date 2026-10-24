@@ -9,6 +9,7 @@ const BRAVO = ['Bravo !', 'Super !', 'Génial !', 'Trop fort !', 'Bien joué !',
 const OUPS = ['Oups !', 'Presque !', 'Pas grave !'];
 const DELAI_BON = 900;
 const DELAI_FAUX = 1400;
+const DELAI_EXPLICATION = 2500;   // pause plus longue : le temps de lire l'explication
 
 const auHasard = liste => liste[Math.floor(Math.random() * liste.length)];
 
@@ -45,7 +46,7 @@ export function bonusVolant(ecran, depuis, points) {
 
 // lancerQcm(app, jeu, questions, { onFin(resultat), onQuitter }) — rend l'écran dans `app`.
 export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
-    const etat = creerPartieQcm(questions, { duree: jeu.duree ?? null });
+    const etat = creerPartieQcm(questions, { duree: jeu.duree ?? null, vies: jeu.vies ?? null });
     const debutPartie = performance.now();
     let debutQuestion = performance.now();
     let minuteur = null;      // setInterval du chrono
@@ -59,6 +60,9 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
     const ecran = creer('div', 'ecran jeu');
     ecran.style.setProperty('--couleur-jeu', jeu.couleur);
     const { entete, maison, progression, score } = creerEntete(jeu);
+    const vies = creer('div', 'pastille vies');
+    vies.hidden = !jeu.vies;
+    if (jeu.vies) entete.insertBefore(vies, score);
     const chrono = creer('div', 'chrono');
     const chronoBarre = creer('div', 'chrono-barre');
     const chronoTexte = creer('div', 'chrono-texte');
@@ -70,8 +74,10 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
     const consigne = creer('div', 'consigne');
     const visuel = creer('div', 'visuel');
     const choixEl = creer('div', 'choix');
+    const explication = creer('div', 'explication');
+    explication.hidden = true;
     const message = creer('div', 'message');
-    ecran.append(entete, chrono, sousConsigne, consigne, visuel, choixEl, message);
+    ecran.append(entete, chrono, sousConsigne, consigne, visuel, choixEl, explication, message);
     app.replaceChildren(ecran);
 
     function fermer() {
@@ -102,10 +108,15 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
     }
 
     function majEntete() {
-        progression.textContent = jeu.duree
+        progression.textContent = (jeu.duree || jeu.vies)
             ? `Question ${etat.index + 1}`
             : `${Math.min(etat.index + 1, questions.length)}/${questions.length}`;
         score.textContent = `⭐ ${etat.points}`;
+        if (jeu.vies) {
+            const restantes = Math.max(0, etat.vies ?? 0);
+            vies.textContent = '❤️'.repeat(restantes) + '🖤'.repeat(jeu.vies - restantes);
+            vies.setAttribute('aria-label', `${restantes} vie${restantes > 1 ? 's' : ''}`);
+        }
     }
 
     // i = -1 : temps écoulé (la question compte fausse).
@@ -129,13 +140,20 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
             message.className = 'message faux';
         }
         majEntete();
-        attente = setTimeout(() => { suivante(etat); afficher(); }, r.juste ? DELAI_BON : DELAI_FAUX);
+        const q = etat.questions[etat.index];
+        let delai = r.juste ? DELAI_BON : DELAI_FAUX;
+        if (q.explication) {
+            explication.textContent = q.explication;
+            explication.hidden = false;
+            delai = Math.max(delai, DELAI_EXPLICATION);
+        }
+        attente = setTimeout(() => { suivante(etat); afficher(); }, delai);
     }
 
     function ecouter(q, motEcrit) {
         const jeton = ++jetonEcoute;
         audio.initAudio();
-        audio.prononcer(q.audio, slugAudio(q.audio)).then(source => {
+        audio.prononcer(q.audio, q.slug ?? slugAudio(q.audio)).then(source => {
             // Appel remplacé (autre clic 🔊 ou question suivante) : on l'ignore.
             if (fini || jeton !== jetonEcoute) return;
             // 'texte' (aucune voix) ou 'muet' (son coupé) : on montre le mot écrit.
@@ -153,12 +171,19 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
         majEntete();
         message.textContent = '';
         message.className = 'message';
+        explication.textContent = '';
+        explication.hidden = true;
         sousConsigne.textContent = q.sousConsigne ?? '';
         sousConsigne.hidden = !q.sousConsigne;
         consigne.textContent = q.consigne;
 
         visuel.replaceChildren();
-        if (q.visuel) {
+        if (q.visuelSVG) {
+            // SVG généré par nous (horloge) : aucune donnée de l'utilisatrice, innerHTML sans risque.
+            const svg = creer('div', 'visuel-svg');
+            svg.innerHTML = q.visuelSVG;
+            visuel.append(svg);
+        } else if (q.visuel) {
             visuel.append(creer('div', 'visuel-emoji', q.visuel));
         } else if (q.audio) {
             const hp = creer('button', 'btn-ecouter', '🔊');
@@ -168,9 +193,10 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
             visuel.append(hp, motEcrit);
             ecouter(q, motEcrit);
         }
-        visuel.hidden = !q.visuel && !q.audio;
+        visuel.hidden = !q.visuelSVG && !q.visuel && !q.audio;
 
         choixEl.classList.toggle('grands', Boolean(q.grandsChoix));
+        choixEl.classList.toggle('deux', q.choix.length === 2);
         boutons = q.choix.map((c, i) => {
             const b = creer('button', 'choix-btn');
             b.append(creer('span', 'touche', String(i + 1)), creer('span', 'choix-texte', c.texte));
