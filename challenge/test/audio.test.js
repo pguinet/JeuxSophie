@@ -20,8 +20,22 @@ test('un fichier audio exactement par mot illustré', async () => {
     const { VOCAB } = await import('../js/donnees/vocab.js');
     const { slugAudio } = await import('../js/jeux.js');
     const attendus = VOCAB.filter(m => m.image).map(m => `${slugAudio(m.en)}.ogg`).sort();
-    const presents = readdirSync(new URL('../audio/', import.meta.url)).sort();
+    const presents = readdirSync(new URL('../audio/', import.meta.url))
+        .filter(f => f.endsWith('.ogg')).sort();
     assert.deepEqual(presents, attendus);
+});
+
+test('un fichier audio exactement par phrase, sans orphelin', async () => {
+    const { readdirSync, statSync } = await import('node:fs');
+    const { PHRASES } = await import('../js/donnees/phrases.js');
+    const { slugAudio } = await import('../js/jeux.js');
+    const dossier = new URL('../audio/phrases/', import.meta.url);
+    const attendus = [...new Set(PHRASES.map(p => `${slugAudio(p.en)}.ogg`))].sort();
+    const presents = readdirSync(dossier).sort();
+    assert.deepEqual(presents, attendus);
+    for (const f of presents) {
+        assert.ok(statSync(new URL(f, dossier)).size <= 60 * 1024, `${f} dépasse 60 Ko`);
+    }
 });
 
 // Stubs des API navigateur ; les globales sont restaurées après chaque test.

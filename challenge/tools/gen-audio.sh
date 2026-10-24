@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 FORCE=${1:-}
-mkdir -p challenge/audio
+mkdir -p challenge/audio/phrases
 LISTE=$(mktemp)
 trap 'rm -f "$LISTE"' EXIT
 node challenge/tools/liste-audio.mjs > "$LISTE"
@@ -12,6 +12,7 @@ docker run --rm -i -v "$PWD/challenge/audio":/out -v piper-voices:/voices -v "$L
   -e FORCE="$FORCE" python:3.12-slim bash -euo pipefail -c '
     apt-get update -qq && apt-get install -y -qq ffmpeg curl >/dev/null
     pip install -q piper-tts
+    mkdir -p /out/phrases
     V=/voices/en_GB-alba-medium.onnx
     BASE=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium
     [ -f "$V" ] || curl -sSL -o "$V" "$BASE/en_GB-alba-medium.onnx"
