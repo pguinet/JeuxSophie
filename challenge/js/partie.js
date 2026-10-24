@@ -28,7 +28,7 @@ export function suivante(e) {
     e.attente = false;
     e.index++;
     if ('essai' in e) { e.essai = 1; e.reponse = []; e.utilises = []; }
-    if ('faites' in e) { e.faites = []; e.ratees = []; e.gaucheChoisie = null; }
+    if ('faites' in e) { e.faites = []; e.droitesFaites = []; e.ratees = []; e.gaucheChoisie = null; }
     if ('trouvees' in e) { e.trouvees = []; e.ratees = []; e.erreurs = 0; }
     if ('tuiles' in e) { e.reponse = []; e.tuiles = []; e.erreursMot = 0; }
     if (e.index >= e.questions.length || e.vies === 0) e.terminee = true;
@@ -91,17 +91,20 @@ export function valider(e) {
 
 export function creerPartieRelier(manches) {
     return { questions: manches, index: 0, points: 0, bonnes: 0, repondues: 0,
-        gaucheChoisie: null, faites: [], ratees: [], attente: false, terminee: manches.length === 0 };
+        gaucheChoisie: null, faites: [], droitesFaites: [], ratees: [], attente: false, terminee: manches.length === 0 };
 }
 
+// Renvoie null si le clic est refusé (fin, attente, index hors bornes, déjà apparié) : aucun effet.
 export function choisirGauche(e, i) {
-    if (e.attente || e.faites.includes(i)) return;
+    const m = e.questions[e.index];
+    if (e.attente || e.terminee || !(i >= 0 && i < m.gauche.length) || e.faites.includes(i)) return null;
     e.gaucheChoisie = i;
 }
 
 export function choisirDroite(e, j) {
-    if (e.attente || e.gaucheChoisie == null) return null;
+    if (e.attente || e.terminee || e.gaucheChoisie == null) return null;
     const m = e.questions[e.index];
+    if (!(j >= 0 && j < m.droite.length) || e.droitesFaites.includes(j)) return null;
     const i = e.gaucheChoisie;
     e.gaucheChoisie = null;
     const paire = m.paires.find(p => p.en === m.gauche[i]);
@@ -111,6 +114,7 @@ export function choisirDroite(e, j) {
     }
     const points = e.ratees.includes(i) ? 5 : 10;
     e.faites.push(i);
+    e.droitesFaites.push(j);
     e.points += points;
     e.repondues++;
     if (!e.ratees.includes(i)) e.bonnes++;
@@ -129,6 +133,7 @@ export function creerPartiePendu(mots) {
 }
 
 export function masque(e) {
+    if (e.terminee) return [];
     return [...e.questions[e.index].en].map(c => {
         const l = c.toLowerCase();
         if (!estLettre(l)) return c;
@@ -171,13 +176,18 @@ export function creerPartieLettres(mots) {
         reponse: [], tuiles: [], erreursMot: 0, attente: false, terminee: mots.length === 0 };
 }
 
+// Seules les lettres de `en` sont attendues : espaces, tirets et apostrophes ne sont pas dans `melange`.
+const lettresDe = texte => [...texte].filter(c => /[a-z]/i.test(c)).join('').toLowerCase();
+
+// Renvoie null si la tuile est refusée (fin, attente, déjà utilisée, hors bornes) ou si le mot n'est pas complet.
 export function taper(e, i) {
-    if (e.attente || e.tuiles.includes(i)) return null;
+    if (e.attente || e.terminee) return null;
     const mot = e.questions[e.index];
+    if (e.tuiles.includes(i) || !(i >= 0 && i < mot.melange.length)) return null;
     e.tuiles.push(i);
     e.reponse.push(mot.melange[i]);
-    if (e.reponse.length < mot.en.length) return null;
-    if (e.reponse.join('').toLowerCase() === mot.en.toLowerCase()) {
+    if (e.reponse.length < mot.melange.length) return null;
+    if (e.reponse.join('').toLowerCase() === lettresDe(mot.en)) {
         const points = e.erreursMot === 0 ? 10 : 5;
         e.points += points;
         if (e.erreursMot === 0) e.bonnes++;
@@ -197,7 +207,7 @@ export function taper(e, i) {
 }
 
 export function effacer(e) {
-    if (e.attente) return;
+    if (e.attente || e.terminee) return null;
     e.tuiles.pop();
     e.reponse.pop();
 }
