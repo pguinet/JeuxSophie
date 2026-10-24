@@ -297,8 +297,8 @@ export const GRAMMAIRE = [
     // some / any (suite)
     { theme: 'a/an', question: 'Would you like _ cup of tea?', bonne: 'a', leurres: ['an', 'many', 'much'], niveau: 3 },
     { theme: 'some/any', question: 'Is there _ milk left?', bonne: 'any', leurres: ['two', 'many', 'an'], niveau: 2 },
-    { theme: 'some/any', question: 'Can I have _ water, please?', bonne: 'some', leurres: ['many', 'a', 'an'], niveau: 2 },
-    { theme: 'some/any', question: "There isn't _ bread in the kitchen.", bonne: 'any', leurres: ['many', 'a', 'an'], niveau: 2 },
+    { theme: 'some/any', question: 'Can I have _ water, please?', bonne: 'some', leurres: ['many', 'two', 'an'], niveau: 2 },
+    { theme: 'some/any', question: "There isn't _ bread in the kitchen.", bonne: 'any', leurres: ['many', 'two', 'an'], niveau: 2 },
     { theme: 'some/any', question: "We haven't got _ money.", bonne: 'any', leurres: ['many', 'a', 'an'], niveau: 2 },
     { theme: 'some/any', question: 'There are _ nice shops in my town.', bonne: 'some', leurres: ['much', 'a', 'an'], niveau: 1 },
     // fréquence
@@ -345,7 +345,7 @@ export const GRAMMAIRE = [
     { theme: 'passé irréguliers', question: 'He _ the ball to his friend. (lancer)', bonne: 'threw', leurres: ['throwed', 'thrown', 'throw'], niveau: 3 },
     { theme: 'passé irréguliers', question: 'She _ her old bike last month. (vendre)', bonne: 'sold', leurres: ['selled', 'sell', 'soled'], niveau: 3 },
     { theme: 'passé irréguliers', question: 'They _ a beautiful house in the country last year. (construire)', bonne: 'built', leurres: ['builded', 'build', 'builted'], niveau: 3 },
-    { theme: 'passé irréguliers', question: 'I _ the film would be great, but it was boring. (penser)', bonne: 'thought', leurres: ['thinked', 'think', 'thoughted'], niveau: 3 },
+    { theme: 'passé irréguliers', question: 'Yesterday I _ the film would be great, but it was boring. (penser)', bonne: 'thought', leurres: ['thinked', 'think', 'thoughted'], niveau: 3 },
     // ── v2 (correctifs) : pièges de niveau 3 à réponse unique ──
     { theme: 'passé irréguliers', question: 'He _ his homework on the bus yesterday. (oublier)', bonne: 'forgot', leurres: ['forgetted', 'forgotten', 'forget'], niveau: 3 },
     { theme: 'passé irréguliers', question: 'The thief _ the money and ran away last night. (voler)', bonne: 'stole', leurres: ['stealed', 'stolen', 'steal'], niveau: 3 },
