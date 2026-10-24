@@ -6,10 +6,11 @@ import { GRAMMAIRE } from '../js/donnees/grammaire.js';
 import { CULTURE } from '../js/donnees/culture.js';
 import { PHRASES } from '../js/donnees/phrases.js';
 
-export function verifierQcm(items, min, nbThemes) {
+export function verifierQcm(items, min, nbThemes, themesPermis) {
     assert.ok(items.length >= min, `au moins ${min} questions (${items.length})`);
     for (const q of items) {
         assert.ok(q.question && q.bonne && q.theme, JSON.stringify(q));
+        if (themesPermis) assert.ok(themesPermis.includes(q.theme), `thème inconnu : ${q.theme}`);
         assert.equal(q.leurres.length, 3, q.question);
         const toutes = [q.bonne, ...q.leurres].map(s => s.toLowerCase());
         assert.equal(new Set(toutes).size, 4, `réponses distinctes : ${q.question}`);
@@ -44,13 +45,14 @@ test('grammaire : chaque question contient un trou', () => {
 });
 
 test('culture : 50 QCM bien formés sur 6 thèmes', () => {
-    verifierQcm(CULTURE, 50, 6);
+    verifierQcm(CULTURE, 50, 6, ['uk', 'usa', 'londres', 'fetes', 'drapeaux', 'royaute', 'nourriture', 'pays']);
 });
 
 test('phrases : 40 phrases de 3 à 7 mots sans mot répété', () => {
     assert.ok(PHRASES.length >= 40, `${PHRASES.length} phrases`);
     for (const p of PHRASES) {
         assert.ok(p.fr, JSON.stringify(p));
+        assert.match(p.en, /^[A-Z].*[.?!]$/, p.en);
         const mots = p.en.split(' ');
         assert.ok(mots.length >= 3 && mots.length <= 7, p.en);
         assert.equal(new Set(mots.map(m => m.toLowerCase())).size, mots.length, `mot répété : ${p.en}`);

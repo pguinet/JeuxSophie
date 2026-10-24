@@ -4,7 +4,7 @@ export const CULTURE = [
     // londres
     { theme: 'londres', question: 'Comment s\'appelle la grande horloge de Londres ?', bonne: 'Big Ben', leurres: ['Big Bob', 'London Eye', 'Tower Bell'] },
     { theme: 'londres', question: 'Quel fleuve traverse Londres ?', bonne: 'La Tamise', leurres: ['La Seine', 'Le Rhin', 'La Loire'] },
-    { theme: 'londres', question: 'Comment s\'appelle la grande roue de Londres ?', bonne: 'London Eye', leurres: ['Big Wheel', 'Tower Eye', 'Sky Ring'] },
+    { theme: 'londres', question: 'Comment s\'appelle la grande roue de Londres ?', bonne: 'London Eye', leurres: ['Sky Wheel', 'Tower Eye', 'Sky Ring'] },
     { theme: 'londres', question: 'Quelle est la couleur des célèbres bus de Londres ?', bonne: 'Rouge', leurres: ['Bleu', 'Vert', 'Jaune'] },
     { theme: 'londres', question: 'Comment appelle-t-on le métro de Londres ?', bonne: 'The Tube', leurres: ['The Bus', 'The Train', 'The Pipe'] },
     { theme: 'londres', question: 'Quel pont célèbre de Londres peut se lever pour laisser passer les bateaux ?', bonne: 'Tower Bridge', leurres: ['Golden Gate', 'Pont Neuf', 'Rialto Bridge'] },
@@ -12,7 +12,7 @@ export const CULTURE = [
     // royaute
     { theme: 'royaute', question: 'Qui est le roi du Royaume-Uni ?', bonne: 'Charles III', leurres: ['William V', 'George VII', 'Henry IX'] },
     { theme: 'royaute', question: 'Comment s\'appelle le prince héritier du trône, fils aîné du roi Charles III ?', bonne: 'William', leurres: ['Harry', 'Andrew', 'George'] },
-    { theme: 'royaute', question: 'Comment s\'appelle la maison du roi à Londres ?', bonne: 'Buckingham Palace', leurres: ['Big Ben', 'Tower Bridge', 'Hyde Palace'] },
+    { theme: 'royaute', question: 'Comment s\'appelle le palais officiel du roi à Londres ?', bonne: 'Buckingham Palace', leurres: ['Big Ben', 'Tower Bridge', 'Hyde Palace'] },
     { theme: 'royaute', question: 'Quelle reine a régné 70 ans, jusqu\'en 2022 ?', bonne: 'Élisabeth II', leurres: ['Victoria', 'Élisabeth Ire', 'Anne'] },
     { theme: 'royaute', question: 'Où garde-t-on les joyaux de la Couronne à Londres ?', bonne: 'Tour de Londres', leurres: ['Big Ben', 'London Eye', 'British Museum'] },
     { theme: 'royaute', question: 'Comment appelle-t-on la relève de la garde devant le palais ?', bonne: 'Changing of the Guard', leurres: ['Guard Parade', 'Royal Walk', 'Palace Dance'] },
@@ -22,7 +22,7 @@ export const CULTURE = [
     { theme: 'fetes', question: 'Qui apporte les cadeaux à Noël en Angleterre ?', bonne: 'Father Christmas', leurres: ['The Easter Bunny', 'Robin Hood', 'Peter Pan'] },
     { theme: 'fetes', question: 'Quel jour fête-t-on la Saint-Valentin ?', bonne: '14 février', leurres: ['14 juillet', '1er mai', '31 octobre'] },
     { theme: 'fetes', question: 'Que mange-t-on à Pâques en Angleterre ?', bonne: 'Des œufs en chocolat', leurres: ['Des citrouilles', 'Des crêpes', 'Des marrons'] },
-    { theme: 'fetes', question: 'Quelle fête américaine a lieu le 4 juillet ?', bonne: 'Fête nationale', leurres: ['Halloween', 'Thanksgiving', 'Pâques'] },
+    { theme: 'fetes', question: 'Quelle fête américaine a lieu le 4 juillet ?', bonne: 'Independence Day', leurres: ['Halloween', 'Thanksgiving', 'Easter'] },
     { theme: 'fetes', question: 'À Halloween, quel légume sculpte-t-on ?', bonne: 'Une citrouille', leurres: ['Une carotte', 'Un chou', 'Une courgette'] },
     { theme: 'fetes', question: 'Que dit-on à Halloween pour demander des bonbons ?', bonne: 'Trick or treat!', leurres: ['Merry Christmas!', 'Happy Easter!', 'Good luck!'] },
     // drapeaux
@@ -49,7 +49,7 @@ export const CULTURE = [
     { theme: 'pays', question: 'Quelle est la capitale de l\'Irlande ?', bonne: 'Dublin', leurres: ['Cork', 'Belfast', 'Galway'] },
     { theme: 'pays', question: 'Quelle est la capitale de la Nouvelle-Zélande ?', bonne: 'Wellington', leurres: ['Auckland', 'Sydney', 'Christchurch'] },
     { theme: 'pays', question: 'Quel animal est le symbole de l\'Australie, qui saute avec une poche ?', bonne: 'Le kangourou', leurres: ['Le koala', 'Le lapin', 'Le castor'] },
-    { theme: 'pays', question: 'De quels pays le Royaume-Uni est-il composé ?', bonne: 'Angleterre, Écosse, Galles, Irlande du Nord', leurres: ['Angleterre, Irlande, France, Écosse', 'Angleterre, Canada, Galles, Écosse', 'Angleterre, Australie, Écosse, Irlande'] },
+    { theme: 'uk', question: 'Combien de pays forment le Royaume-Uni ?', bonne: '4', leurres: ['2', '3', '6'] },
     { theme: 'pays', question: 'Quelle mer sépare la France de l\'Angleterre ?', bonne: 'La Manche', leurres: ['La Méditerranée', 'La mer Rouge', 'L\'océan Indien'] },
     // usa
     { theme: 'usa', question: 'Quelle est la capitale des États-Unis ?', bonne: 'Washington D.C.', leurres: ['New York', 'Los Angeles', 'Chicago'] },
