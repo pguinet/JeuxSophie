@@ -2,7 +2,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { creerPartieQcm, repondre, suivante, tempsEcoule, resultat,
-    creerPartiePhrases, placer, retirer, valider } from '../js/partie.js';
+    creerPartiePhrases, placer, retirer, valider,
+    creerPartieRelier, choisirGauche, choisirDroite,
+    creerPartiePendu, proposer, masque,
+    creerPartieLettres, taper, effacer } from '../js/partie.js';
 
 const q = (bonne) => ({ consigne: '?', choix: [0, 1, 2, 3].map(i => ({ texte: `r${i}`, juste: i === bonne })) });
 
@@ -86,4 +89,59 @@ test('survie : questions épuisées avant 0 vie, fin comme en v1', () => {
     repondre(e, 1, 1000); suivante(e);
     assert.equal(e.vies, 2);
     assert.equal(e.terminee, true);
+});
+
+test('relier : 10 au 1er coup, 5 après une erreur, manche finie', () => {
+    const manche = { paires: [{ en: 'dog', fr: 'chien' }, { en: 'cat', fr: 'chat' }],
+        gauche: ['dog', 'cat'], droite: ['chat', 'chien'] };
+    const e = creerPartieRelier([manche]);
+    choisirGauche(e, 0);
+    assert.deepEqual(choisirDroite(e, 0), { juste: false });   // dog-chat
+    choisirGauche(e, 0);
+    assert.deepEqual(choisirDroite(e, 1), { juste: true, points: 5 });
+    choisirGauche(e, 1);
+    assert.deepEqual(choisirDroite(e, 0), { juste: true, points: 10 });
+    assert.equal(e.attente, true);
+    assert.deepEqual(resultat(e), { bonnes: 1, repondues: 2, points: 15 });
+    suivante(e);
+    assert.equal(e.terminee, true);
+});
+
+test('pendu : casse, touches ignorées, espace et tiret visibles', () => {
+    const e = creerPartiePendu([{ en: 'T-shirt', fr: 't-shirt' }, { en: 'ice cream', fr: 'glace' }]);
+    assert.deepEqual(masque(e), ['_', '-', '_', '_', '_', '_', '_']);
+    assert.equal(proposer(e, 'é'), 'ignoree');
+    assert.equal(proposer(e, '3'), 'ignoree');
+    assert.equal(proposer(e, 'T'), 'bonne');
+    assert.equal(proposer(e, 't'), 'deja');
+    assert.equal(e.erreurs, 0);
+    for (const l of 'shir') proposer(e, l);
+    assert.equal(e.attente, true);
+    assert.equal(e.points, 10 + 2 * 7);
+    suivante(e);
+    assert.deepEqual(masque(e), ['_', '_', '_', ' ', '_', '_', '_', '_', '_']);
+});
+
+test('pendu : 7 erreurs = perdu', () => {
+    const e = creerPartiePendu([{ en: 'cat', fr: 'chat' }]);
+    for (const l of 'bdefghi') proposer(e, l);
+    assert.equal(e.erreurs, 7);
+    assert.equal(e.attente, true);
+    assert.equal(e.points, 0);
+    assert.equal(proposer(e, 'c'), 'ignoree');
+});
+
+test('lettres : lettres répétées interchangeables, erreurs', () => {
+    const e = creerPartieLettres([{ en: 'apple', fr: 'pomme', melange: ['p', 'l', 'a', 'p', 'e'] }]);
+    for (const i of [2, 3, 0, 1, 4]) taper(e, i);        // a p p l e (tuiles p échangées)
+    assert.equal(e.points, 10);
+    assert.equal(e.attente, true);
+    const f = creerPartieLettres([{ en: 'cat', fr: 'chat', melange: ['t', 'a', 'c'] }]);
+    taper(f, 0); taper(f, 1);
+    effacer(f);
+    assert.deepEqual(f.reponse, ['t']);
+    assert.deepEqual(taper(f, 2), null);                 // 't','c' : pas encore complet ? (2 lettres sur 3)
+    assert.deepEqual(taper(f, 1), { juste: false });     // t c a
+    for (const i of [2, 1, 0]) taper(f, i);              // c a t
+    assert.equal(f.points, 5);
 });
