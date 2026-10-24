@@ -1,0 +1,9 @@
+/* challenge/css/style.css — complété par les tâches d'interface */
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #dbeafe, #fce7f3);
+    color: #1e293b;
+}
+#app { max-width: 1100px; margin: 0 auto; padding: 16px; }
