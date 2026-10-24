@@ -44,18 +44,18 @@ export const GRAMMAIRE = [
     { theme: 'pluriels', question: 'One man, three _.', bonne: 'men', leurres: ['mans', 'mens', 'manes'] },
     { theme: 'pluriels', question: 'One watch, two _.', bonne: 'watches', leurres: ['watchs', 'watchies', 'watchen'] },
     // this/these/those
-    { theme: 'this/these', question: '_ is my pen. (it is near me)', bonne: 'This', leurres: ['These', 'Those', 'They'] },
-    { theme: 'this/these', question: '_ are my shoes. (they are near me)', bonne: 'These', leurres: ['This', 'That', 'It'] },
-    { theme: 'this/these', question: '_ are my parents over there.', bonne: 'Those', leurres: ['This', 'That', 'It'] },
-    { theme: 'this/these', question: '_ boys are my friends. (they are near me)', bonne: 'These', leurres: ['This', 'That', 'It'] },
-    { theme: 'this/these', question: '_ apple is delicious! (I am eating it)', bonne: 'This', leurres: ['These', 'Those', 'They'] },
+    { theme: 'this/these', question: '_ is my pen. (près de moi)', bonne: 'This', leurres: ['These', 'Those', 'They'] },
+    { theme: 'this/these', question: '_ are my shoes. (près de moi)', bonne: 'These', leurres: ['This', 'That', 'It'] },
+    { theme: 'this/these', question: '_ are my parents. (loin de moi)', bonne: 'Those', leurres: ['This', 'That', 'It'] },
+    { theme: 'this/these', question: '_ boys are my friends. (près de moi)', bonne: 'These', leurres: ['This', 'That', 'It'] },
+    { theme: 'this/these', question: '_ apple is delicious! (je le mange)', bonne: 'This', leurres: ['These', 'Those', 'They'] },
     // there is / there are
     { theme: 'there is/are', question: 'There _ a book on the desk.', bonne: 'is', leurres: ['are', 'am', 'be'] },
     { theme: 'there is/are', question: 'There _ three cats in the garden.', bonne: 'are', leurres: ['is', 'am', 'be'] },
     { theme: 'there is/are', question: '_ there a cinema in your town?', bonne: 'Is', leurres: ['Are', 'Am', 'Do'] },
     { theme: 'there is/are', question: 'There _ two girls in my class.', bonne: 'are', leurres: ['is', 'has', 'have'] },
     { theme: 'there is/are', question: '_ there any pens in your bag?', bonne: 'Are', leurres: ['Is', 'Am', 'Do'] },
-    { theme: 'there is/are', question: 'There _ no school on Sunday.', bonne: 'is', leurres: ['are', 'am', 'be'] },
+    { theme: 'there is/are', question: 'There _ no school on Sundays.', bonne: 'is', leurres: ['are', 'am', 'be'] },
     // can
     { theme: 'can', question: 'I _ swim very well.', bonne: 'can', leurres: ['cans', 'can to', 'am can'] },
     { theme: 'can', question: 'She can _ the piano.', bonne: 'play', leurres: ['plays', 'playing', 'to play'] },
@@ -112,6 +112,6 @@ export const GRAMMAIRE = [
     { theme: 'imperatif', question: '_ the door, please!', bonne: 'Open', leurres: ['Opens', 'Opening', 'To open'] },
     { theme: 'imperatif', question: '_ run in the corridor!', bonne: 'Don\'t', leurres: ['Not', 'Doesn\'t', 'No'] },
     { theme: 'imperatif', question: '_ quiet, please!', bonne: 'Be', leurres: ['Are', 'Is', 'Am'] },
-    { theme: 'imperatif', question: 'Listen _ the teacher.', bonne: 'to', leurres: ['at', 'in', 'on'] },
+    { theme: 'prépositions', question: 'Listen _ the teacher.', bonne: 'to', leurres: ['at', 'in', 'on'] },
     { theme: 'imperatif', question: '_ up, please.', bonne: 'Stand', leurres: ['Stands', 'Standing', 'To stand'] },
 ];
