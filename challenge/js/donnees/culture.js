@@ -1,0 +1,62 @@
+// Culture des pays anglophones (questions en français, réponses courtes).
+// Une seule bonne réponse par question ; faits vérifiés pour octobre 2026.
+export const CULTURE = [
+    // londres
+    { theme: 'londres', question: 'Comment s\'appelle la grande horloge de Londres ?', bonne: 'Big Ben', leurres: ['Big Bob', 'London Eye', 'Tower Bell'] },
+    { theme: 'londres', question: 'Quel fleuve traverse Londres ?', bonne: 'La Tamise', leurres: ['La Seine', 'Le Rhin', 'La Loire'] },
+    { theme: 'londres', question: 'Comment s\'appelle la grande roue de Londres ?', bonne: 'London Eye', leurres: ['Big Wheel', 'Tower Eye', 'Sky Ring'] },
+    { theme: 'londres', question: 'Quelle est la couleur des célèbres bus de Londres ?', bonne: 'Rouge', leurres: ['Bleu', 'Vert', 'Jaune'] },
+    { theme: 'londres', question: 'Comment appelle-t-on le métro de Londres ?', bonne: 'The Tube', leurres: ['The Bus', 'The Train', 'The Pipe'] },
+    { theme: 'londres', question: 'Quel pont célèbre de Londres peut se lever pour laisser passer les bateaux ?', bonne: 'Tower Bridge', leurres: ['Golden Gate', 'Pont Neuf', 'Rialto Bridge'] },
+    { theme: 'londres', question: 'Dans quel pays se trouve Londres ?', bonne: 'Angleterre', leurres: ['Écosse', 'Irlande', 'Australie'] },
+    // royaute
+    { theme: 'royaute', question: 'Qui est le roi du Royaume-Uni ?', bonne: 'Charles III', leurres: ['William V', 'George VII', 'Henry IX'] },
+    { theme: 'royaute', question: 'Comment s\'appelle le prince héritier du trône, fils aîné du roi Charles III ?', bonne: 'William', leurres: ['Harry', 'Andrew', 'George'] },
+    { theme: 'royaute', question: 'Comment s\'appelle la maison du roi à Londres ?', bonne: 'Buckingham Palace', leurres: ['Big Ben', 'Tower Bridge', 'Hyde Palace'] },
+    { theme: 'royaute', question: 'Quelle reine a régné 70 ans, jusqu\'en 2022 ?', bonne: 'Élisabeth II', leurres: ['Victoria', 'Élisabeth Ire', 'Anne'] },
+    { theme: 'royaute', question: 'Où garde-t-on les joyaux de la Couronne à Londres ?', bonne: 'Tour de Londres', leurres: ['Big Ben', 'London Eye', 'British Museum'] },
+    { theme: 'royaute', question: 'Comment appelle-t-on la relève de la garde devant le palais ?', bonne: 'Changing of the Guard', leurres: ['Guard Parade', 'Royal Walk', 'Palace Dance'] },
+    // fetes
+    { theme: 'fetes', question: 'Quel jour fête-t-on Halloween ?', bonne: '31 octobre', leurres: ['1er novembre', '25 décembre', '14 février'] },
+    { theme: 'fetes', question: 'Quel jour fête-t-on Noël ?', bonne: '25 décembre', leurres: ['24 janvier', '31 décembre', '6 janvier'] },
+    { theme: 'fetes', question: 'Qui apporte les cadeaux à Noël en Angleterre ?', bonne: 'Father Christmas', leurres: ['The Easter Bunny', 'Robin Hood', 'Peter Pan'] },
+    { theme: 'fetes', question: 'Quel jour fête-t-on la Saint-Valentin ?', bonne: '14 février', leurres: ['14 juillet', '1er mai', '31 octobre'] },
+    { theme: 'fetes', question: 'Que mange-t-on à Pâques en Angleterre ?', bonne: 'Des œufs en chocolat', leurres: ['Des citrouilles', 'Des crêpes', 'Des marrons'] },
+    { theme: 'fetes', question: 'Quelle fête américaine a lieu le 4 juillet ?', bonne: 'Fête nationale', leurres: ['Halloween', 'Thanksgiving', 'Pâques'] },
+    { theme: 'fetes', question: 'À Halloween, quel légume sculpte-t-on ?', bonne: 'Une citrouille', leurres: ['Une carotte', 'Un chou', 'Une courgette'] },
+    { theme: 'fetes', question: 'Que dit-on à Halloween pour demander des bonbons ?', bonne: 'Trick or treat!', leurres: ['Merry Christmas!', 'Happy Easter!', 'Good luck!'] },
+    // drapeaux
+    { theme: 'drapeaux', question: 'Comment appelle-t-on le drapeau du Royaume-Uni ?', bonne: 'Union Jack', leurres: ['Stars and Stripes', 'Maple Leaf', 'Red Cross'] },
+    { theme: 'drapeaux', question: 'Quelles couleurs a le drapeau du Royaume-Uni ?', bonne: 'Rouge, blanc, bleu', leurres: ['Vert, blanc, rouge', 'Jaune, noir, rouge', 'Orange, blanc, vert'] },
+    { theme: 'drapeaux', question: 'Quel symbole figure au centre du drapeau du Canada ?', bonne: 'Une feuille d\'érable', leurres: ['Une étoile', 'Un ours', 'Un castor'] },
+    { theme: 'drapeaux', question: 'Comment appelle-t-on le drapeau des États-Unis ?', bonne: 'Stars and Stripes', leurres: ['Union Jack', 'Red Maple', 'Blue Cross'] },
+    { theme: 'drapeaux', question: 'Combien y a-t-il de bandes sur le drapeau des États-Unis ?', bonne: '13', leurres: ['10', '50', '7'] },
+    { theme: 'drapeaux', question: 'Combien y a-t-il d\'étoiles sur le drapeau des États-Unis ?', bonne: '50', leurres: ['13', '48', '100'] },
+    { theme: 'drapeaux', question: 'Quelle est la couleur de la croix sur le drapeau de l\'Angleterre ?', bonne: 'Rouge', leurres: ['Bleue', 'Verte', 'Noire'] },
+    // nourriture
+    { theme: 'nourriture', question: 'Que boit-on traditionnellement à 5 heures en Angleterre ?', bonne: 'Du thé', leurres: ['Du café', 'Du jus d\'orange', 'Du lait chaud'] },
+    { theme: 'nourriture', question: 'Que met-on dans un « fish and chips » ?', bonne: 'Poisson et frites', leurres: ['Poulet et riz', 'Jambon et pâtes', 'Fromage et pain'] },
+    { theme: 'nourriture', question: 'Qu\'est-ce qu\'un « full English breakfast » ?', bonne: 'Un gros petit-déjeuner', leurres: ['Un dîner du soir', 'Un goûter sucré', 'Un déjeuner léger'] },
+    { theme: 'nourriture', question: 'Quel plat américain est un pain rond avec de la viande hachée ?', bonne: 'Hamburger', leurres: ['Sandwich club', 'Hot dog', 'Pancake'] },
+    { theme: 'nourriture', question: 'Que mange-t-on souvent avec le thé, avec de la confiture et de la crème ?', bonne: 'Des scones', leurres: ['Des croissants', 'Des donuts', 'Des muffins salés'] },
+    { theme: 'nourriture', question: 'Que met-on sur les pancakes américains ?', bonne: 'Du sirop d\'érable', leurres: ['De la moutarde', 'Du vinaigre', 'De la sauce soja'] },
+    { theme: 'nourriture', question: 'Quel repas de viande mange-t-on le dimanche en famille en Angleterre ?', bonne: 'Le Sunday roast', leurres: ['Le hot dog', 'Le burrito', 'Le fast food'] },
+    // pays
+    { theme: 'pays', question: 'Quelle est la capitale de l\'Australie ?', bonne: 'Canberra', leurres: ['Sydney', 'Melbourne', 'Perth'] },
+    { theme: 'pays', question: 'Quelle est la capitale du Canada ?', bonne: 'Ottawa', leurres: ['Toronto', 'Montréal', 'Vancouver'] },
+    { theme: 'pays', question: 'Quelle est la capitale de l\'Écosse ?', bonne: 'Édimbourg', leurres: ['Glasgow', 'Cardiff', 'Belfast'] },
+    { theme: 'pays', question: 'Quelle est la capitale du pays de Galles ?', bonne: 'Cardiff', leurres: ['Édimbourg', 'Dublin', 'Belfast'] },
+    { theme: 'pays', question: 'Quelle est la capitale de l\'Irlande ?', bonne: 'Dublin', leurres: ['Cork', 'Belfast', 'Galway'] },
+    { theme: 'pays', question: 'Quelle est la capitale de la Nouvelle-Zélande ?', bonne: 'Wellington', leurres: ['Auckland', 'Sydney', 'Christchurch'] },
+    { theme: 'pays', question: 'Quel animal est le symbole de l\'Australie, qui saute avec une poche ?', bonne: 'Le kangourou', leurres: ['Le koala', 'Le lapin', 'Le castor'] },
+    { theme: 'pays', question: 'De quels pays le Royaume-Uni est-il composé ?', bonne: 'Angleterre, Écosse, Galles, Irlande du Nord', leurres: ['Angleterre, Irlande, France, Écosse', 'Angleterre, Canada, Galles, Écosse', 'Angleterre, Australie, Écosse, Irlande'] },
+    { theme: 'pays', question: 'Quelle mer sépare la France de l\'Angleterre ?', bonne: 'La Manche', leurres: ['La Méditerranée', 'La mer Rouge', 'L\'océan Indien'] },
+    // usa
+    { theme: 'usa', question: 'Quelle est la capitale des États-Unis ?', bonne: 'Washington D.C.', leurres: ['New York', 'Los Angeles', 'Chicago'] },
+    { theme: 'usa', question: 'Quelle statue célèbre accueille les bateaux à New York ?', bonne: 'La statue de la Liberté', leurres: ['Big Ben', 'Le Penseur', 'Le Christ Rédempteur'] },
+    { theme: 'usa', question: 'Combien d\'États comptent les États-Unis ?', bonne: '50', leurres: ['13', '25', '52'] },
+    { theme: 'usa', question: 'Comment s\'appelle la maison du président des États-Unis ?', bonne: 'La Maison-Blanche', leurres: ['Buckingham Palace', 'Le Capitole', 'Hollywood'] },
+    { theme: 'usa', question: 'Comment appelle-t-on le bus jaune qui emmène les enfants à l\'école aux États-Unis ?', bonne: 'School bus', leurres: ['Yellow Tube', 'Taxi cab', 'Big bus'] },
+    { theme: 'usa', question: 'Dans quelle ville américaine se trouve Hollywood ?', bonne: 'Los Angeles', leurres: ['New York', 'Miami', 'Boston'] },
+    { theme: 'usa', question: 'Quelle langue parle-t-on principalement aux États-Unis ?', bonne: 'L\'anglais', leurres: ['Le français', 'L\'espagnol', 'L\'allemand'] },
+];
