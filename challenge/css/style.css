@@ -539,3 +539,45 @@ body {
     .pastille-couleur { width: 50px; height: 50px; }
     .resultat-rang { flex-direction: column; }
 }
+
+/* --- Écran du classement --- */
+.classement { display: flex; flex-direction: column; gap: 14px; }
+.classement-entete {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
+    background: rgba(226, 232, 252, .94);
+    backdrop-filter: blur(6px);
+}
+.classement-retour { padding: 10px 18px; font-size: clamp(16px, 2.2vw, 20px); white-space: nowrap; }
+.classement-titre { margin: 0; flex: 1; font-size: clamp(24px, 4.5vw, 38px); color: #5b21b6; }
+.classement-liste { list-style: none; margin: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.classement-ligne {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px;
+    border-radius: 18px;
+    background: #f1f5f9;
+    font-size: clamp(16px, 2.2vw, 20px);
+    scroll-margin: 80px;
+}
+.classement-ligne.podium-1 { background: #fef3c7; }
+.classement-ligne.podium-2 { background: #e2e8f0; }
+.classement-ligne.podium-3 { background: #fed7aa; }
+.classement-ligne.classement-moi {
+    background: #fde047;
+    border: 3px solid #f59e0b;
+    font-weight: bold;
+    box-shadow: 0 4px 0 rgba(180, 83, 9, .25);
+}
+.classement-rang { width: 2.2em; text-align: center; font-weight: bold; color: #475569; flex-shrink: 0; }
+.classement-avatar { flex-shrink: 0; width: 30px; height: 40px; }
+.classement-avatar svg { display: block; width: 30px; height: 40px; }
+.classement-pseudo { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.classement-toi { color: #b45309; }
+.classement-points { font-weight: bold; color: #5b21b6; white-space: nowrap; }
