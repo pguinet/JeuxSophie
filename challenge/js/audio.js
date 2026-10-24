@@ -88,18 +88,42 @@ function direAvecVoix(mot) {
     speechSynthesis.speak(u);
 }
 
-// Prononce `mot`. Renvoie une promesse résolue avec la source utilisée
+const DELAI_SECURITE_MS = 2000;
+let dernierAudio = null;
+
+// Prononce `mot`. Renvoie une promesse TOUJOURS résolue avec la source utilisée
 // ('fichier' | 'voix' | 'texte' | 'muet') ; 'texte' = l'écran doit afficher le mot écrit.
-export function prononcer(mot, slug) {
+// Le repli (voix, sinon texte) sert si le fichier manque, si la lecture est refusée
+// (autoplay) ou si rien ne se passe au bout de `delaiMs`.
+export function prononcer(mot, slug, delaiMs = DELAI_SECURITE_MS) {
+    if (dernierAudio) { dernierAudio.pause(); dernierAudio = null; }
+    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
     if (muet) return Promise.resolve('muet');
     return new Promise(resolve => {
-        const a = new Audio(`audio/${slug}.ogg`);
-        a.addEventListener('playing', () => resolve('fichier'), { once: true });
-        a.addEventListener('error', () => {
+        let fini = false;
+        let minuteur = null;
+        const terminer = source => {
+            if (fini) return;
+            fini = true;
+            clearTimeout(minuteur);
+            resolve(source);
+        };
+        const repli = () => {
+            if (fini) return;
             const source = choisirSource({ fichierOk: false, voixAnglaise: Boolean(voixAnglaise()) });
             if (source === 'voix') direAvecVoix(mot);
-            resolve(source);
-        }, { once: true });
-        a.play().catch(() => {});
+            terminer(source);
+        };
+        const a = new Audio(`audio/${slug}.ogg`);
+        dernierAudio = a;
+        a.addEventListener('playing', () => terminer('fichier'), { once: true });
+        a.addEventListener('error', repli, { once: true });
+        minuteur = setTimeout(repli, delaiMs);
+        try {
+            const p = a.play();
+            if (p && p.catch) p.catch(repli);
+        } catch {
+            repli();
+        }
     });
 }

@@ -19,6 +19,6 @@ docker run --rm -i -v "$PWD/challenge/audio":/out -v piper-voices:/voices -v "$L
     while IFS=$'"'"'\t'"'"' read -r slug mot; do
       [ -f "/out/$slug.ogg" ] && [ "$FORCE" != "--force" ] && continue
       echo "$mot" | piper -m "$V" -f /tmp/w.wav
-      ffmpeg -loglevel error -y -i /tmp/w.wav -ac 1 -c:a libopus -b:a 24k "/out/$slug.ogg"
+      ffmpeg -nostdin -loglevel error -y -i /tmp/w.wav -ac 1 -c:a libopus -b:a 24k "/out/$slug.ogg"
     done < /liste.tsv
     chown -R '"$(id -u):$(id -g)"' /out'
