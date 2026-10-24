@@ -27,12 +27,12 @@ export const JEUX = [
     { id: 'relier', famille: 'mots', nom: 'Relie les mots', emoji: '🔗', couleur: '#0d9488', type: 'relier',
         aide: 'Relie chaque mot anglais à sa traduction' },
     { id: 'vraifaux', famille: 'grammaire', nom: 'Vrai ou faux', emoji: '✅', couleur: '#65a30d', type: 'qcm',
-        aide: 'Lis la phrase en anglais : vrai ou faux ?' },
+        aide: 'Lis la phrase en anglais : vrai ou faux ?' },
     { id: 'intrus', famille: 'mots', nom: 'Cherche l\'intrus', emoji: '🕵️', couleur: '#7c3aed', type: 'qcm',
         aide: 'Trouve le mot qui n\'est pas de la même famille' },
     { id: 'contraires', famille: 'mots', nom: 'Les contraires', emoji: '↔️', couleur: '#db2777', type: 'qcm',
         aide: 'Trouve le contraire du mot' },
-    { id: 'heure', famille: 'grammaire', nom: 'Quelle heure est-il ?', emoji: '🕒', couleur: '#0284c7', type: 'qcm',
+    { id: 'heure', famille: 'grammaire', nom: 'Quelle heure est-il ?', emoji: '🕒', couleur: '#0284c7', type: 'qcm',
         aide: 'Lis l\'horloge et dis l\'heure en anglais' },
     { id: 'pendu', famille: 'mots', nom: 'Le pendu', emoji: '🎈', couleur: '#e11d48', type: 'pendu',
         aide: 'Devine le mot anglais lettre par lettre' },
@@ -41,7 +41,7 @@ export const JEUX = [
     { id: 'ecoutephrases', famille: 'ecoute', nom: 'J\'écoute des phrases', emoji: '🎧', couleur: '#6d28d9', type: 'qcm',
         aide: 'Écoute la phrase et choisis sa traduction' },
     { id: 'survie', famille: 'defis', nom: 'Survie', emoji: '❤️', couleur: '#b91c1c', type: 'qcm', vies: 3,
-        aide: '3 vies : de plus en plus dur, jusqu\'où iras-tu ?' },
+        aide: '3 vies : de plus en plus dur, jusqu\'où iras-tu ?' },
     { id: 'concours', famille: 'defis', nom: 'Le concours', emoji: '🏆', couleur: '#1e40af', type: 'qcm',
         aide: '45 questions, comme le vrai concours' },
 ];
@@ -51,7 +51,7 @@ export const THEMES_INTRUS = ['animaux', 'nourriture', 'couleurs', 'vetements', 
     'sports', 'metiers', 'nature', 'cuisine', 'corps'];
 // Thèmes trop proches pour servir d'intrus l'un à l'autre (un « teacher » parmi des métiers,
 // un « sink » parmi la maison…).
-const THEMES_VOISINS = [['maison', 'cuisine'], ['nourriture', 'cuisine'], ['ecole', 'metiers']];
+const THEMES_VOISINS = [['maison', 'cuisine'], ['nourriture', 'cuisine'], ['ecole', 'metiers'], ['sports', 'metiers']];
 const voisins = (a, b) => THEMES_VOISINS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 
 export function slugAudio(en) {

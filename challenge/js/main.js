@@ -148,7 +148,7 @@ function jouer(jeu) {
     const ancienRecord = etat.meilleurs[jeu.id] ?? 0;
     const fin = (res) => {
         enregistrer(enregistrerPartie(etat, jeu.id, res.points));
-        afficherResultat(jeu, res, avant, ancienRecord);
+        afficherResultat(jeu, { ...res, total: questions.length }, avant, ancienRecord);
     };
     const opts = { onFin: fin, onQuitter: accueil };
     if (jeu.type === 'phrases') lancerPhrases(app, questions, opts);
@@ -167,11 +167,11 @@ function bravo(res) {
     return 'Continue, tu progresses ! 💪';
 }
 
-// Ligne du score : dépend du jeu (concours sur 45, survie en série, sinon x sur y).
+// Ligne du score : dépend du jeu (concours sur le nombre de questions, survie, sinon x sur y).
 function texteBonnes(jeu, res) {
-    if (jeu.id === 'concours') return `🏆 ${res.bonnes} / 45`;
+    if (jeu.id === 'concours') return `🏆 ${res.bonnes} / ${res.total ?? res.repondues}`;
     if (jeu.id === 'survie') {
-        return `❤️ ${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} d'affilée`;
+        return `❤️ ${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} !`;
     }
     return `${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} sur ${res.repondues}`;
 }

@@ -3,7 +3,7 @@
 // L'état de la partie vit dans partie.js ; ce module ne fait que l'afficher.
 import { creerPartiePhrases, placer, retirer, valider, suivante, resultat } from './partie.js';
 import { JEUX } from './jeux.js';
-import { creerEntete, bonusVolant } from './ui-qcm.js';
+import { creerEntete, bonusVolant } from './ui-commun.js';
 import * as audio from './audio.js';
 
 const JEU = JEUX.find(j => j.id === 'phrases');

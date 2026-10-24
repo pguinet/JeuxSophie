@@ -205,6 +205,15 @@ test('intrus : pas de mot polyvalent, un intrus d\'un autre thème', () => {
     }
 });
 
+test('intrus : sports et métiers ne sont jamais mélangés (thèmes voisins)', () => {
+    for (let g = 1; g <= 200; g++) {
+        for (const q of genererPartie('intrus', mulberry32(g))) {
+            const th = new Set(q.choix.map(c => VOCAB.find(m => m.en === c.texte).theme));
+            assert.ok(!(th.has('sports') && th.has('metiers')));
+        }
+    }
+});
+
 test('contraires : l\'autre mot de la paire, leurres d\'autres paires', () => {
     for (let g = 1; g <= 200; g++) {
         for (const q of genererPartie('contraires', mulberry32(g))) {

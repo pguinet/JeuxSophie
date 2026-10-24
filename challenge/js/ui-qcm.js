@@ -3,6 +3,7 @@
 // L'état de la partie vit dans partie.js ; ce module ne fait que l'afficher.
 import { creerPartieQcm, repondre, suivante, tempsEcoule, resultat } from './partie.js';
 import { slugAudio } from './jeux.js';
+import { creer, creerEntete, bonusVolant } from './ui-commun.js';
 import * as audio from './audio.js';
 
 const BRAVO = ['Bravo !', 'Super !', 'Génial !', 'Trop fort !', 'Bien joué !', 'Yes!'];
@@ -12,37 +13,6 @@ const DELAI_FAUX = 1400;
 const DELAI_EXPLICATION = 2500;   // pause plus longue : le temps de lire l'explication
 
 const auHasard = liste => liste[Math.floor(Math.random() * liste.length)];
-
-function creer(tag, classe, texte) {
-    const el = document.createElement(tag);
-    if (classe) el.className = classe;
-    if (texte != null) el.textContent = texte;
-    return el;
-}
-
-// En-tête commun aux écrans de jeu : 🏠, nom du jeu, progression, points.
-export function creerEntete(jeu) {
-    const entete = creer('div', 'jeu-entete');
-    entete.style.setProperty('--couleur-jeu', jeu.couleur);
-    const maison = creer('button', 'btn-maison', '🏠');
-    maison.title = 'Retour au menu';
-    const titre = creer('div', 'jeu-titre', `${jeu.emoji} ${jeu.nom}`);
-    const progression = creer('div', 'pastille progression');
-    const score = creer('div', 'pastille score');
-    entete.append(maison, titre, progression, score);
-    return { entete, maison, progression, score };
-}
-
-// Petit « +15 » qui s'envole depuis l'élément `depuis`.
-export function bonusVolant(ecran, depuis, points) {
-    const r = depuis.getBoundingClientRect();
-    const e = ecran.getBoundingClientRect();
-    const b = creer('div', 'bonus-vol', `+${points}`);
-    b.style.left = `${r.left - e.left + r.width / 2}px`;
-    b.style.top = `${r.top - e.top}px`;
-    b.addEventListener('animationend', () => b.remove());
-    ecran.appendChild(b);
-}
 
 // lancerQcm(app, jeu, questions, { onFin(resultat), onQuitter }) — rend l'écran dans `app`.
 export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
