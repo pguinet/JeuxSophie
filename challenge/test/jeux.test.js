@@ -58,9 +58,11 @@ test('tous les QCM : choix distincts, une bonne réponse (200 graines)', () => {
 
 test('QCM hors vrai/faux : 4 choix', () => {
     for (const j of JEUX.filter(x => x.type === 'qcm' && x.id !== 'vraifaux')) {
-        for (const q of genererPartie(j.id, mulberry32(5))) {
-            if (q.cle.startsWith('vf:')) continue;
-            assert.equal(q.choix.length, 4, `${j.id} ${q.cle}`);
+        for (let g = 1; g <= 50; g++) {
+            for (const q of partie(j.id, g)) {
+                if (q.cle.startsWith('vf:')) continue;
+                assert.equal(q.choix.length, 4, `${j.id} ${q.cle}`);
+            }
         }
     }
 });
@@ -189,7 +191,11 @@ test('intrus : pas de mot polyvalent, un intrus d\'un autre thème', () => {
     for (let g = 1; g <= 200; g++) {
         for (const q of genererPartie('intrus', mulberry32(g))) {
             const mots = q.choix.map(c => VOCAB.find(m => m.en === c.texte));
-            assert.ok(mots.every(m => m && !m.polyvalent));
+            assert.ok(mots.every(m => m && !m.polyvalent && !['lamb', 'water', 'referee'].includes(m.en)));
+            for (const m of mots) {
+                assert.ok(VOCAB.every(x => x === m || (norm(x.en) !== norm(m.en) && norm(x.fr) !== norm(m.fr))
+                    || x.theme === m.theme), m.en);
+            }
             const intrus = mots[q.choix.findIndex(c => c.juste)];
             const autres = mots.filter(m => m !== intrus);
             assert.ok(autres.every(m => m.theme === autres[0].theme) && intrus.theme !== autres[0].theme);
@@ -267,15 +273,37 @@ test('survie : niveaux croissants, pas de doublon', () => {
     }
 });
 
-test('survie : types mélangés', () => {
-    const qs = genererPartie('survie', mulberry32(7));
-    const prefixes = new Set(qs.map(q => q.cle.split(':')[0]));
-    for (const p of ['v', 'g', 'pg', 'c', 'ct', 'h', 'vf']) assert.ok(prefixes.has(p), p);
+test('survie : types mélangés, vrai/faux pas sur-représenté', () => {
+    for (let g = 1; g <= 50; g++) {
+        const qs = partie('survie', g);
+        const prefixes = new Set(qs.map(q => q.cle.split(':')[0]));
+        for (const p of ['v', 'g', 'pg', 'c', 'ct', 'h', 'vf']) assert.ok(prefixes.has(p), `${g} ${p}`);
+        const n3 = qs.slice(25, 150);
+        assert.ok(n3.filter(q => q.cle.startsWith('vf:')).length <= 0.2 * n3.length, `graine ${g}`);
+    }
+});
+
+// Une question ne doit pas se voir deux fois, même venant de banques différentes
+// (piège « Comment dit-on « … » ? » et traduction, `fr` partagés entre thèmes).
+test('parties mélangées : pas de question visible en double (300 graines)', () => {
+    for (const id of ['quiz', 'course', 'survie', 'concours']) {
+        for (let g = 1; g <= 300; g++) {
+            const qs = partie(id, g).slice(0, 150);
+            const vues = qs.map(q => `${norm(q.consigne)}|${q.visuel ?? ''}|${q.visuelSVG ?? ''}`);
+            assert.equal(new Set(vues).size, qs.length, `${id} ${g}`);
+            const frs = qs.filter(q => q.cle.startsWith('v:'))
+                .map(q => norm(VOCAB.find(m => m.en === q.cle.slice(2)).fr));
+            assert.equal(new Set(frs).size, frs.length, `${id} ${g}`);
+            const demandes = qs.filter(q => q.cle.startsWith('pg:'))
+                .flatMap(q => [...q.consigne.matchAll(/«\s*([^»]+?)\s*»/g)].map(m => norm(m[1])));
+            assert.ok(frs.every(f => !demandes.includes(f)), `${id} ${g}`);
+        }
+    }
 });
 
 test('concours : répartition et clés uniques', () => {
     for (let g = 1; g <= 50; g++) {
-        const qs = genererPartie('concours', mulberry32(g));
+        const qs = partie('concours', g);
         const n = p => qs.filter(q => q.cle.startsWith(`${p}:`)).length;
         assert.deepEqual(['v', 'g', 'pg', 'c', 'h', 'ct', 'vf'].map(n), [12, 10, 6, 7, 4, 3, 3]);
         assert.equal(new Set(qs.map(q => q.cle)).size, 45);

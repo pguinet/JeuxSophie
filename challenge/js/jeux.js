@@ -68,6 +68,37 @@ function choix(bonne, leurres, rng) {
 
 const norm = t => String(t).trim().toLowerCase();
 
+// --- Anti-doublon des parties mélangées ---
+
+// Deux questions ne doivent pas se voir pareilles (même consigne et même image ou horloge),
+// et un mot français déjà demandé (« … » d'une traduction ou d'un piège) ne revient pas.
+const motsDemandes = q => (/^(v|pg):/.test(q.cle)
+    ? [...q.consigne.matchAll(/«\s*([^»]+?)\s*»/g)].map(m => norm(m[1])) : []);
+
+function creerFiltre() {
+    const vues = new Set();
+    const frs = new Set();
+    return q => {
+        const k = `${norm(q.consigne)}|${q.visuel ?? ''}|${q.visuelSVG ?? ''}|${q.audio ?? ''}`;
+        const mots = motsDemandes(q);
+        if (vues.has(k) || mots.some(f => frs.has(f))) return false;
+        vues.add(k);
+        for (const f of mots) frs.add(f);
+        return true;
+    };
+}
+
+// n questions acceptées par `filtre`, fabriquées dans l'ordre du tirage par niveau.
+function tirerFiltre(banque, n, faire, filtre, rng) {
+    const res = [];
+    for (const item of tirerParNiveau(banque, banque.length, rng)) {
+        if (res.length === n) break;
+        const q = faire(item, rng);
+        if (filtre(q)) res.push(q);
+    }
+    return res;
+}
+
 // --- Vocabulaire ---
 
 function qImage(mot, rng) {
@@ -179,7 +210,23 @@ function heuresDistinctes(n, rng) {
 
 // --- Intrus ---
 
-const SANS_POLYVALENT = VOCAB.filter(m => !m.polyvalent);
+// Mots qui pourraient appartenir à une autre famille sans être marqués `polyvalent`
+// (agneau : animal ou viande ; eau : boisson ou nature ; arbitre : sport ou métier).
+const EXCLUS_INTRUS = ['lamb', 'water', 'referee'];
+// Un anglais ou un français présent dans plusieurs thèmes est ambigu pour l'intrus.
+const themesDe = cle => {
+    const m = new Map();
+    for (const v of VOCAB) {
+        const k = norm(cle(v));
+        if (!m.has(k)) m.set(k, new Set());
+        m.get(k).add(v.theme);
+    }
+    return m;
+};
+const THEMES_EN = themesDe(v => v.en);
+const THEMES_FR = themesDe(v => v.fr);
+const SANS_POLYVALENT = VOCAB.filter(m => !m.polyvalent && !EXCLUS_INTRUS.includes(m.en)
+    && THEMES_EN.get(norm(m.en)).size === 1 && THEMES_FR.get(norm(m.fr)).size === 1);
 
 // Prend dans `banque` un mot dont ni l'anglais ni le français n'est déjà dans `vus`.
 function motLibre(banque, vus, rng) {
@@ -268,28 +315,32 @@ function survie(rng) {
         return piles.get(k);
     };
     const cles = new Set();
+    const filtre = creerFiltre();
+    const accepte = q => !cles.has(q.cle) && filtre(q);
     const res = [];
-    const depart = Math.floor(rng() * TYPES_SURVIE.length);
+    let tour = Math.floor(rng() * TYPES_SURVIE.length);
     for (let i = 0; i < 150; i++) {
         const niv = NIVEAU_SURVIE(i);
-        for (let d = 0; d < TYPES_SURVIE.length; d++) {
-            const t = (depart + i + d) % TYPES_SURVIE.length;
+        // Tourniquet sur les seuls types qui existent à ce niveau (l'heure est de niveau 2).
+        const dispo = TYPES_SURVIE.map((_, t) => t).filter(t => !TYPES_SURVIE[t].heure || niv === 2);
+        for (let d = 0; d < dispo.length; d++) {
+            const t = dispo[(tour + d) % dispo.length];
             let q = null;
             if (TYPES_SURVIE[t].heure) {
-                if (niv !== 2) continue;   // l'heure est de niveau 2
                 for (let essai = 0; essai < 50 && !q; essai++) {
                     const h = qHeureNiveau(rng);
-                    if (!cles.has(h.cle)) q = h;
+                    if (accepte(h)) q = h;
                 }
             } else {
                 const p = pile(t, niv);
                 while (p.length > 0 && !q) {
                     const c = TYPES_SURVIE[t].faire(p.pop(), rng);
-                    if (!cles.has(c.cle)) q = c;
+                    if (accepte(c)) q = c;
                 }
             }
             if (q) { cles.add(q.cle); res.push(q); break; }
         }
+        tour++;
     }
     return res;
 }
@@ -297,14 +348,15 @@ function survie(rng) {
 // --- Concours ---
 
 function concours(rng) {
+    const f = creerFiltre();
     return shuffle([
-        ...tirerParNiveau(VOCAB, 12, rng).map(m => qTraduction(m, rng)),
-        ...tirerParNiveau(GRAMMAIRE, 10, rng).map(q => qFixe(q, 'g', rng)),
-        ...tirerParNiveau(PIEGES, 6, rng).map(q => qFixe(q, 'pg', rng)),
-        ...tirerParNiveau(CULTURE, 7, rng).map(q => qFixe(q, 'c', rng)),
+        ...tirerFiltre(PIEGES, 6, (q, r) => qFixe(q, 'pg', r), f, rng),
+        ...tirerFiltre(VOCAB, 12, qTraduction, f, rng),
+        ...tirerFiltre(GRAMMAIRE, 10, (q, r) => qFixe(q, 'g', r), f, rng),
+        ...tirerFiltre(CULTURE, 7, (q, r) => qFixe(q, 'c', r), f, rng),
         ...heuresDistinctes(4, rng),
-        ...tirerParNiveau(CONTRAIRES, 3, rng).map(p => qContraire(p, rng)),
-        ...tirerParNiveau(VRAIFAUX, 3, rng).map(qVraiFaux),
+        ...tirerFiltre(CONTRAIRES, 3, qContraire, f, rng),
+        ...tirerFiltre(VRAIFAUX, 3, qVraiFaux, f, rng),
     ], rng);
 }
 
@@ -314,19 +366,21 @@ export function genererPartie(idJeu, rng = Math.random) {
     case 'ecoute': return tirerParNiveau(IMAGES, 10, rng).map(m => qEcoute(m, rng));
     case 'culture': return tirerParNiveau(CULTURE, 10, rng).map(q => qFixe(q, 'c', rng));
     case 'phrases': return tirerParNiveau(PHRASES, 8, rng).map(p => qPhrase(p, rng));
-    case 'quiz': return shuffle([
-        ...tirerParNiveau(VOCAB, 5, rng).map(m => qTraduction(m, rng)),
-        ...tirerParNiveau(GRAMMAIRE, 4, rng).map(q => qFixe(q, 'g', rng)),
-        ...tirerParNiveau(PIEGES, 2, rng).map(q => qFixe(q, 'pg', rng)),
-        ...tirerParNiveau(CULTURE, 4, rng).map(q => qFixe(q, 'c', rng)),
-    ], rng);
+    case 'quiz': {
+        const f = creerFiltre();
+        return shuffle([
+            ...tirerFiltre(PIEGES, 2, (q, r) => qFixe(q, 'pg', r), f, rng),
+            ...tirerFiltre(VOCAB, 5, qTraduction, f, rng),
+            ...tirerFiltre(GRAMMAIRE, 4, (q, r) => qFixe(q, 'g', r), f, rng),
+            ...tirerFiltre(CULTURE, 4, (q, r) => qFixe(q, 'c', r), f, rng),
+        ], rng);
+    }
     case 'course': {
         // Alterne vocabulaire et grammaire (pièges compris) ; 60 questions suffisent pour 1 minute.
-        const v = tirerParNiveau(VOCAB, 30, rng);
-        const g = tirerParNiveau([...GRAMMAIRE, ...PIEGES], 30, rng);
-        return Array.from({ length: 60 }, (_, i) => (i % 2 === 0
-            ? qTraduction(v[i / 2], rng)
-            : qGrammaire(g[(i - 1) / 2], rng)));
+        const f = creerFiltre();
+        const g = tirerFiltre([...GRAMMAIRE, ...PIEGES], 30, qGrammaire, f, rng);
+        const v = tirerFiltre(VOCAB, 30, qTraduction, f, rng);
+        return Array.from({ length: 60 }, (_, i) => (i % 2 === 0 ? v[i / 2] : g[(i - 1) / 2]));
     }
     case 'relier': return relier(rng);
     case 'vraifaux': return tirerParNiveau(VRAIFAUX, 15, rng).map(qVraiFaux);
