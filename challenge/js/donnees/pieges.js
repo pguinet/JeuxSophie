@@ -161,7 +161,7 @@ export const PIEGES = [
     { theme: 'chips ≠ chips', question: 'Comment dit-on « frites » en anglais britannique ?', bonne: 'chips', leurres: ['crisps', 'fries', 'French chips'], niveau: 3 },
     { theme: 'chips ≠ chips', question: 'Comment dit-on « chips » (le paquet croustillant) en anglais britannique ?', bonne: 'crisps', leurres: ['chips', 'fries', 'chipps'], niveau: 3 },
     // ask ≠ demander
-    { theme: 'demand ≠ demander', question: 'Comment dit-on « demander » (quelque chose à quelqu\'un) en anglais ?', bonne: 'ask', leurres: ['demand', 'request', 'order'], niveau: 3 },
+    { theme: 'demand ≠ demander', question: 'Comment dit-on « demander » (quelque chose à quelqu\'un) en anglais ?', bonne: 'ask', leurres: ['demand', 'answer', 'order'], niveau: 3 },
     // disappoint ≠ décevoir
     { theme: 'deceive ≠ décevoir', question: 'Comment dit-on « décevoir » en anglais ?', bonne: 'disappoint', leurres: ['deceive', 'decide', 'receive'], niveau: 3 },
     // rude ≠ rude
@@ -196,7 +196,7 @@ export const PIEGES = [
     // look / watch / see
     { theme: 'look/watch/see', question: '_ at the blackboard, please!', bonne: 'Look', leurres: ['Watch', 'See', 'Listen'], niveau: 1 },
     { theme: 'look/watch/see', question: 'I _ TV every evening.', bonne: 'watch', leurres: ['look', 'see', 'listen'], niveau: 1 },
-    { theme: 'look/watch/see', question: 'I can _ the mountain from my window.', bonne: 'see', leurres: ['look', 'watch', 'listen'], niveau: 3 },
+    { theme: 'look/watch/see', question: 'I can _ the mountain from my window.', bonne: 'see', leurres: ['look', 'hear', 'listen'], niveau: 3 },
     // borrow / lend
     { theme: 'borrow/lend', question: 'Can I _ your pen, please?', bonne: 'borrow', leurres: ['lend', 'lent', 'leave'], niveau: 2 },
     { theme: 'borrow/lend', question: 'Can you _ me your bike for an hour?', bonne: 'lend', leurres: ['borrow', 'borrowed', 'owe'], niveau: 3 },
