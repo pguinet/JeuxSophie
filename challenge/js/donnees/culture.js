@@ -146,7 +146,7 @@ export const CULTURE = [
     { theme: 'royaute', question: 'En quelle année Charles III a-t-il été couronné ?', bonne: '2023', leurres: ['2022', '2021', '2024'], niveau: 3 },
     { theme: 'royaute', question: 'Quel prince est le fils cadet du roi Charles III ?', bonne: 'Harry', leurres: ['William', 'Andrew', 'Edward'], niveau: 2 },
     { theme: 'royaute', question: 'Comment s\'appelle le fils aîné du prince William ?', bonne: 'George', leurres: ['Louis', 'Archie', 'Philip'], niveau: 3 },
-    { theme: 'londres', question: 'Quelle est la résidence officielle du Premier ministre ?', bonne: '10 Downing Street', leurres: ['Buckingham Palace', 'Kensington Palace', 'Hampton Court'], niveau: 2 },
+    { theme: 'londres', question: 'Quelle est la résidence officielle du Premier ministre britannique ?', bonne: '10 Downing Street', leurres: ['Buckingham Palace', 'Kensington Palace', 'Hampton Court'], niveau: 2 },
     { theme: 'londres', question: 'Comment s\'appelle le palais où siège le Parlement britannique ?', bonne: 'Palace of Westminster', leurres: ['Buckingham Palace', 'Kensington Palace', 'Hampton Court'], niveau: 3 },
     { theme: 'londres', question: 'Que désigne vraiment le nom « Big Ben » ?', bonne: 'La grosse cloche', leurres: ['La tour entière', 'Le pont voisin', 'Le cadran'], niveau: 3 },
     { theme: 'londres', question: 'Dans quel quartier de Londres passe le méridien zéro ?', bonne: 'Greenwich', leurres: ['Soho', 'Camden', 'Chelsea'], niveau: 3 },
