@@ -60,3 +60,30 @@ test('phrases : 2e essai 5 points, 3e essai révèle la solution', () => {
     placer(e, 0); placer(e, 1); placer(e, 2);
     assert.deepEqual(valider(e), { juste: false, points: 0, solution: ['a', 'b', 'c'] });
 });
+
+test('survie : 3 vies, fin à 0', () => {
+    const e = creerPartieQcm(Array.from({ length: 20 }, () => q(0)), { vies: 3 });
+    assert.equal(e.vies, 3);
+    assert.equal(repondre(e, 0, 1000).vies, 3); suivante(e);
+    for (let i = 0; i < 3; i++) { repondre(e, 1, 1000); if (i < 2) suivante(e); }
+    assert.equal(e.vies, 0);
+    assert.equal(e.terminee, false);
+    suivante(e);
+    assert.equal(e.terminee, true);
+    assert.equal(e.bonnes, 1);
+});
+
+test('sans vies : comportement v1', () => {
+    const e = creerPartieQcm([q(0), q(0)]);
+    assert.equal(e.vies, null);
+    repondre(e, 1, 1000); suivante(e);
+    assert.equal(e.terminee, false);
+});
+
+test('survie : questions épuisées avant 0 vie, fin comme en v1', () => {
+    const e = creerPartieQcm([q(0), q(0)], { vies: 3 });
+    repondre(e, 0, 1000); suivante(e);
+    repondre(e, 1, 1000); suivante(e);
+    assert.equal(e.vies, 2);
+    assert.equal(e.terminee, true);
+});

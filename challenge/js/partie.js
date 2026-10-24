@@ -3,9 +3,10 @@
 // et lit l'état. Le verrou `attente` empêche de compter deux réponses.
 import { pointsQuestion, pointsPhrase } from './points.js';
 
-export function creerPartieQcm(questions, { duree = null } = {}) {
+// vies : mode Survie. Chaque mauvaise réponse retire une vie ; 0 vie termine la partie.
+export function creerPartieQcm(questions, { duree = null, vies = null } = {}) {
     return { questions, index: 0, points: 0, bonnes: 0, repondues: 0, serie: 0,
-        attente: false, terminee: questions.length === 0, duree };
+        attente: false, terminee: questions.length === 0, duree, vies };
 }
 
 export function repondre(e, indexChoix, ms) {
@@ -17,8 +18,9 @@ export function repondre(e, indexChoix, ms) {
     e.points += points;
     e.repondues++;
     if (juste) e.bonnes++;
+    if (!juste && e.vies != null) e.vies = Math.max(0, e.vies - 1);
     e.attente = true;
-    return { juste, points, bonneIndex: q.choix.findIndex(c => c.juste) };
+    return { juste, points, bonneIndex: q.choix.findIndex(c => c.juste), vies: e.vies };
 }
 
 // Sert aux deux types de partie : remet aussi à zéro l'essai en cours des phrases.
@@ -27,6 +29,7 @@ export function suivante(e) {
     e.index++;
     if ('essai' in e) { e.essai = 1; e.reponse = []; e.utilises = []; }
     if (e.index >= e.questions.length) e.terminee = true;
+    if (e.vies === 0) e.terminee = true;
 }
 
 export function tempsEcoule(e, msDepuisDebut) {
