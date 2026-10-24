@@ -5,6 +5,9 @@ import { classement } from './classement.js';
 import { avatarSVG } from './avatar.js';
 import { lancerQcm } from './ui-qcm.js';
 import { lancerPhrases } from './ui-phrases.js';
+import { lancerRelier } from './ui-relier.js';
+import { lancerPendu } from './ui-pendu.js';
+import { lancerLettres } from './ui-lettres.js';
 import { afficherCompte } from './ecran-compte.js';
 import { afficherClassement } from './ecran-classement.js';
 import { joueursDepasses, phraseDepasses, rangTexte } from './resultat.js';
@@ -54,6 +57,13 @@ function compte() {
 }
 
 // --- Accueil ---
+
+const FAMILLES = [
+    { id: 'mots', titre: '📚 Les mots' },
+    { id: 'grammaire', titre: '✏️ Phrases et grammaire' },
+    { id: 'ecoute', titre: '🎧 L\'écoute' },
+    { id: 'defis', titre: '🏆 Les défis' },
+];
 
 function boutonMuet() {
     const b = creer('button', 'btn-rond btn-muet');
@@ -113,9 +123,16 @@ function accueil() {
     entete.append(avatar, infos, outils);
 
     const titre = creer('h1', 'titre-jeu titre-petit', 'The Biggest Challenge');
-    const grille = creer('div', 'grille-jeux');
-    grille.append(...JEUX.map(carteJeu));
-    ecran.append(titre, entete, creer('h2', 'accueil-question', 'À quoi on joue ? 🎮'), grille);
+    ecran.append(titre, entete, creer('h2', 'accueil-question', 'À quoi on joue ? 🎮'));
+    for (const f of FAMILLES) {
+        const jeux = JEUX.filter(j => j.famille === f.id);
+        if (jeux.length === 0) continue;
+        const section = creer('section', 'accueil-famille');
+        const grille = creer('div', 'grille-jeux');
+        grille.append(...jeux.map(carteJeu));
+        section.append(creer('h2', 'accueil-famille-titre', f.titre), grille);
+        ecran.append(section);
+    }
     afficher(ecran);
 }
 
@@ -135,6 +152,9 @@ function jouer(jeu) {
     };
     const opts = { onFin: fin, onQuitter: accueil };
     if (jeu.type === 'phrases') lancerPhrases(app, questions, opts);
+    else if (jeu.type === 'relier') lancerRelier(app, jeu, questions, opts);
+    else if (jeu.type === 'pendu') lancerPendu(app, jeu, questions, opts);
+    else if (jeu.type === 'lettres') lancerLettres(app, jeu, questions, opts);
     else lancerQcm(app, jeu, questions, opts);
 }
 
@@ -145,6 +165,15 @@ function bravo(res) {
     if (taux >= 0.6) return 'Bravo ! 🎉';
     if (taux >= 0.3) return 'Bien joué ! 👍';
     return 'Continue, tu progresses ! 💪';
+}
+
+// Ligne du score : dépend du jeu (concours sur 45, survie en série, sinon x sur y).
+function texteBonnes(jeu, res) {
+    if (jeu.id === 'concours') return `🏆 ${res.bonnes} / 45`;
+    if (jeu.id === 'survie') {
+        return `❤️ ${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} d'affilée`;
+    }
+    return `${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} sur ${res.repondues}`;
 }
 
 function afficherResultat(jeu, res, avant, ancienRecord) {
@@ -159,8 +188,7 @@ function afficherResultat(jeu, res, avant, ancienRecord) {
     carte.append(
         creer('div', 'resultat-jeu', `${jeu.emoji} ${jeu.nom}`),
         creer('h1', 'resultat-titre', bravo(res)),
-        creer('div', 'resultat-bonnes',
-            `${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} sur ${res.repondues}`),
+        creer('div', 'resultat-bonnes', texteBonnes(jeu, res)),
         creer('div', 'resultat-points', `+${res.points} points`),
     );
     if (res.points > ancienRecord) {
