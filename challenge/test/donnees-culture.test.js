@@ -27,7 +27,7 @@ test('phrases : au moins 100 phrases de 3 à 9 mots sans mot répété', () => {
         assert.match(p.en, /^[A-Z].*[.?!]$/, p.en);
         const mots = p.en.split(' ');
         assert.ok(mots.length >= 3 && mots.length <= 9, p.en);
-        assert.equal(new Set(mots.map(m => m.toLowerCase())).size, mots.length, `mot répété : ${p.en}`);
+        assert.equal(new Set(mots.map(m => m.toLowerCase().replace(/[.?!,]$/, ''))).size, mots.length, `mot répété : ${p.en}`);
     }
 });
 
