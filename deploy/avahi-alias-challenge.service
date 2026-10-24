@@ -1,0 +1,15 @@
+[Unit]
+Description=Alias mDNS challenge.local (The Biggest Challenge)
+After=avahi-daemon.service network-online.target
+Wants=network-online.target
+Requires=avahi-daemon.service
+
+[Service]
+Type=simple
+# L'adresse IP vient du DHCP : on la lit au démarrage.
+ExecStart=/bin/sh -c 'exec /usr/bin/avahi-publish -a -R challenge.local "$(hostname -I | cut -d" " -f1)"'
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -113,6 +113,50 @@ Sur la tablette de Sophie, ouvrir :
 
 - `http://jeux.local/` — page d'accueil de tous les jeux
 - `http://jeux.local/aventure/`, `/chat/`, etc.
+- `http://challenge.local/` — The Biggest Challenge (adresse à part, voir plus bas)
+
+---
+
+## Adresse challenge.local (The Biggest Challenge)
+
+Le jeu `challenge/` a sa propre adresse, `http://challenge.local/`, et n'apparaît plus dans
+le menu de `http://jeux.local/`. Deux fichiers de `deploy/` y contribuent :
+
+- `50-jeux.conf` : un bloc `$HTTP["host"]` qui sert `/var/www/jeux/challenge` à la racine
+  quand l'hôte demandé est `challenge.local` (le jeu n'utilise que des chemins relatifs).
+- `avahi-alias-challenge.service` : service systemd qui publie l'alias mDNS
+  `challenge.local` vers l'IP du Pi (lue au démarrage, car elle vient du DHCP).
+
+Installation (une fois, puis à chaque changement de `50-jeux.conf`) :
+
+```bash
+# Depuis le poste de dev :
+scp deploy/50-jeux.conf deploy/avahi-alias-challenge.service sophie@jeux.local:/tmp/
+```
+
+```bash
+# Sur le Pi :
+# 1. avahi-publish vient du paquet avahi-utils (s'il manque).
+command -v avahi-publish || sudo apt install -y avahi-utils
+
+# 2. Alias mDNS.
+sudo cp /tmp/avahi-alias-challenge.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now avahi-alias-challenge.service
+
+# 3. Config lighttpd : tester AVANT de redémarrer.
+sudo cp /tmp/50-jeux.conf /etc/lighttpd/conf-available/50-jeux.conf
+sudo /usr/sbin/lighttpd -tt -f /etc/lighttpd/lighttpd.conf
+sudo systemctl restart lighttpd
+```
+
+Vérifications :
+
+```bash
+curl -sI http://challenge.local/    # 200, le jeu
+curl -sI http://jeux.local/         # 200, le menu (sans la carte challenge)
+systemctl is-active avahi-alias-challenge lighttpd
+```
 
 ---
 
@@ -123,6 +167,7 @@ Sur la tablette de Sophie, ouvrir :
 | `aventure`/`chat` : écran noir, erreur console `Failed to load module` | Vérifier que `vendor/three@0.170.0/three.module.js` a bien été déployé et que `.js` est servi en `text/javascript` (config `50-jeux.conf`). |
 | `rsync: permission denied` | Le docroot n'appartient pas à l'utilisateur SSH : `sudo chown -R sophie:sophie /var/www/jeux`. |
 | `jeux.local` introuvable | Installer `avahi-daemon` sur le Pi, ou utiliser l'IP directement. |
+| `challenge.local` introuvable | `systemctl status avahi-alias-challenge` ; vérifier `avahi-utils` et que l'IP donnée par `hostname -I` est la bonne. |
 | Page pas à jour après déploiement | Les en-têtes `no-cache` sont actifs ; forcer un rafraîchissement (Ctrl/Cmd+Maj+R) sur la tablette. |
 
 ## Mises à jour automatiques du Pi (depuis le 2026-10-03)
