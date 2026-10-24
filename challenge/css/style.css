@@ -255,3 +255,287 @@ body {
     .jeu-titre { flex-basis: calc(100% - 64px); font-size: 20px; }
     .visuel-emoji { font-size: 96px; }
 }
+
+/* ===================================================================== */
+/* --- Compte, éditeur d'avatar, accueil et résultat (Task 12) --- */
+/* ===================================================================== */
+.ecran button { font-family: inherit; cursor: pointer; }
+.ecran button:disabled { cursor: default; }
+.carte {
+    background: rgba(255, 255, 255, .92);
+    border-radius: 26px;
+    box-shadow: 0 8px 0 rgba(0, 0, 0, .08), 0 12px 30px rgba(30, 41, 59, .08);
+}
+.titre-jeu {
+    margin: 12px 0 4px;
+    text-align: center;
+    font-size: clamp(32px, 6vw, 60px);
+    line-height: 1.05;
+    color: #fff;
+    background: linear-gradient(90deg, #2563eb, #9333ea, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(255, 255, 255, .9));
+}
+.titre-jeu.titre-petit { font-size: clamp(24px, 4vw, 36px); margin-top: 0; }
+
+.btn-gros {
+    border: none;
+    border-radius: 20px;
+    padding: 14px 28px;
+    font-size: clamp(20px, 2.6vw, 26px);
+    font-weight: bold;
+    color: #fff;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, .18);
+    transition: transform .1s, box-shadow .1s;
+}
+.btn-gros:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+.btn-gros:disabled { background: #cbd5e1; box-shadow: none; }
+.btn-vert { background: #22c55e; }
+.btn-violet { background: #8b5cf6; }
+.btn-blanc { background: #fff; color: #1e293b; }
+.btn-rond {
+    border: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    font-size: 26px;
+    background: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .15);
+    transition: transform .1s;
+}
+
+/* Création du compte */
+.compte { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 6vh; }
+.compte-intro { margin: 0 0 12px; font-size: clamp(18px, 2.4vw, 22px); color: #475569; text-align: center; }
+.compte-carte {
+    width: min(480px, 100%);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    text-align: center;
+}
+.compte-label { font-size: 24px; font-weight: bold; }
+.champ-pseudo {
+    font: inherit;
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    padding: 12px 16px;
+    border-radius: 18px;
+    border: 3px solid #c4b5fd;
+    outline: none;
+    width: 100%;
+    min-width: 0;
+}
+.champ-pseudo:focus { border-color: #8b5cf6; box-shadow: 0 0 0 4px #ede9fe; }
+.compte-aide { color: #64748b; font-size: 15px; margin-bottom: 6px; }
+
+/* Éditeur d'avatar */
+.editeur-entete { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.editeur-titre { margin: 0; font-size: clamp(24px, 3.4vw, 34px); }
+.editeur-corps { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 20px; align-items: start; }
+.editeur-apercu { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.apercu-avatar svg { display: block; max-width: 100%; height: auto; filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .1)); }
+.apercu-avatar.saute { animation: pop .35s; }
+.apercu-pseudo {
+    font-size: 26px;
+    font-weight: bold;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+.apercu-boutons { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.editeur-choix { padding: 16px; min-width: 0; }
+.onglets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; }
+.onglet {
+    border: none;
+    border-radius: 16px;
+    padding: 8px 4px;
+    background: #f1f5f9;
+    color: #334155;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-weight: bold;
+    font-size: 15px;
+    transition: transform .1s;
+}
+.onglet-emoji { font-size: 28px; line-height: 1.1; }
+.onglet.actif { background: #8b5cf6; color: #fff; box-shadow: 0 4px 0 #6d28d9; }
+.pastilles { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; padding: 6px; }
+.pastille-couleur {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    box-shadow: 0 0 0 2px #cbd5e1, 0 4px 0 rgba(0, 0, 0, .12);
+    transition: transform .1s;
+}
+.pastille-couleur.choisie { box-shadow: 0 0 0 4px #8b5cf6, 0 4px 0 rgba(0, 0, 0, .12); transform: scale(1.1); }
+.sous-onglets { display: flex; justify-content: center; gap: 10px; margin-bottom: 14px; }
+.sous-onglet {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    background: #f1f5f9;
+    color: #334155;
+}
+.sous-onglet.actif { background: #ec4899; color: #fff; box-shadow: 0 4px 0 #be185d; }
+.vignettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+.vignette {
+    border: 3px solid transparent;
+    border-radius: 18px;
+    background: #f8fafc;
+    padding: 6px 4px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: transform .1s;
+}
+.vignette.choisie { border-color: #8b5cf6; background: #ede9fe; }
+.vignette-img svg { display: block; width: 89px; height: 120px; }
+.vignette-nom { font-size: 14px; font-weight: bold; color: #334155; }
+
+/* Accueil */
+.accueil { display: flex; flex-direction: column; gap: 16px; }
+.accueil-entete { display: flex; align-items: center; gap: 18px; padding: 14px 18px; }
+.accueil-avatar svg { display: block; width: 89px; height: 120px; }
+.accueil-infos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.accueil-pseudo {
+    font-size: clamp(26px, 3.6vw, 38px);
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+.accueil-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+.badge {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: clamp(17px, 2.2vw, 22px);
+    font-weight: bold;
+    white-space: nowrap;
+}
+.badge-total { background: #fef3c7; color: #92400e; }
+.badge-rang { background: #ede9fe; color: #5b21b6; box-shadow: 0 4px 0 #c4b5fd; transition: transform .1s; }
+.accueil-outils { display: flex; flex-direction: column; gap: 10px; }
+.accueil-outils .btn-rond { background: #f1f5f9; }
+.accueil-question { margin: 4px 0 -4px; font-size: clamp(22px, 3vw, 30px); }
+.grille-jeux { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.carte-jeu {
+    --couleur-jeu: #2563eb;
+    border: none;
+    border-radius: 24px;
+    padding: 18px 16px 16px;
+    background: var(--couleur-jeu);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    box-shadow: 0 7px 0 rgba(0, 0, 0, .2);
+    transition: transform .1s, box-shadow .1s;
+}
+.carte-jeu:active { transform: translateY(5px); box-shadow: 0 2px 0 rgba(0, 0, 0, .2); }
+.carte-jeu-emoji { font-size: 56px; line-height: 1.1; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .15)); }
+.carte-jeu-nom { font-size: 24px; font-weight: bold; text-shadow: 1px 1px 0 rgba(0, 0, 0, .25); }
+.carte-jeu-aide { font-size: 16px; opacity: .95; min-height: 2.4em; margin-bottom: 6px; }
+.carte-jeu-record {
+    margin-top: auto;
+    background: rgba(255, 255, 255, .92);
+    color: #1e293b;
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Résultat */
+.resultat { display: flex; justify-content: center; padding-top: 3vh; }
+.resultat-carte {
+    width: min(620px, 100%);
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    border-top: 10px solid var(--couleur-jeu);
+}
+.resultat-jeu { font-size: 20px; font-weight: bold; color: var(--couleur-jeu); }
+.resultat-titre { margin: 0; font-size: clamp(30px, 5vw, 46px); }
+.resultat-bonnes { font-size: clamp(20px, 2.8vw, 26px); color: #334155; }
+.resultat-points {
+    font-size: clamp(44px, 8vw, 72px);
+    font-weight: bold;
+    color: #f59e0b;
+    text-shadow: 0 4px 0 rgba(0, 0, 0, .1);
+    animation: pop .5s .2s both;
+}
+.resultat-record { font-size: 22px; font-weight: bold; color: #b45309; }
+.resultat-rang {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #ede9fe;
+    border-radius: 20px;
+    padding: 10px 18px;
+}
+.resultat-avatar svg { display: block; width: 67px; height: 90px; }
+.resultat-rang-texte {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    font-size: clamp(20px, 2.8vw, 26px);
+    font-weight: bold;
+    color: #5b21b6;
+}
+.rang-ancien { color: #94a3b8; text-decoration: line-through; }
+.rang-fleche { color: #8b5cf6; }
+.rang-nouveau { font-size: clamp(32px, 5vw, 44px); color: #16a34a; animation: pop .5s .6s both; }
+.resultat-depasse {
+    font-size: clamp(19px, 2.6vw, 24px);
+    font-weight: bold;
+    color: #0f766e;
+    background: #ccfbf1;
+    border-radius: 16px;
+    padding: 10px 16px;
+    overflow-wrap: anywhere;
+    animation: arrive .5s .9s both;
+}
+.resultat-boutons { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 8px; }
+
+@keyframes arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (hover: hover) {
+    .btn-gros:hover:not(:disabled), .btn-rond:hover, .onglet:hover, .pastille-couleur:hover,
+    .vignette:hover, .sous-onglet:hover, .badge-rang:hover, .carte-jeu:hover { transform: translateY(-3px); }
+    .pastille-couleur.choisie:hover { transform: scale(1.1) translateY(-3px); }
+}
+
+@media (max-width: 720px) {
+    .editeur-corps { grid-template-columns: 1fr; }
+    .apercu-avatar svg { width: 163px; height: 220px; }
+    .onglets { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 520px) {
+    .accueil-entete { gap: 10px; padding: 12px; }
+    .accueil-avatar svg { width: 67px; height: 90px; }
+    .accueil-outils .btn-rond { width: 44px; height: 44px; font-size: 22px; }
+    .carte-jeu { padding: 12px 14px; }
+    .carte-jeu-emoji { font-size: 44px; }
+    .carte-jeu-aide { min-height: 0; }
+    .pastille-couleur { width: 50px; height: 50px; }
+    .resultat-rang { flex-direction: column; }
+}
