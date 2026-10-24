@@ -144,10 +144,10 @@ sudo cp /tmp/avahi-alias-challenge.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now avahi-alias-challenge.service
 
-# 3. Config lighttpd : tester AVANT de redémarrer.
+# 3. Config lighttpd : sauvegarde, puis redémarrage seulement si le test passe.
+sudo cp /etc/lighttpd/conf-available/50-jeux.conf /etc/lighttpd/conf-available/50-jeux.conf.bak-$(date +%F)
 sudo cp /tmp/50-jeux.conf /etc/lighttpd/conf-available/50-jeux.conf
-sudo /usr/sbin/lighttpd -tt -f /etc/lighttpd/lighttpd.conf
-sudo systemctl restart lighttpd
+sudo /usr/sbin/lighttpd -tt -f /etc/lighttpd/lighttpd.conf && sudo systemctl restart lighttpd
 ```
 
 Vérifications :
