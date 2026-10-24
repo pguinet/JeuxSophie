@@ -48,3 +48,13 @@ test('validerPseudo', () => {
     assert.equal(validerPseudo('a'.repeat(16)), 'a'.repeat(16));
     assert.equal(validerPseudo('a'.repeat(17)), null);
 });
+
+test('charger assainit parties, meilleurs et muet', () => {
+    const brut = '{"v":1,"parties":"x","muet":"oui","meilleurs":{"quiz":120,"image":"a","course":null}}';
+    const e = charger(memoire({ [CLE]: brut }));
+    assert.equal(e.parties, 0);
+    assert.equal(e.muet, false);
+    assert.deepEqual(e.meilleurs, { quiz: 120 });
+    assert.deepEqual(charger(memoire({ [CLE]: '{"v":1,"meilleurs":[5,6]}' })).meilleurs, {});
+    assert.equal(charger(memoire({ [CLE]: '{"v":1,"muet":true}' })).muet, true);
+});

@@ -71,3 +71,15 @@ test('slugAudio', () => {
     assert.equal(slugAudio('T-shirt'), 't-shirt');
     assert.equal(slugAudio("Mum's"), 'mum-s');
 });
+
+test('grammaire : consigne française et trou affiché ___', () => {
+    const qs = genererPartie('quiz', mulberry32(3)).filter(q => q.cle.startsWith('g:'));
+    assert.ok(qs.length > 0);
+    for (const q of qs) {
+        assert.equal(q.sousConsigne, 'Complète la phrase :');
+        assert.ok(q.consigne.includes('___') && !/(^|[^_])_([^_]|$)/.test(q.consigne));
+        assert.ok(q.cle.includes('_'));   // la clé garde la donnée d'origine
+    }
+    const autres = genererPartie('culture', mulberry32(3));
+    assert.ok(autres.every(q => q.sousConsigne === undefined));
+});

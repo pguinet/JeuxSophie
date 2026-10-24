@@ -71,7 +71,12 @@ function leurresDistincts(q) {
 }
 
 function qFixe(q, prefixe, rng) {
-    return { cle: `${prefixe}:${q.question}`, consigne: q.question, choix: choix(q.bonne, leurresDistincts(q), rng) };
+    const base = { cle: `${prefixe}:${q.question}`, consigne: q.question, choix: choix(q.bonne, leurresDistincts(q), rng) };
+    // Grammaire : consigne française au-dessus, trou affiché `___` (données inchangées).
+    if (prefixe === 'g') {
+        return { ...base, consigne: q.question.replace(/_/g, '___'), sousConsigne: 'Complète la phrase :' };
+    }
+    return base;
 }
 
 function qPhrase(p, rng) {

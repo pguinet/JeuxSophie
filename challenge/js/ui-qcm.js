@@ -66,11 +66,12 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
     const aChrono = Boolean(jeu.chrono || jeu.duree);
     chrono.hidden = !aChrono;
 
+    const sousConsigne = creer('div', 'consigne-aide');
     const consigne = creer('div', 'consigne');
     const visuel = creer('div', 'visuel');
     const choixEl = creer('div', 'choix');
     const message = creer('div', 'message');
-    ecran.append(entete, chrono, consigne, visuel, choixEl, message);
+    ecran.append(entete, chrono, sousConsigne, consigne, visuel, choixEl, message);
     app.replaceChildren(ecran);
 
     function fermer() {
@@ -152,6 +153,8 @@ export function lancerQcm(app, jeu, questions, { onFin, onQuitter }) {
         majEntete();
         message.textContent = '';
         message.className = 'message';
+        sousConsigne.textContent = q.sousConsigne ?? '';
+        sousConsigne.hidden = !q.sousConsigne;
         consigne.textContent = q.consigne;
 
         visuel.replaceChildren();

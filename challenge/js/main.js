@@ -12,6 +12,7 @@ import * as audio from './audio.js';
 
 const app = document.getElementById('app');
 let etat = charger();
+const DELAI_RESULTAT_MS = 600;   // Entrée/Espace ignorés juste après l'affichage du résultat
 audio.setMuet(etat.muet);
 
 // Politique d'autoplay : le son ne peut démarrer qu'après un geste de l'enfant.
@@ -97,7 +98,7 @@ function accueil() {
     const pseudo = creer('div', 'accueil-pseudo', etat.profil.pseudo);   // textContent
     const stats = creer('div', 'accueil-stats');
     const total = creer('span', 'badge badge-total', `⭐ ${etat.total} points`);
-    const rang = creer('button', 'badge badge-rang', `🥇 ${rangTexte(moi.rang)} sur ${lignes.length}`);
+    const rang = creer('button', 'badge badge-rang', `${['🥇', '🥈', '🥉'][moi.rang - 1] ?? '🏆'} ${rangTexte(moi.rang)} sur ${lignes.length}`);
     rang.title = 'Voir le classement';
     rang.addEventListener('click', () => { audio.sfxClic(); voirClassement(); });
     stats.append(total, rang);
@@ -196,7 +197,18 @@ function afficherResultat(jeu, res, avant, ancienRecord) {
 
     ecran.append(carte);
     afficher(ecran);
-    rejouer.focus();
+    // Aucun bouton focalisé, et Entrée/Espace ignorés un instant : un Entrée de trop
+    // (validation de la dernière phrase) ne doit pas relancer la partie. Le clic reste possible.
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    const ouvertA = performance.now();
+    const filtre = ev => {
+        if (!ecran.isConnected) { document.removeEventListener('keydown', filtre, true); return; }
+        if ((ev.key === 'Enter' || ev.key === ' ') && performance.now() - ouvertA < DELAI_RESULTAT_MS) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    };
+    document.addEventListener('keydown', filtre, true);
 }
 
 // --- Démarrage (paramètres de test : ?jeu=<id>, ?ecran=compte|accueil|classement) ---

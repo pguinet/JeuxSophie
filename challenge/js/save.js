@@ -19,7 +19,13 @@ export function charger(storage = globalThis.localStorage) {
         const e = { ...nouvelleSauvegarde(), ...d };
         e.profil = profilValide(e.profil);
         if (!Number.isFinite(e.total)) e.total = 0;
-        if (!e.meilleurs || typeof e.meilleurs !== 'object') e.meilleurs = {};
+        if (!Number.isFinite(e.parties)) e.parties = 0;
+        e.muet = e.muet === true;
+        const m = e.meilleurs;
+        e.meilleurs = {};
+        if (m && typeof m === 'object' && !Array.isArray(m)) {
+            for (const [k, v] of Object.entries(m)) if (Number.isFinite(v)) e.meilleurs[k] = v;
+        }
         return e;
     } catch {
         return nouvelleSauvegarde();

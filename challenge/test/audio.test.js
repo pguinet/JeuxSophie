@@ -114,3 +114,16 @@ test('prononcer : un appel remplacé est annulé sans repli tardif', async () =>
         assert.deepEqual(dites, ['nouveau']);
     });
 });
+
+test('prononcer : fichier tardif -> mis en pause au repli, pas de double lecture', async () => {
+    await avecStubs({ comportement: 'rien', voix: true }, async dites => {
+        let audioCree = null;
+        const AudioBase = globalThis.Audio;
+        globalThis.Audio = class extends AudioBase {
+            constructor(src) { super(src); audioCree = this; }
+        };
+        assert.equal(await prononcer('dog', 'dog', 30), 'voix');
+        assert.equal(audioCree.pause.appele, true);
+        assert.deepEqual(dites, ['dog']);
+    });
+});

@@ -111,13 +111,15 @@ export function prononcer(mot, slug, delaiMs = DELAI_SECURITE_MS) {
             resolve(source);
         };
         annulerPrecedent = () => terminer('muet');
+        const a = new Audio(`audio/${slug}.ogg`);
         const repli = () => {
             if (fini) return;
+            // Le fichier ne doit pas démarrer après coup (mot dit deux fois).
+            try { a.pause(); } catch { /* rien à arrêter */ }
             const source = choisirSource({ fichierOk: false, voixAnglaise: Boolean(voixAnglaise()) });
             if (source === 'voix') direAvecVoix(mot);
             terminer(source);
         };
-        const a = new Audio(`audio/${slug}.ogg`);
         dernierAudio = a;
         a.addEventListener('playing', () => terminer('fichier'), { once: true });
         a.addEventListener('error', repli, { once: true });
