@@ -26,49 +26,58 @@ export const FONDS = [
     { id: 'citron', couleur: '#fef9c3' }, { id: 'nuage', couleur: '#f1f5f9' },
 ];
 
-// Calotte lisse (dessus du crâne), partagée par plusieurs coiffures.
-const CALOTTE = '<path d="M36 90 Q40 25 100 26 Q160 25 164 90 Q140 55 100 58 Q60 55 36 90Z"/>';
+// Les cheveux de devant partent toujours d'un arc un peu plus grand que la tête
+// (rayon 74 contre 72) : aucun bord de peau ne dépasse au-dessus des cheveux.
+// `ligne` décrit la limite cheveux/front, de la tempe droite (174,95) à la gauche.
+const casque = ligne => `<path d="M26 95 A74 74 0 0 1 174 95 ${ligne} Z"/>`;
+
+// Calotte lisse, frange arrondie assez basse (front court).
+const CALOTTE = casque('Q154 70 100 72 Q46 70 26 95');
 
 // Chaque coiffure : calque `arriere` (derrière la tête) + calque `avant` (frange),
-// dans le repère du SVG (tête : cercle cx=100 cy=95 r=72, haut du crâne à y=23).
+// dans le repère du SVG (tête : cercle cx=100 cy=95 r=72, haut du crâne à y=23 ;
+// yeux à y≈100-124).
 export const COIFFURES = [
     // Filles
     { id: 'longs', nom: 'Longs', genre: 'fille',
         arriere: '<path d="M30 95 Q28 20 100 18 Q172 20 170 95 L174 175 Q150 160 148 110 L52 110 Q50 160 26 175Z"/>',
-        avant: '<path d="M38 88 Q44 20 100 21 Q156 20 162 88 Q130 60 100 66 Q70 60 38 88Z"/>' },
+        avant: casque('L172 112 Q164 80 140 74 Q114 72 100 62 Q86 72 60 74 Q36 80 28 112') },
     { id: 'queue', nom: 'Queue de cheval', genre: 'fille',
-        arriere: '<circle cx="100" cy="24" r="22"/><path d="M98 10 Q150 0 160 60 Q150 40 130 30Z"/><path d="M162 50 Q190 100 170 150 Q172 95 150 70Z"/>',
+        arriere: '<circle cx="100" cy="22" r="20"/><path d="M98 8 Q150 0 160 60 Q150 40 130 28Z"/><path d="M162 50 Q190 100 170 150 Q172 95 150 70Z"/>',
         avant: CALOTTE },
     { id: 'couettes', nom: 'Couettes', genre: 'fille',
-        arriere: '<circle cx="28" cy="80" r="26"/><circle cx="172" cy="80" r="26"/>',
-        avant: '<path d="M36 92 Q40 25 100 26 Q160 25 164 92 Q150 58 100 52 Q50 58 36 92Z"/>' },
+        arriere: '<circle cx="26" cy="82" r="26"/><circle cx="174" cy="82" r="26"/>',
+        avant: CALOTTE },
     { id: 'carre', nom: 'Carré', genre: 'fille',
         arriere: '<path d="M24 95 Q24 18 100 18 Q176 18 176 95 L176 138 Q176 156 158 156 L42 156 Q24 156 24 138Z"/>',
-        avant: '<path d="M28 104 Q28 20 100 20 Q172 20 172 104 L158 104 Q156 72 140 70 L60 70 Q44 72 42 104Z"/>' },
+        avant: casque('L172 106 L158 106 Q156 80 148 78 L52 78 Q44 80 42 106 L28 106') },
     { id: 'chignon', nom: 'Chignon', genre: 'fille',
-        arriere: '<circle cx="100" cy="24" r="22"/>',
+        arriere: '<circle cx="100" cy="22" r="20"/>',
         avant: CALOTTE },
     { id: 'tresse', nom: 'Tresse', genre: 'fille',
         arriere: '<ellipse cx="160" cy="120" rx="15" ry="19"/><ellipse cx="166" cy="148" rx="14" ry="17"/>'
             + '<ellipse cx="169" cy="174" rx="12" ry="15"/><ellipse cx="170" cy="196" rx="9" ry="11"/>',
-        avant: '<path d="M36 92 Q38 24 100 24 Q162 24 164 92 Q150 54 120 50 Q90 64 36 92Z"/>' },
+        avant: casque('Q164 66 124 64 Q84 66 50 86 Q36 92 26 95') },
     // Garçons
     { id: 'court', nom: 'Court', genre: 'garcon', arriere: '',
-        avant: '<path d="M34 86 Q36 22 100 22 Q164 22 166 86 Q150 56 120 60 Q100 46 80 60 Q50 56 34 86Z"/>' },
+        avant: casque('Q162 74 144 76 Q130 70 118 78 Q106 70 94 78 Q82 70 70 78 Q56 72 46 78 Q34 80 26 95') },
     { id: 'afro', nom: 'Afro', genre: 'garcon', arriere: '<circle cx="100" cy="82" r="78"/>',
-        avant: '<path d="M30 90 Q32 22 100 22 Q168 22 170 90 Q152 52 100 52 Q48 52 30 90Z"/>' },
-    // Front baissé (remarque de Sophie) : la base des pics descend de y≈62 à y≈74.
+        avant: casque('Q156 66 100 68 Q44 66 26 95') },
+    // Pics au-dessus d'un casque, frange en dents de scie (front court).
     { id: 'pics', nom: 'En pics', genre: 'garcon', arriere: '',
-        avant: '<path d="M32 92 L40 30 L60 46 L72 14 L90 38 L104 8 L118 38 L134 14 L142 46 L162 30 L168 92 Q140 70 100 74 Q60 70 32 92Z"/>' },
+        avant: '<path d="M36 64 L42 16 L60 34 L74 6 L90 28 L104 2 L118 28 L134 6 L144 34 L160 16 L166 64Z"/>'
+            + casque('L168 96 L158 74 L146 86 L132 72 L118 84 L100 72 L82 84 L68 72 L54 86 L42 74 L32 96') },
     { id: 'meche', nom: 'Mèche sur le côté', genre: 'garcon', arriere: '',
-        avant: '<path d="M34 86 Q36 22 100 22 Q164 22 166 86 Q154 56 124 56 Q96 58 76 80 Q64 66 34 86Z"/>' },
+        avant: casque('Q166 72 132 68 Q102 66 70 84 Q50 94 26 95') },
     { id: 'boucles', nom: 'Bouclés', genre: 'garcon', arriere: '',
-        avant: '<path d="M36 80 Q40 28 100 28 Q160 28 164 80 Q140 56 100 58 Q60 56 36 80Z"/>'
-            + '<circle cx="40" cy="78" r="15"/><circle cx="46" cy="52" r="16"/><circle cx="64" cy="34" r="16"/>'
-            + '<circle cx="88" cy="24" r="16"/><circle cx="112" cy="24" r="16"/><circle cx="136" cy="34" r="16"/>'
-            + '<circle cx="154" cy="52" r="16"/><circle cx="160" cy="78" r="15"/>' },
+        avant: casque('Q156 70 100 72 Q44 70 26 95')
+            + '<circle cx="34" cy="80" r="14"/><circle cx="40" cy="54" r="16"/><circle cx="60" cy="32" r="16"/>'
+            + '<circle cx="86" cy="20" r="16"/><circle cx="114" cy="20" r="16"/><circle cx="140" cy="32" r="16"/>'
+            + '<circle cx="160" cy="54" r="16"/><circle cx="166" cy="80" r="14"/>'
+            + '<circle cx="58" cy="72" r="11"/><circle cx="80" cy="74" r="11"/><circle cx="100" cy="75" r="11"/>'
+            + '<circle cx="120" cy="74" r="11"/><circle cx="142" cy="72" r="11"/>' },
     { id: 'rase', nom: 'Rasé', genre: 'garcon', arriere: '',
-        avant: '<path d="M30 86 Q30 21 100 21 Q170 21 170 86 Q164 46 100 44 Q36 46 30 86Z"/>' },
+        avant: casque('Q162 60 100 60 Q38 60 26 95') },
 ];
 
 export const LOOK_DEFAUT = { peau: 'p2', coiffure: 'longs', cheveux: 'chatain', haut: 'rose', bas: 'marine', fond: 'creme' };

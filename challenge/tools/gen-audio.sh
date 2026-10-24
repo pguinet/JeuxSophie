@@ -18,7 +18,10 @@ docker run --rm -i -v "$PWD/challenge/audio":/out -v piper-voices:/voices -v "$L
     [ -f "$V.json" ] || curl -sSL -o "$V.json" "$BASE/en_GB-alba-medium.onnx.json"
     while IFS=$'"'"'\t'"'"' read -r slug mot; do
       [ -f "/out/$slug.ogg" ] && [ "$FORCE" != "--force" ] && continue
-      echo "$mot" | piper -m "$V" -f /tmp/w.wav
-      ffmpeg -nostdin -loglevel error -y -i /tmp/w.wav -ac 1 -c:a libopus -b:a 24k "/out/$slug.ogg"
+      # Débit ralenti (1,35) et 0,3 s de silence avant et après, pour que le début
+      # du mot ne soit plus avalé (choix de Sophie, « voix 1 »). Pas d apostrophe ici : script entre quotes.
+      echo "$mot" | piper -m "$V" --length_scale 1.35 -f /tmp/w.wav
+      ffmpeg -nostdin -loglevel error -y -i /tmp/w.wav -af "adelay=300:all=1,apad=pad_dur=0.3" \
+        -ac 1 -c:a libopus -b:a 24k "/out/$slug.ogg"
     done < /liste.tsv
     chown -R '"$(id -u):$(id -g)"' /out'
