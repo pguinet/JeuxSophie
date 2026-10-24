@@ -9,6 +9,7 @@ Collection de petits jeux web 3D faits pour Sophie (la fille de Pascal), jouable
 - **`aventure/`** — *Aventure Jungle* : jeu d'action 3D à la troisième personne (personnage visible, caméra derrière/au-dessus). Le joueur explore une jungle, combat des monstres (serpent, araignée, crocodile, singe) à l'épée et au projectile, gagne des pièces et progresse via un système de quêtes.
 - **`chat/`** — *Mon Chat* : tamagotchi 3D. Sophie s'occupe d'un chat dans une maison avec jardin (5 jauges : faim, soif, bonheur, propreté, fatigue), avec boutique de meubles et sauvegarde locale.
 - **`chat2/`** — *Mon Chat 2* : version 2 **réaliste** du tamagotchi (même principe de jeu, `chat/` reste intact). Chat procédural (SDF → marching cubes → skinning → fourrure en couches), environnement PBR Poly Haven (textures, HDRI, modèles glTF), cycle jour/nuit, post-traitement. Design : `docs/plans/2026-09-02-chat2-design.md`.
+- **`challenge/`** — *The Biggest Challenge* : entraînement à l'anglais de 6ème façon « Big Challenge ». Avatar « figurine Pop » en 2D (SVG), 6 jeux (grand quiz, image et mot, j'écoute, phrases en morceaux, course contre la montre, culture), points seulement, classement contre 30 joueurs inventés. Design : `docs/plans/2026-10-24-biggest-challenge-design.md`.
 
 ## À qui tu parles
 
@@ -29,7 +30,7 @@ Collection de petits jeux web 3D faits pour Sophie (la fille de Pascal), jouable
 
 ## Lancer / tester
 
-Il n'y a **aucun test automatisé ni outil de lint** pour les jeux historiques — la vérification se fait en jouant dans le navigateur. **Exception : le personnage 3D partagé (`shared/`)** : tests `node --import ./shared/test/register.mjs --test shared/test/*.test.mjs` (le crochet fait pointer `three` vers `vendor/`) et ESLint via Docker (`shared/tools/lint.sh`, couvre aussi `habille/`, `etoiles3d/`, `defile/`). **Autre exception : `chat2/`** dispose de tests unitaires (`node --test chat2/test/`), d'ESLint via Docker (`chat2/tools/lint.sh`) et d'un outil de capture headless (`chat2/tools/screenshot.sh <url> <out.png> [w h budget_ms]`, variable `CHROME_LOG=<fichier>` pour récupérer la console JS). Voir la section *Spécificités chat2/* plus bas. Comme les jeux utilisent des ES modules, ils doivent être servis par HTTP (pas d'ouverture `file://`).
+Il n'y a **aucun test automatisé ni outil de lint** pour les jeux historiques — la vérification se fait en jouant dans le navigateur. **Exception : le personnage 3D partagé (`shared/`)** : tests `node --import ./shared/test/register.mjs --test shared/test/*.test.mjs` (le crochet fait pointer `three` vers `vendor/`) et ESLint via Docker (`shared/tools/lint.sh`, couvre aussi `habille/`, `etoiles3d/`, `defile/`). **Autre exception : `chat2/`** dispose de tests unitaires (`node --test chat2/test/`), d'ESLint via Docker (`chat2/tools/lint.sh`) et d'un outil de capture headless (`chat2/tools/screenshot.sh <url> <out.png> [w h budget_ms]`, variable `CHROME_LOG=<fichier>` pour récupérer la console JS). Voir la section *Spécificités chat2/* plus bas. **Autre exception : `challenge/`** dispose de tests unitaires (`node --test challenge/test/`) et d'ESLint via Docker (`challenge/tools/lint.sh`). Voir la section *Spécificités challenge/* plus bas. Comme les jeux utilisent des ES modules, ils doivent être servis par HTTP (pas d'ouverture `file://`).
 
 ```bash
 # Servir tout le dépôt à la racine
@@ -93,6 +94,13 @@ Chaque jeu suit le même squelette :
 - **Interface** : `hud.js`, `actions.js`, `shop.js` (UI) + `shop-logic.js` (pur), `needs.js` (pur), `save.js` (clé `monchat2_save`, migration depuis `monchat_save` v1), `color-picker.js`, `effects.js`, `camera.js`.
 - **Paramètres d'URL utiles** : `?debug=1` (FPS/état), `?q=low|medium|high`, `?nofx=1` (sans ombres ni bloom, pour les captures headless), `?time=0.62&pause=1` (heure du cycle figée), `?cam=x,y,z&look=x,y,z`, `?coat=tabby|black|grey|white|ginger`. Visionneuse du chat seul : `chat2/viewer.html?view=3q|side|face&state=sit|sleep|walk|eat&shells=N`.
 - Les captures headless (SwiftShader) sont **lentes** (1 à 3 min par image avec fourrure et ombres) : utiliser `q=low&nofx=1` pour vérifier la mise en page, réserver la qualité moyenne aux vérifications finales.
+
+### Spécificités *challenge/*
+- **Modules purs testés sous Node** (`challenge/js/`) : `rng.js` (générateur seedé `mulberry32`), `points.js` (barème : base, bonus de vitesse, série, phrases), `avatar.js` (avatar « figurine Pop » en SVG, 12 coiffures, `taille` = hauteur en px), `classement.js` (30 joueurs inventés générés depuis la graine fixe `20261024` : rien à sauvegarder), `save.js` (clé `biggest_save`, compte, points, meilleurs scores), `jeux.js` (définition des 6 jeux `JEUX` et génération des parties), `partie.js` (machines d'état QCM et phrases), `resultat.js` (rangs, joueurs dépassés). Données pédagogiques dans `js/donnees/` (`vocab.js`, `phrases.js`, `grammaire.js`, `culture.js`).
+- **Écrans** : `main.js` (point d'entrée et menu), `ecran-compte.js` (création du compte), `ecran-classement.js`, `ui-qcm.js` (jeux à choix multiples), `ui-phrases.js` (phrases en morceaux). Textes saisis insérés avec `textContent`, jamais `innerHTML`.
+- **Audio** : `audio.js` lit les prononciations `challenge/audio/*.ogg`, générées une fois pour toutes par `challenge/tools/gen-audio.sh` (Docker, voix piper `en_GB-alba`, liste produite par `challenge/tools/liste-audio.mjs`; `--force` regénère tout).
+- **Tests et lint** : `node --test challenge/test/` ; `challenge/tools/lint.sh` (ESLint 9 via Docker).
+- **Paramètres d'URL** : `?jeu=<id>` ouvre directement un jeu (`quiz`, `image`, `ecoute`, `phrases`, `course`, `culture`) ; `?ecran=compte|accueil|classement` ouvre un écran précis.
 
 ### Spécificités *chat/*
 - `cat.js` (le plus gros module) : modèle 3D du chat, fourrure, animations (marche, dort, mange, ronronne, joue, se lave) et comportement autonome piloté par les jauges.
