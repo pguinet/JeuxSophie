@@ -90,12 +90,14 @@ function direAvecVoix(mot) {
 
 const DELAI_SECURITE_MS = 2000;
 let dernierAudio = null;
+let annulerPrecedent = null;   // annule l'appel en cours (minuteur, repli, promesse)
 
 // Prononce `mot`. Renvoie une promesse TOUJOURS résolue avec la source utilisée
 // ('fichier' | 'voix' | 'texte' | 'muet') ; 'texte' = l'écran doit afficher le mot écrit.
 // Le repli (voix, sinon texte) sert si le fichier manque, si la lecture est refusée
 // (autoplay) ou si rien ne se passe au bout de `delaiMs`.
 export function prononcer(mot, slug, delaiMs = DELAI_SECURITE_MS) {
+    if (annulerPrecedent) { annulerPrecedent(); annulerPrecedent = null; }   // avant pause()
     if (dernierAudio) { dernierAudio.pause(); dernierAudio = null; }
     if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
     if (muet) return Promise.resolve('muet');
@@ -108,6 +110,7 @@ export function prononcer(mot, slug, delaiMs = DELAI_SECURITE_MS) {
             clearTimeout(minuteur);
             resolve(source);
         };
+        annulerPrecedent = () => terminer('muet');
         const repli = () => {
             if (fini) return;
             const source = choisirSource({ fichierOk: false, voixAnglaise: Boolean(voixAnglaise()) });

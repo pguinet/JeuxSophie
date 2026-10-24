@@ -92,3 +92,25 @@ test('prononcer : sourdine -> muet', async () => {
         assert.equal(await prononcer('dog', 'dog', 50), 'muet');
     });
 });
+
+test('prononcer : un appel remplacé est annulé sans repli tardif', async () => {
+    await avecStubs({ comportement: 'rien', voix: true }, async dites => {
+        const pendants = [];
+        const AudioBase = globalThis.Audio;
+        globalThis.Audio = class extends AudioBase {
+            constructor(src) {
+                super(src);
+                this.pause = () => pendants.shift()?.(); // pause() fait rejeter le play() en attente
+            }
+            play() {
+                return new Promise((_, rejeter) => pendants.push(() => rejeter(new Error('AbortError'))));
+            }
+        };
+        const premier = prononcer('ancien', 'ancien', 40);
+        const second = prononcer('nouveau', 'nouveau', 40);
+        assert.equal(await premier, 'muet');
+        assert.equal(await second, 'voix');
+        await new Promise(r => setTimeout(r, 120));
+        assert.deepEqual(dites, ['nouveau']);
+    });
+});
