@@ -426,6 +426,7 @@ body {
 }
 .badge-total { background: #fef3c7; color: #92400e; }
 .badge-rang { background: #ede9fe; color: #5b21b6; box-shadow: 0 4px 0 #c4b5fd; transition: transform .1s; }
+.badge-jour { background: #fef9c3; color: #92400e; box-shadow: 0 4px 0 #fcd34d; }
 .accueil-outils { display: flex; flex-direction: column; gap: 10px; }
 .accueil-outils .btn-rond { background: #f1f5f9; }
 .accueil-question { margin: 4px 0 -4px; font-size: clamp(22px, 3vw, 30px); }
@@ -482,6 +483,20 @@ body {
     animation: pop .5s .2s both;
 }
 .resultat-record { font-size: 22px; font-weight: bold; color: #b45309; }
+.resultat-rang-jour {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    background: #fef9c3;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: clamp(18px, 2.4vw, 22px);
+    font-weight: bold;
+    color: #92400e;
+}
+.resultat-rang-jour .rang-nouveau { font-size: clamp(24px, 3.6vw, 32px); }
 .resultat-rang {
     display: flex;
     align-items: center;
@@ -520,7 +535,7 @@ body {
 
 @media (hover: hover) {
     .btn-gros:hover:not(:disabled), .btn-rond:hover, .onglet:hover, .pastille-couleur:hover,
-    .vignette:hover, .sous-onglet:hover, .badge-rang:hover, .carte-jeu:hover { transform: translateY(-3px); }
+    .vignette:hover, .sous-onglet:hover, .badge-rang:hover, .carte-jeu:hover, .classement-onglet:not(.actif):hover { transform: translateY(-3px); }
     .pastille-couleur.choisie:hover { transform: scale(1.1) translateY(-3px); }
 }
 
@@ -542,17 +557,18 @@ body {
 
 /* --- Écran du classement --- */
 .classement { display: flex; flex-direction: column; gap: 14px; }
-.classement-entete {
+.classement-haut {
     position: sticky;
     top: 0;
     z-index: 2;
     display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 8px 0;
-    background: rgba(226, 232, 252, .94);
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 0 10px;
+    background: rgba(226, 232, 252, .98);
     backdrop-filter: blur(6px);
 }
+.classement-entete { display: flex; align-items: center; gap: 14px; }
 .classement-retour { padding: 10px 18px; font-size: clamp(16px, 2.2vw, 20px); white-space: nowrap; }
 .classement-titre { margin: 0; flex: 1; font-size: clamp(24px, 4.5vw, 38px); color: #5b21b6; }
 .classement-liste { list-style: none; margin: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -564,7 +580,7 @@ body {
     border-radius: 18px;
     background: #f1f5f9;
     font-size: clamp(16px, 2.2vw, 20px);
-    scroll-margin: 80px;
+    scroll-margin: 190px 0 20px;
 }
 .classement-ligne.podium-1 { background: #fef3c7; }
 .classement-ligne.podium-2 { background: #e2e8f0; }
@@ -581,6 +597,28 @@ body {
 .classement-pseudo { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .classement-toi { color: #b45309; }
 .classement-points { font-weight: bold; color: #5b21b6; white-space: nowrap; }
+.classement-onglets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.classement-onglet {
+    border: 3px solid transparent;
+    border-radius: 18px;
+    padding: 10px 14px;
+    background: #fff;
+    color: #5b21b6;
+    box-shadow: 0 4px 0 #c4b5fd;
+    font: inherit;
+    font-size: clamp(18px, 2.6vw, 24px);
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform .1s;
+}
+.classement-onglet.actif {
+    background: #7c3aed;
+    border-color: #5b21b6;
+    color: #fff;
+    box-shadow: 0 4px 0 #4c1d95;
+}
+.classement-mention { margin: -2px 0 0; text-align: center; font-size: 17px; font-weight: bold; color: #475569; }
+.classement-mention[hidden] { display: none; }
 
 /* ===================================================================== */
 /* --- Écran QCM v2 : horloge, vies, explication, deux choix (Task 9) --- */

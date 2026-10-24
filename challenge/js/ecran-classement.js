@@ -1,5 +1,6 @@
 // challenge/js/ecran-classement.js
-// Écran du classement : la liste des 31 joueurs, Sophie surlignée et amenée au centre.
+// Écran du classement : deux onglets (Total / Aujourd'hui), la liste des 31 joueurs,
+// Sophie surlignée et amenée au centre.
 import { avatarSVG } from './avatar.js';
 import * as audio from './audio.js';
 
@@ -25,29 +26,68 @@ function ligneJoueur(l) {
     return li;
 }
 
-// afficherClassement(app, lignes, { onRetour })
-export function afficherClassement(app, lignes, { onRetour }) {
+const ONGLETS = [
+    { id: 'total', titre: '🏆 Total' },
+    { id: 'jour', titre: '☀️ Aujourd\'hui' },
+];
+
+// afficherClassement(app, { total: lignes, jour: lignes }, { onRetour, onglet })
+export function afficherClassement(app, lignes, { onRetour, onglet = 'total' }) {
     const ecran = creer('div', 'ecran classement');
     const entete = creer('div', 'classement-entete');
     const retour = creer('button', 'btn-gros btn-blanc classement-retour', '← Accueil');
     const titre = creer('h1', 'classement-titre', '🥇 Classement');
     entete.append(retour, titre);
 
+    const barre = creer('div', 'classement-onglets');
+    barre.setAttribute('role', 'tablist');
+    const boutons = ONGLETS.map(o => {
+        const b = creer('button', 'classement-onglet', o.titre);
+        b.setAttribute('role', 'tab');
+        b.addEventListener('click', () => { if (o.id !== actif) { audio.sfxClic(); montrer(o.id); } });
+        return b;
+    });
+    barre.append(...boutons);
+
+    const mention = creer('div', 'classement-mention', 'Remis à zéro chaque nuit à minuit 🌙');
     const liste = creer('ol', 'classement-liste carte');
-    liste.append(...lignes.map(ligneJoueur));
-    ecran.append(entete, liste);
+    // En-tête collant : retour, titre et onglets restent visibles pendant le défilement.
+    const haut = creer('div', 'classement-haut');
+    haut.append(entete, barre, mention);
+    ecran.append(haut, liste);
+
+    let actif = null;
+    function montrer(id) {
+        actif = ONGLETS.some(o => o.id === id) ? id : 'total';
+        ONGLETS.forEach((o, i) => {
+            const choisi = o.id === actif;
+            boutons[i].classList.toggle('actif', choisi);
+            boutons[i].setAttribute('aria-selected', String(choisi));
+        });
+        mention.hidden = actif !== 'jour';
+        liste.replaceChildren(...lignes[actif].map(ligneJoueur));
+        const moi = liste.querySelector('.classement-moi');
+        if (moi && moi.isConnected) moi.scrollIntoView({ block: 'center' });
+    }
 
     function quitter() {
         document.removeEventListener('keydown', surTouche);
         onRetour();
     }
     function surTouche(e) {
+        if (!ecran.isConnected) { document.removeEventListener('keydown', surTouche); return; }
         if (e.key === 'Escape') quitter();
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            const i = ONGLETS.findIndex(o => o.id === actif);
+            const j = (i + (e.key === 'ArrowRight' ? 1 : ONGLETS.length - 1)) % ONGLETS.length;
+            audio.sfxClic();
+            montrer(ONGLETS[j].id);
+        }
     }
     retour.addEventListener('click', () => { audio.sfxClic(); quitter(); });
     document.addEventListener('keydown', surTouche);
 
     app.replaceChildren(ecran);
-    const moi = liste.querySelector('.classement-moi');
-    if (moi) moi.scrollIntoView({ block: 'center' });
+    montrer(onglet);
 }

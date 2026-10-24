@@ -1,7 +1,8 @@
 // challenge/js/main.js — point d'entrée : écrans compte, accueil, jeu, résultat, classement.
-import { charger, sauver, enregistrerPartie } from './save.js';
+import { charger, sauver, enregistrerPartie, pointsDuJour } from './save.js';
 import { JEUX, genererPartie } from './jeux.js';
-import { classement } from './classement.js';
+import { classement, classementJour } from './classement.js';
+import { jourIndex } from './jour.js';
 import { avatarSVG } from './avatar.js';
 import { lancerQcm } from './ui-qcm.js';
 import { lancerPhrases } from './ui-phrases.js';
@@ -95,9 +96,23 @@ function carteJeu(jeu) {
     return b;
 }
 
+// Les deux classements (Total et Aujourd'hui) calculés au même instant.
+function classements(maintenant = new Date()) {
+    return {
+        index: jourIndex(maintenant),
+        total: classement(etat.profil, etat.total, maintenant),
+        jour: classementJour(etat.profil, pointsDuJour(etat, maintenant), maintenant),
+    };
+}
+
+function medaille(rang, defaut) {
+    return ['🥇', '🥈', '🥉'][rang - 1] ?? defaut;
+}
+
 function accueil() {
-    const lignes = classement(etat.profil, etat.total);
+    const { total: lignes, jour: lignesJour } = classements();
     const moi = lignes.find(l => l.moi);
+    const moiJour = lignesJour.find(l => l.moi);
 
     const ecran = creer('div', 'ecran accueil');
     const entete = creer('div', 'accueil-entete carte');
@@ -108,10 +123,13 @@ function accueil() {
     const pseudo = creer('div', 'accueil-pseudo', etat.profil.pseudo);   // textContent
     const stats = creer('div', 'accueil-stats');
     const total = creer('span', 'badge badge-total', `⭐ ${etat.total} points`);
-    const rang = creer('button', 'badge badge-rang', `${['🥇', '🥈', '🥉'][moi.rang - 1] ?? '🏆'} ${rangTexte(moi.rang)} sur ${lignes.length}`);
-    rang.title = 'Voir le classement';
-    rang.addEventListener('click', () => { audio.sfxClic(); voirClassement(); });
-    stats.append(total, rang);
+    const rang = creer('button', 'badge badge-rang', `${medaille(moi.rang, '🏆')} ${rangTexte(moi.rang)} sur ${lignes.length}`);
+    rang.title = 'Voir le classement de tous les points';
+    rang.addEventListener('click', () => { audio.sfxClic(); voirClassement('total'); });
+    const rangJour = creer('button', 'badge badge-rang badge-jour', `${medaille(moiJour.rang, '☀️')} ${rangTexte(moiJour.rang)} aujourd'hui`);
+    rangJour.title = 'Voir le classement du jour';
+    rangJour.addEventListener('click', () => { audio.sfxClic(); voirClassement('jour'); });
+    stats.append(total, rang, rangJour);
     infos.append(pseudo, stats);
 
     const outils = creer('div', 'accueil-outils');
@@ -136,14 +154,14 @@ function accueil() {
     afficher(ecran);
 }
 
-function voirClassement() {
-    afficherClassement(app, classement(etat.profil, etat.total), { onRetour: accueil });
+function voirClassement(onglet = 'total') {
+    afficherClassement(app, classements(), { onRetour: accueil, onglet });
 }
 
 // --- Partie et résultat ---
 
 function jouer(jeu) {
-    const avant = classement(etat.profil, etat.total);
+    const avant = classements();
     const questions = genererPartie(jeu.id);
     const ancienRecord = etat.meilleurs[jeu.id] ?? 0;
     const fin = (res) => {
@@ -176,10 +194,15 @@ function texteBonnes(jeu, res) {
     return `${res.bonnes} bonne${res.bonnes > 1 ? 's' : ''} réponse${res.bonnes > 1 ? 's' : ''} sur ${res.repondues}`;
 }
 
-function afficherResultat(jeu, res, avant, ancienRecord) {
-    const apres = classement(etat.profil, etat.total);
+function afficherResultat(jeu, res, avants, ancienRecord) {
+    const apress = classements();
+    const avant = avants.total, apres = apress.total;
     const ancien = avant.find(l => l.moi).rang;
     const nouveau = apres.find(l => l.moi).rang;
+    // Classement du jour : si minuit est passé pendant la partie, l'ancien rang n'a plus de sens.
+    const memeJour = avants.index === apress.index;
+    const ancienJour = avants.jour.find(l => l.moi).rang;
+    const nouveauJour = apress.jour.find(l => l.moi).rang;
     audio.sfxFin();
 
     const ecran = creer('div', 'ecran resultat');
@@ -212,6 +235,20 @@ function afficherResultat(jeu, res, avant, ancienRecord) {
     rang.append(avatar, texteRang);
     carte.append(rang);
 
+    const rangJour = creer('div', 'resultat-rang-jour');
+    rangJour.append(creer('span', 'rang-sur', '☀️ Aujourd\'hui : '));
+    if (memeJour && nouveauJour < ancienJour) {
+        rangJour.append(
+            creer('span', 'rang-ancien', rangTexte(ancienJour)),
+            creer('span', 'rang-fleche', '➜'),
+            creer('span', 'rang-nouveau', rangTexte(nouveauJour)),
+        );
+    } else {
+        rangJour.append(creer('span', 'rang-nouveau', rangTexte(nouveauJour)));
+    }
+    rangJour.append(creer('span', 'rang-sur', ` sur ${apress.jour.length}`));
+    carte.append(rangJour);
+
     const phrase = phraseDepasses(joueursDepasses(avant, apres));
     if (phrase) carte.append(creer('div', 'resultat-depasse', `🚀 ${phrase}`));   // textContent
 
@@ -239,7 +276,7 @@ function afficherResultat(jeu, res, avant, ancienRecord) {
     document.addEventListener('keydown', filtre, true);
 }
 
-// --- Démarrage (paramètres de test : ?jeu=<id>, ?ecran=compte|accueil|classement) ---
+// --- Démarrage (paramètres de test : ?jeu=<id>, ?ecran=compte|accueil|classement|classement-jour) ---
 
 function demarrer() {
     const params = new URLSearchParams(location.search);
@@ -248,7 +285,8 @@ function demarrer() {
     if (jeu) { jouer(jeu); return; }
     const ecran = params.get('ecran');
     if (ecran === 'compte') compte();
-    else if (ecran === 'classement') voirClassement();
+    else if (ecran === 'classement') voirClassement('total');
+    else if (ecran === 'classement-jour') voirClassement('jour');
     else accueil();
 }
 

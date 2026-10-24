@@ -1,7 +1,10 @@
 // challenge/test/save.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CLE, charger, sauver, nouvelleSauvegarde, enregistrerPartie, validerPseudo } from '../js/save.js';
+import {
+    CLE, charger, sauver, nouvelleSauvegarde, enregistrerPartie, validerPseudo, pointsDuJour,
+} from '../js/save.js';
+import { jourIndex } from '../js/jour.js';
 
 function memoire(init = {}) {
     const m = new Map(Object.entries(init));
@@ -57,4 +60,40 @@ test('charger assainit parties, meilleurs et muet', () => {
     assert.deepEqual(e.meilleurs, { quiz: 120 });
     assert.deepEqual(charger(memoire({ [CLE]: '{"v":1,"meilleurs":[5,6]}' })).meilleurs, {});
     assert.equal(charger(memoire({ [CLE]: '{"v":1,"muet":true}' })).muet, true);
+});
+
+test('nouvelle sauvegarde : points du jour à 0', () => {
+    assert.deepEqual(nouvelleSauvegarde().jour, { index: 0, points: 0 });
+    assert.equal(pointsDuJour(nouvelleSauvegarde(), new Date(2026, 9, 24, 12, 0)), 0);
+});
+
+test('points du jour : cumul dans la journée, remise à zéro le lendemain', () => {
+    const matin = new Date(2026, 9, 24, 9, 0);
+    const soir = new Date(2026, 9, 24, 21, 0);
+    const lendemain = new Date(2026, 9, 25, 0, 5);
+    const e1 = enregistrerPartie(nouvelleSauvegarde(), 'quiz', 120, matin);
+    const e2 = enregistrerPartie(e1, 'quiz', 80, soir);
+    assert.deepEqual(e2.jour, { index: jourIndex(matin), points: 200 });
+    assert.equal(pointsDuJour(e2, soir), 200);
+    assert.equal(pointsDuJour(e2, lendemain), 0);
+    const e3 = enregistrerPartie(e2, 'image', 30, lendemain);
+    assert.deepEqual(e3.jour, { index: jourIndex(lendemain), points: 30 });
+    assert.equal(e3.total, 230);
+});
+
+test('sauvegarde v1 sans jour ou jour abîmé : 0 point du jour, sans erreur', () => {
+    const t = new Date(2026, 9, 24, 12, 0);
+    const e = charger(memoire({ [CLE]: '{"v":1,"total":500}' }));
+    assert.deepEqual(e.jour, { index: 0, points: 0 });
+    assert.equal(pointsDuJour(e, t), 0);
+    const abime = charger(memoire({ [CLE]: '{"v":1,"jour":{"index":"x","points":null}}' }));
+    assert.deepEqual(abime.jour, { index: 0, points: 0 });
+    assert.deepEqual(charger(memoire({ [CLE]: '{"v":1,"jour":[1,2]}' })).jour, { index: 0, points: 0 });
+    const ok = charger(memoire({ [CLE]: `{"v":1,"jour":{"index":${jourIndex(t)},"points":40}}` }));
+    assert.equal(pointsDuJour(ok, t), 40);
+    // Ancien état en mémoire sans champ jour : enregistrerPartie ne plante pas.
+    const sansJour = nouvelleSauvegarde();
+    delete sansJour.jour;
+    assert.equal(enregistrerPartie(sansJour, 'quiz', 10, t).jour.points, 10);
+    assert.equal(pointsDuJour(sansJour, t), 0);
 });
