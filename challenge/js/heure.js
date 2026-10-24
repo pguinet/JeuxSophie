@@ -16,20 +16,24 @@ export function heureEnAnglais(h, m) {
     return `It's ${MINUTES[60 - m]} to ${NOMBRES[heureSuivante(h)]}.`;
 }
 
-// Leurres pièges : past/to inversés, heure d'à côté, minutes en miroir ou voisines.
-function leurresHeure(h, m, rng) {
+// Quatre choix, un seul juste. Les leurres « pièges » passent en premier
+// (past/to inversé, minutes en miroir), puis on complète avec des voisins mélangés.
+export function choixHeure(h, m, rng = Math.random) {
     const juste = heureEnAnglais(h, m);
-    const candidats = [];
-    if (m > 0 && m < 30) candidats.push(`It's ${MINUTES[m]} to ${NOMBRES[h]}.`);
-    if (m > 30) candidats.push(`It's ${MINUTES[60 - m]} past ${NOMBRES[h]}.`);
-    candidats.push(heureEnAnglais(heureSuivante(h), m), heureEnAnglais(heurePrecedente(h), m));
-    if (m !== 0 && m !== 30) candidats.push(heureEnAnglais(h, 60 - m));
+    const pieges = [];
+    if (m > 0 && m < 30) pieges.push(`It's ${MINUTES[m]} to ${NOMBRES[h]}.`);
+    if (m > 30) pieges.push(`It's ${MINUTES[60 - m]} past ${NOMBRES[h]}.`);
+    if (m !== 0 && m !== 30) pieges.push(heureEnAnglais(h, 60 - m));
+    const voisins = [heureEnAnglais(heureSuivante(h), m), heureEnAnglais(heurePrecedente(h), m)];
     for (const d of [5, 10, -5, -10]) {
         const m2 = m + d;
-        if (m2 >= 0 && m2 < 60) candidats.push(heureEnAnglais(h, m2));
+        if (m2 >= 0 && m2 < 60) voisins.push(heureEnAnglais(h, m2));
     }
     const vus = new Set([juste]);
-    return shuffle(candidats, rng).filter(t => !vus.has(t) && vus.add(t)).slice(0, 3);
+    const leurres = [...pieges, ...shuffle(voisins, rng)]
+        .filter(t => !vus.has(t) && vus.add(t)).slice(0, 3);
+    return shuffle([{ texte: juste, juste: true },
+        ...leurres.map(t => ({ texte: t, juste: false }))], rng);
 }
 
 export function anglesAiguilles(h, m) {
@@ -40,7 +44,7 @@ export function horlogeSVG(h, m) {
     const { heures, minutes } = anglesAiguilles(h, m);
     const graduations = Array.from({ length: 12 }, (_, i) => {
         const a = i * 30;
-        return `<line x1="100" y1="18" x2="100" y2="${i % 3 === 0 ? 34 : 28}" stroke="#334155" stroke-width="${i % 3 === 0 ? 4 : 2}" transform="rotate(${a} 100 100)"/>`;
+        return `<line x1="100" y1="18" x2="100" y2="${i % 3 === 0 ? 30 : 26}" stroke="#334155" stroke-width="${i % 3 === 0 ? 4 : 2}" transform="rotate(${a} 100 100)"/>`;
     }).join('');
     const chiffres = Array.from({ length: 12 }, (_, i) => {
         const n = i + 1, a = (n * 30 - 90) * Math.PI / 180;
@@ -49,8 +53,8 @@ export function horlogeSVG(h, m) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="horloge">
 <circle cx="100" cy="100" r="92" fill="#fff" stroke="#1e3a8a" stroke-width="8"/>
 ${graduations}${chiffres}
-<line x1="100" y1="100" x2="100" y2="52" stroke="#1e293b" stroke-width="8" stroke-linecap="round" transform="rotate(${heures} 100 100)"/>
-<line x1="100" y1="100" x2="100" y2="28" stroke="#dc2626" stroke-width="5" stroke-linecap="round" transform="rotate(${minutes} 100 100)"/>
+<line x1="100" y1="100" x2="100" y2="60" stroke="#1e293b" stroke-width="8" stroke-linecap="round" transform="rotate(${heures} 100 100)"/>
+<line x1="100" y1="100" x2="100" y2="44" stroke="#dc2626" stroke-width="5" stroke-linecap="round" transform="rotate(${minutes} 100 100)"/>
 <circle cx="100" cy="100" r="7" fill="#1e293b"/>
 </svg>`;
 }
@@ -58,8 +62,6 @@ ${graduations}${chiffres}
 export function qHeure(rng = Math.random) {
     const h = 1 + Math.floor(rng() * 12);
     const m = pick([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], rng);
-    const juste = heureEnAnglais(h, m);
-    const choix = shuffle([{ texte: juste, juste: true },
-        ...leurresHeure(h, m, rng).map(t => ({ texte: t, juste: false }))], rng);
-    return { cle: `h:${h}:${m}`, consigne: 'What time is it?', visuelSVG: horlogeSVG(h, m), choix };
+    return { cle: `h:${h}:${m}`, consigne: 'What time is it?', visuelSVG: horlogeSVG(h, m),
+        choix: choixHeure(h, m, rng) };
 }
