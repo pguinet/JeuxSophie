@@ -40,7 +40,7 @@ function leurresMemeTheme(mot, banque, rng) {
     const vus = new Set([norm(mot.en), norm(mot.fr), mot.emoji]);
     const res = [];
     for (const m of shuffle(banque.filter(x => x.theme === mot.theme), rng)) {
-        if (vus.has(norm(m.en)) || vus.has(norm(m.fr)) || vus.has(m.emoji)) continue;
+        if (vus.has(norm(m.en)) || vus.has(norm(m.fr)) || (m.emoji && vus.has(m.emoji))) continue;
         vus.add(norm(m.en)); vus.add(norm(m.fr)); vus.add(m.emoji);
         res.push(m);
         if (res.length === 3) break;

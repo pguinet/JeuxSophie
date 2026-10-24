@@ -11,7 +11,10 @@ test('vocabulaire v2 : volume, thèmes, niveaux', () => {
     }
     assert.equal(new Set(VOCAB.map(m => m.en.toLowerCase())).size, VOCAB.length);
     for (const m of VOCAB) {
-        assert.ok(m.en && m.fr && m.emoji && THEMES_VOCAB.includes(m.theme), JSON.stringify(m));
+        assert.ok(m.en && m.fr && THEMES_VOCAB.includes(m.theme), JSON.stringify(m));
+        assert.equal(typeof m.emoji, 'string');
+        if (m.image) assert.ok(m.emoji, `emoji manquant : ${m.en}`);
+        else assert.equal(m.emoji, '', `mot sans image : emoji vide attendu : ${m.en}`);
         assert.ok([1, 2, 3].includes(m.niveau), JSON.stringify(m));
         assert.equal(typeof m.image, 'boolean');
         assert.ok(!/^to /.test(m.en), m.en);
