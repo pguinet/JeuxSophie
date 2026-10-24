@@ -1,12 +1,14 @@
 // challenge/js/save.js
 // Sauvegarde locale du compte, des points et des meilleurs scores.
 import { jourIndex } from './jour.js';
+import { nouvellesFusees, fuseesValides } from './fusees.js';
 
 export const CLE = 'biggest_save';
 export const PSEUDO_MAX = 16;
 
 export function nouvelleSauvegarde() {
-    return { v: 1, profil: null, total: 0, meilleurs: {}, parties: 0, muet: false, jour: { index: 0, points: 0 } };
+    return { v: 1, profil: null, total: 0, meilleurs: {}, parties: 0, muet: false, jour: { index: 0, points: 0 },
+        fusees: nouvellesFusees() };
 }
 
 function profilValide(p) {
@@ -30,6 +32,7 @@ export function charger(storage = globalThis.localStorage) {
         if (!Number.isFinite(e.parties)) e.parties = 0;
         e.muet = e.muet === true;
         e.jour = jourValide(e.jour);
+        e.fusees = fuseesValides(e.fusees);
         const m = e.meilleurs;
         e.meilleurs = {};
         if (m && typeof m === 'object' && !Array.isArray(m)) {

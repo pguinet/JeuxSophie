@@ -97,3 +97,18 @@ test('sauvegarde v1 sans jour ou jour abîmé : 0 point du jour, sans erreur', (
     assert.equal(enregistrerPartie(sansJour, 'quiz', 10, t).jour.points, 10);
     assert.equal(pointsDuJour(sansJour, t), 0);
 });
+
+test('fusées : absentes de la sauvegarde → état par défaut, abîmées → assainies', () => {
+    assert.deepEqual(nouvelleSauvegarde().fusees, { maj: null, bonus: {}, bonusJour: { index: 0, parBot: {} } });
+    const sans = charger(memoire({ [CLE]: '{"v":1,"total":500}' }));
+    assert.deepEqual(sans.fusees, nouvelleSauvegarde().fusees);
+    const brut = '{"v":1,"fusees":{"maj":"x","bonus":{"0":300,"1":-5,"2":"a","3":null},'
+        + '"bonusJour":{"index":20385,"parBot":{"0":100,"4":1e400}}}}';
+    const e = charger(memoire({ [CLE]: brut }));
+    assert.deepEqual(e.fusees, { maj: null, bonus: { 0: 300 }, bonusJour: { index: 20385, parBot: { 0: 100 } } });
+    assert.deepEqual(charger(memoire({ [CLE]: '{"v":1,"fusees":[1]}' })).fusees, nouvelleSauvegarde().fusees);
+    const ok = { ...nouvelleSauvegarde(), fusees: { maj: 1761000000000, bonus: { 5: 1200 }, bonusJour: { index: 3, parBot: { 5: 200 } } } };
+    const s = memoire();
+    sauver(ok, s);
+    assert.deepEqual(charger(s).fusees, ok.fusees);
+});

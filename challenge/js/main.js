@@ -2,6 +2,7 @@
 import { charger, sauver, enregistrerPartie, pointsDuJour } from './save.js';
 import { JEUX, genererPartie } from './jeux.js';
 import { classement, classementJour } from './classement.js';
+import { avancerFusees } from './fusees.js';
 import { jourIndex } from './jour.js';
 import { avatarSVG } from './avatar.js';
 import { lancerQcm } from './ui-qcm.js';
@@ -17,6 +18,24 @@ import * as audio from './audio.js';
 const app = document.getElementById('app');
 let etat = charger();
 const DELAI_RESULTAT_MS = 600;   // Entrée/Espace ignorés juste après l'affichage du résultat
+const RAFRAICHIR_ACCUEIL_MS = 15000;   // places de l'accueil mises à jour (les fusées bougent)
+
+// Horloge du jeu. Paramètre de test ?maintenant=<date ISO> : le jeu démarre à cette heure-là
+// (et le temps continue de s'écouler normalement).
+const DECALAGE_MS = (() => {
+    const t = Date.parse(new URLSearchParams(location.search).get('maintenant') ?? '');
+    return Number.isFinite(t) ? t - Date.now() : 0;
+})();
+function horloge() {
+    return new Date(Date.now() + DECALAGE_MS);
+}
+
+// Minuteur de rafraîchissement de l'écran affiché (un seul à la fois).
+let minuteur = null;
+function arreterMinuteur() {
+    if (minuteur !== null) clearInterval(minuteur);
+    minuteur = null;
+}
 audio.setMuet(etat.muet);
 
 // Politique d'autoplay : le son ne peut démarrer qu'après un geste de l'enfant.
@@ -31,6 +50,7 @@ function creer(tag, classe, texte) {
 }
 
 function afficher(ecran) {
+    arreterMinuteur();
     app.replaceChildren(ecran);
     window.scrollTo(0, 0);
 }
@@ -43,13 +63,14 @@ function enregistrer(nouvelEtat) {
 // --- Compte et avatar ---
 
 function compte() {
+    arreterMinuteur();
     const p = etat.profil;
     afficherCompte(app, {
         pseudo: p?.pseudo,
         look: p?.look,
         onValider: (pseudo, look) => {
             // Modification : pseudo et date de création conservés.
-            const profil = p ? { ...p, look } : { pseudo, look, creeLe: new Date().toISOString() };
+            const profil = p ? { ...p, look } : { pseudo, look, creeLe: horloge().toISOString() };
             enregistrer({ ...etat, profil });
             accueil();
         },
@@ -96,12 +117,20 @@ function carteJeu(jeu) {
     return b;
 }
 
-// Les deux classements (Total et Aujourd'hui) calculés au même instant.
-function classements(maintenant = new Date()) {
+// Les joueurs fusées gagnent leurs points jusqu'à maintenant (rattrapage si le jeu était fermé).
+function avancer(maintenant = horloge()) {
+    if (!etat.profil) return;
+    const fusees = avancerFusees(etat.fusees, { profil: etat.profil, total: etat.total, maintenant });
+    enregistrer({ ...etat, fusees });
+}
+
+// Les deux classements (Total et Aujourd'hui) calculés au même instant, fusées à jour.
+function classements(maintenant = horloge()) {
+    avancer(maintenant);
     return {
         index: jourIndex(maintenant),
-        total: classement(etat.profil, etat.total, maintenant),
-        jour: classementJour(etat.profil, pointsDuJour(etat, maintenant), maintenant),
+        total: classement(etat.profil, etat.total, maintenant, etat.fusees),
+        jour: classementJour(etat.profil, pointsDuJour(etat, maintenant), maintenant, etat.fusees, etat.total),
     };
 }
 
@@ -110,9 +139,6 @@ function medaille(rang, defaut) {
 }
 
 function accueil() {
-    const { total: lignes, jour: lignesJour } = classements();
-    const moi = lignes.find(l => l.moi);
-    const moiJour = lignesJour.find(l => l.moi);
 
     const ecran = creer('div', 'ecran accueil');
     const entete = creer('div', 'accueil-entete carte');
@@ -123,13 +149,22 @@ function accueil() {
     const pseudo = creer('div', 'accueil-pseudo', etat.profil.pseudo);   // textContent
     const stats = creer('div', 'accueil-stats');
     const total = creer('span', 'badge badge-total', `⭐ ${etat.total} points`);
-    const rang = creer('button', 'badge badge-rang', `${medaille(moi.rang, '🏆')} ${rangTexte(moi.rang)} sur ${lignes.length}`);
+    const rang = creer('button', 'badge badge-rang');
     rang.title = 'Voir le classement de tous les points';
     rang.addEventListener('click', () => { audio.sfxClic(); voirClassement('total'); });
-    const rangJour = creer('button', 'badge badge-rang badge-jour', `${medaille(moiJour.rang, '☀️')} ${rangTexte(moiJour.rang)} aujourd'hui`);
+    const rangJour = creer('button', 'badge badge-rang badge-jour');
     rangJour.title = 'Voir le classement du jour';
     rangJour.addEventListener('click', () => { audio.sfxClic(); voirClassement('jour'); });
     stats.append(total, rang, rangJour);
+    // Places dans les deux classements (recalculées régulièrement : les fusées avancent).
+    const majPlaces = () => {
+        const { total: lignes, jour: lignesJour } = classements();
+        const moi = lignes.find(l => l.moi);
+        const moiJour = lignesJour.find(l => l.moi);
+        rang.textContent = `${medaille(moi.rang, '🏆')} ${rangTexte(moi.rang)} sur ${lignes.length}`;
+        rangJour.textContent = `${medaille(moiJour.rang, '☀️')} ${rangTexte(moiJour.rang)} aujourd'hui`;
+    };
+    majPlaces();
     infos.append(pseudo, stats);
 
     const outils = creer('div', 'accueil-outils');
@@ -152,20 +187,29 @@ function accueil() {
         ecran.append(section);
     }
     afficher(ecran);
+    minuteur = setInterval(() => {
+        if (ecran.isConnected) majPlaces();
+        else arreterMinuteur();
+    }, RAFRAICHIR_ACCUEIL_MS);
 }
 
 function voirClassement(onglet = 'total') {
-    afficherClassement(app, classements(), { onRetour: accueil, onglet });
+    arreterMinuteur();
+    afficherClassement(app, classements(), { onRetour: accueil, onglet, rafraichir: () => classements() });
 }
 
 // --- Partie et résultat ---
 
 function jouer(jeu) {
+    arreterMinuteur();
     const avant = classements();
     const questions = genererPartie(jeu.id);
     const ancienRecord = etat.meilleurs[jeu.id] ?? 0;
     const fin = (res) => {
-        enregistrer(enregistrerPartie(etat, jeu.id, res.points));
+        // Les fusées avancent jusqu'à la fin de la partie avec l'ancien total, puis on compte les points.
+        const maintenant = horloge();
+        avancer(maintenant);
+        enregistrer(enregistrerPartie(etat, jeu.id, res.points, maintenant));
         afficherResultat(jeu, { ...res, total: questions.length }, avant, ancienRecord);
     };
     const opts = { onFin: fin, onQuitter: accueil };
@@ -276,11 +320,13 @@ function afficherResultat(jeu, res, avants, ancienRecord) {
     document.addEventListener('keydown', filtre, true);
 }
 
-// --- Démarrage (paramètres de test : ?jeu=<id>, ?ecran=compte|accueil|classement|classement-jour) ---
+// --- Démarrage (paramètres de test : ?jeu=<id>, ?ecran=compte|accueil|classement|classement-jour,
+// ?maintenant=<date ISO>) ---
 
 function demarrer() {
     const params = new URLSearchParams(location.search);
     if (!etat.profil) { compte(); return; }
+    avancer();   // rattrape les gains des fusées pendant que le jeu était fermé
     const jeu = JEUX.find(j => j.id === params.get('jeu'));
     if (jeu) { jouer(jeu); return; }
     const ecran = params.get('ecran');

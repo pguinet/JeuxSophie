@@ -3,6 +3,7 @@
 import { mulberry32, hashString, pick, shuffle } from './rng.js';
 import { lookAleatoire } from './avatar.js';
 import { jourIndex } from './jour.js';
+import { estPeriodeFusee, debutFusees, fuseesValides } from './fusees.js';
 
 export { jourIndex };
 
@@ -86,18 +87,42 @@ function ranger(lignes) {
     return lignes.map((l, i) => ({ ...l, rang: i + 1 }));
 }
 
-// Classement sur les points totaux.
-export function classement(profil, total, maintenant = new Date()) {
-    const lignes = bots().map(b => ({
-        pseudo: b.pseudo, look: b.look, points: pointsBot(b, profil.creeLe, maintenant), moi: false,
+// Joueurs inventés qui sont des fusées 🚀 en ce moment : pendant une période, ceux qui sont
+// devant Sophie au classement Total (voir fusees.js). `pointsTotaux[i]` = points du joueur i.
+function fuseesActives(profil, total, maintenant, pointsTotaux) {
+    const actif = estPeriodeFusee(maintenant) && maintenant.getTime() >= debutFusees(profil);
+    return pointsTotaux.map(p => actif && p > total);
+}
+
+// Points totaux de chaque joueur inventé, bonus des fusées compris.
+function totauxBots(liste, profil, maintenant, f) {
+    return liste.map(b => pointsBot(b, profil.creeLe, maintenant) + (f.bonus[b.id] ?? 0));
+}
+
+// Classement sur les points totaux (avec les bonus des fusées si `fusees` est donné).
+export function classement(profil, total, maintenant = new Date(), fusees = null) {
+    const f = fuseesValides(fusees);
+    const liste = bots();
+    const points = totauxBots(liste, profil, maintenant, f);
+    const fusee = fuseesActives(profil, total, maintenant, points);
+    const lignes = liste.map((b, i) => ({
+        pseudo: b.pseudo, look: b.look, points: points[i], moi: false, fusee: fusee[i],
     }));
-    lignes.push({ pseudo: profil.pseudo, look: profil.look, points: total, moi: true });
+    lignes.push({ pseudo: profil.pseudo, look: profil.look, points: total, moi: true, fusee: false });
     return ranger(lignes);
 }
 
-// Classement du jour : points gagnés depuis minuit (remis à zéro chaque nuit).
-export function classementJour(profil, pointsJour, maintenant = new Date()) {
-    const lignes = bots().map(b => ({ pseudo: b.pseudo, look: b.look, points: pointsBotJour(b, maintenant), moi: false }));
-    lignes.push({ pseudo: profil.pseudo, look: profil.look, points: pointsJour, moi: true });
+// Classement du jour : points gagnés depuis minuit (remis à zéro chaque nuit), bonus des fusées
+// du jour compris. Les fusées sont celles du Total : `total` = points totaux de Sophie.
+export function classementJour(profil, pointsJour, maintenant = new Date(), fusees = null, total = 0) {
+    const f = fuseesValides(fusees);
+    const bonusJour = f.bonusJour.index === jourIndex(maintenant) ? f.bonusJour.parBot : {};
+    const liste = bots();
+    const fusee = fuseesActives(profil, total, maintenant, totauxBots(liste, profil, maintenant, f));
+    const lignes = liste.map((b, i) => ({
+        pseudo: b.pseudo, look: b.look, points: pointsBotJour(b, maintenant) + (bonusJour[b.id] ?? 0),
+        moi: false, fusee: fusee[i],
+    }));
+    lignes.push({ pseudo: profil.pseudo, look: profil.look, points: pointsJour, moi: true, fusee: false });
     return ranger(lignes);
 }

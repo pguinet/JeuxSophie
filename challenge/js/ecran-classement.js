@@ -1,10 +1,12 @@
 // challenge/js/ecran-classement.js
 // Écran du classement : deux onglets (Total / Aujourd'hui), la liste des 31 joueurs,
-// Sophie surlignée et amenée au centre.
+// Sophie surlignée et amenée au centre. Les joueurs fusées 🚀 ont un 🟢 « en train de jouer »,
+// et la liste se met à jour toute seule pendant que l'écran est ouvert.
 import { avatarSVG } from './avatar.js';
 import * as audio from './audio.js';
 
 const MEDAILLES = ['🥇', '🥈', '🥉'];
+const RAFRAICHIR_MS = 5000;
 
 function creer(tag, classe, texte) {
     const el = document.createElement(tag);
@@ -21,6 +23,11 @@ function ligneJoueur(l) {
     avatar.innerHTML = avatarSVG(l.look, { taille: 40 });   // SVG généré, sans texte saisi
     const pseudo = creer('span', 'classement-pseudo', l.pseudo);   // textContent
     if (l.moi) pseudo.append(creer('span', 'classement-toi', ' (toi)'));
+    if (l.fusee) {
+        li.classList.add('classement-fusee');
+        pseudo.prepend(creer('span', 'classement-vert', '🟢 '));
+        pseudo.append(creer('span', 'classement-joue', 'en train de jouer'));
+    }
     const points = creer('span', 'classement-points', `⭐ ${l.points}`);
     li.append(rang, avatar, pseudo, points);
     return li;
@@ -31,8 +38,9 @@ const ONGLETS = [
     { id: 'jour', titre: '☀️ Aujourd\'hui' },
 ];
 
-// afficherClassement(app, { total: lignes, jour: lignes }, { onRetour, onglet })
-export function afficherClassement(app, lignes, { onRetour, onglet = 'total' }) {
+// afficherClassement(app, { total: lignes, jour: lignes }, { onRetour, onglet, rafraichir })
+// `rafraichir()` (facultatif) renvoie de nouvelles lignes ; appelé toutes les 5 s.
+export function afficherClassement(app, lignes, { onRetour, onglet = 'total', rafraichir = null }) {
     const ecran = creer('div', 'ecran classement');
     const entete = creer('div', 'classement-entete');
     const retour = creer('button', 'btn-gros btn-blanc classement-retour', '← Accueil');
@@ -57,6 +65,10 @@ export function afficherClassement(app, lignes, { onRetour, onglet = 'total' }) 
     ecran.append(haut, liste);
 
     let actif = null;
+    function remplir() {
+        liste.replaceChildren(...lignes[actif].map(ligneJoueur));
+    }
+    // Changement d'onglet : Sophie est ramenée au centre.
     function montrer(id) {
         actif = ONGLETS.some(o => o.id === id) ? id : 'total';
         ONGLETS.forEach((o, i) => {
@@ -65,17 +77,32 @@ export function afficherClassement(app, lignes, { onRetour, onglet = 'total' }) 
             boutons[i].setAttribute('aria-selected', String(choisi));
         });
         mention.hidden = actif !== 'jour';
-        liste.replaceChildren(...lignes[actif].map(ligneJoueur));
+        remplir();
         const moi = liste.querySelector('.classement-moi');
         if (moi && moi.isConnected) moi.scrollIntoView({ block: 'center' });
     }
 
+    // Mise à jour en direct : même onglet, sans toucher au défilement de l'enfant.
+    let minuteur = null;
+    function arreter() {
+        if (minuteur !== null) clearInterval(minuteur);
+        minuteur = null;
+    }
+    if (rafraichir) {
+        minuteur = setInterval(() => {
+            if (!ecran.isConnected) { arreter(); return; }
+            lignes = rafraichir();
+            remplir();
+        }, RAFRAICHIR_MS);
+    }
+
     function quitter() {
+        arreter();
         document.removeEventListener('keydown', surTouche);
         onRetour();
     }
     function surTouche(e) {
-        if (!ecran.isConnected) { document.removeEventListener('keydown', surTouche); return; }
+        if (!ecran.isConnected) { arreter(); document.removeEventListener('keydown', surTouche); return; }
         if (e.key === 'Escape') quitter();
         else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             e.preventDefault();

@@ -596,6 +596,9 @@ body {
 .classement-avatar svg { display: block; width: 30px; height: 40px; }
 .classement-pseudo { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .classement-toi { color: #b45309; }
+.classement-ligne.classement-fusee { box-shadow: inset 4px 0 0 #22c55e; }
+.classement-vert { font-size: .8em; }
+.classement-joue { display: block; font-size: 13px; font-weight: bold; color: #15803d; line-height: 1.1; }
 .classement-points { font-weight: bold; color: #5b21b6; white-space: nowrap; }
 .classement-onglets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .classement-onglet {
