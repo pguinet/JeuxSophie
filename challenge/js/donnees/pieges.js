@@ -15,7 +15,7 @@ export const PIEGES = [
     { theme: 'to/too/two', question: 'I have _ sisters.', bonne: 'two', leurres: ['to', 'too', 'tow'], niveau: 1 },
     { theme: 'to/too/two', question: 'It is _ cold today. Let us stay inside.', bonne: 'too', leurres: ['to', 'two', 'so to'], niveau: 1 },
     { theme: 'to/too/two', question: 'We are going _ the beach.', bonne: 'to', leurres: ['too', 'two', 'tu'], niveau: 1 },
-    { theme: 'to/too/two', question: 'Can I come _? (moi aussi)', bonne: 'too', leurres: ['to', 'two', 'also'], niveau: 2 },
+    { theme: 'to/too/two', question: 'Can I come _? (moi aussi)', bonne: 'too', leurres: ['to', 'two', 'toe'], niveau: 2 },
     { theme: 'to/too/two', question: 'This bag is _ heavy for me to carry.', bonne: 'too', leurres: ['to', 'two', 'enough'], niveau: 3 },
     // your / you're
     { theme: "your/you're", question: "_ my best friend.", bonne: "You're", leurres: ['Your', 'Youre', 'You'], niveau: 2 },
@@ -53,7 +53,7 @@ export const PIEGES = [
     { theme: 'buy/by/bye', question: 'Goodbye! _! See you tomorrow.', bonne: 'Bye', leurres: ['Buy', 'By', 'Bi'], niveau: 1 },
     { theme: 'buy/by/bye', question: 'The cinema is _ the park. (à côté de)', bonne: 'by', leurres: ['buy', 'bye', 'bi'], niveau: 3 },
     // no / know
-    { theme: 'no/know', question: 'I _ the answer!', bonne: 'know', leurres: ['no', 'now', 'knew'], niveau: 1 },
+    { theme: 'no/know', question: 'I _ the answer!', bonne: 'know', leurres: ['no', 'now', 'knows'], niveau: 1 },
     { theme: 'no/know', question: '_, thank you. I am full.', bonne: 'No', leurres: ['Know', 'Now', 'Knew'], niveau: 1 },
     { theme: 'no/know', question: 'There is _ milk in the fridge. It is empty.', bonne: 'no', leurres: ['know', 'now', 'not'], niveau: 2 },
     // new / knew
@@ -119,7 +119,7 @@ export const PIEGES = [
     { theme: 'actually ≠ actuellement', question: 'I thought he was ten, but _ he is twelve.', bonne: 'actually', leurres: ['at the moment', 'usually', 'finally'], niveau: 3 },
     // sensible ≠ sensible
     { theme: 'sensible ≠ sensible', question: 'Comment dit-on « sensible » (qui a facilement de la peine) en anglais ?', bonne: 'sensitive', leurres: ['sensible', 'sensibel', 'sensitiv'], niveau: 3 },
-    { theme: 'sensible ≠ sensible', question: 'My brother is very _. He never does silly things. (raisonnable)', bonne: 'sensible', leurres: ['sensitive', 'sensual', 'sensing'], niveau: 3 },
+    { theme: 'sensible ≠ sensible', question: 'My brother is very _. He never does silly things. (raisonnable)', bonne: 'sensible', leurres: ['sensitive', 'sensibly', 'sensing'], niveau: 3 },
     // sympathetic ≠ sympathique
     { theme: 'sympathetic ≠ sympathique', question: 'Comment dit-on « sympathique » (agréable) en anglais ?', bonne: 'nice', leurres: ['sympathetic', 'sympathique', 'sympatic'], niveau: 2 },
     { theme: 'sympathetic ≠ sympathique', question: 'Our new teacher is very _. We all like her.', bonne: 'nice', leurres: ['sympathetic', 'sympatic', 'sympathy'], niveau: 3 },
@@ -141,7 +141,7 @@ export const PIEGES = [
     { theme: 'location ≠ location', question: 'Comment dit-on « location de voitures » en anglais britannique ?', bonne: 'car hire', leurres: ['car location', 'car locating', 'car rent'], niveau: 3 },
     { theme: 'location ≠ location', question: 'Que veut dire « location » dans « the location of the school » ?', bonne: 'l\'endroit', leurres: ['la location', 'la leçon', 'la sortie'], niveau: 3 },
     // pain ≠ pain
-    { theme: 'pain ≠ pain', question: 'Comment dit-on « pain » (qu\'on mange) en anglais ?', bonne: 'bread', leurres: ['pain', 'bun', 'cake'], niveau: 1 },
+    { theme: 'pain ≠ pain', question: 'Comment dit-on « pain » (qu\'on mange) en anglais ?', bonne: 'bread', leurres: ['pain', 'butter', 'cake'], niveau: 1 },
     { theme: 'pain ≠ pain', question: 'I have a _ in my back. (une douleur)', bonne: 'pain', leurres: ['bread', 'pen', 'pane'], niveau: 2 },
     // coin ≠ coin
     { theme: 'coin ≠ coin', question: 'Comment dit-on « coin » (de la rue) en anglais ?', bonne: 'corner', leurres: ['coin', 'edge', 'side'], niveau: 2 },
@@ -161,7 +161,7 @@ export const PIEGES = [
     { theme: 'chips ≠ chips', question: 'Comment dit-on « frites » en anglais britannique ?', bonne: 'chips', leurres: ['crisps', 'fries', 'French chips'], niveau: 3 },
     { theme: 'chips ≠ chips', question: 'Comment dit-on « chips » (le paquet croustillant) en anglais britannique ?', bonne: 'crisps', leurres: ['chips', 'fries', 'chipps'], niveau: 3 },
     // ask ≠ demander
-    { theme: 'demand ≠ demander', question: 'Comment dit-on « demander » (une question) en anglais ?', bonne: 'ask', leurres: ['demand', 'request', 'order'], niveau: 3 },
+    { theme: 'demand ≠ demander', question: 'Comment dit-on « demander » (quelque chose à quelqu\'un) en anglais ?', bonne: 'ask', leurres: ['demand', 'request', 'order'], niveau: 3 },
     // disappoint ≠ décevoir
     { theme: 'deceive ≠ décevoir', question: 'Comment dit-on « décevoir » en anglais ?', bonne: 'disappoint', leurres: ['deceive', 'decide', 'receive'], niveau: 3 },
     // rude ≠ rude
@@ -196,13 +196,13 @@ export const PIEGES = [
     // look / watch / see
     { theme: 'look/watch/see', question: '_ at the blackboard, please!', bonne: 'Look', leurres: ['Watch', 'See', 'Listen'], niveau: 1 },
     { theme: 'look/watch/see', question: 'I _ TV every evening.', bonne: 'watch', leurres: ['look', 'see', 'listen'], niveau: 1 },
-    { theme: 'look/watch/see', question: 'Can you _ the mountain from your window?', bonne: 'see', leurres: ['look', 'watch', 'listen'], niveau: 3 },
+    { theme: 'look/watch/see', question: 'I can _ the mountain from my window.', bonne: 'see', leurres: ['look', 'watch', 'listen'], niveau: 3 },
     // borrow / lend
     { theme: 'borrow/lend', question: 'Can I _ your pen, please?', bonne: 'borrow', leurres: ['lend', 'lent', 'leave'], niveau: 2 },
     { theme: 'borrow/lend', question: 'Can you _ me your bike for an hour?', bonne: 'lend', leurres: ['borrow', 'borrowed', 'owe'], niveau: 3 },
     // bring / take
     { theme: 'bring/take', question: 'Come to my party and _ your friends!', bonne: 'bring', leurres: ['take', 'carry', 'go'], niveau: 3 },
-    { theme: 'bring/take', question: 'It is cold. _ your coat when you go out.', bonne: 'Take', leurres: ['Bring', 'Carry', 'Come'], niveau: 3 },
+    { theme: 'bring/take', question: 'It is cold. _ your coat when you go out. (tu sors sans moi)', bonne: 'Take', leurres: ['Bring', 'Carry', 'Come'], niveau: 3 },
     // learn / teach
     { theme: 'learn/teach', question: 'Mrs Brown _ us English.', bonne: 'teaches', leurres: ['learns', 'learn', 'teach'], niveau: 2 },
     { theme: 'learn/teach', question: 'I want to _ to swim.', bonne: 'learn', leurres: ['teach', 'study', 'know'], niveau: 2 },
@@ -231,7 +231,7 @@ export const PIEGES = [
     { theme: 'be ≠ avoir', question: 'I _ hungry. Can I have a sandwich?', bonne: 'am', leurres: ['have', 'has', 'got'], niveau: 1 },
     { theme: 'be ≠ avoir', question: 'We _ cold. Can you close the window?', bonne: 'are', leurres: ['have', 'has', 'got'], niveau: 2 },
     // also / too
-    { theme: 'also/too', question: 'I like pizza and I _ like pasta.', bonne: 'also', leurres: ['too', 'as well', 'either'], niveau: 3 },
+    { theme: 'also/too', question: 'I like pizza and I _ like pasta.', bonne: 'also', leurres: ['so', 'as well', 'either'], niveau: 3 },
     // at home
     { theme: 'at home', question: 'I am _ home.', bonne: 'at', leurres: ['in', 'on', 'to'], niveau: 2 },
 ];
