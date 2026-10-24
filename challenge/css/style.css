@@ -605,3 +605,164 @@ body {
     .choix.deux { grid-template-columns: 1fr 1fr; gap: 12px; }
     .explication { font-size: 18px; }
 }
+
+/* ===================================================================== */
+/* --- Relie les mots, Le pendu, Lettres mélangées (Task 10) --- */
+/* ===================================================================== */
+/* Relier */
+.relier {
+    width: min(820px, 100%);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(12px, 4vw, 60px);
+}
+.relier-colonne { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.relier-titre { font-size: 18px; font-weight: bold; color: #475569; }
+.carte-relier {
+    min-height: 64px;
+    border: 4px solid transparent;
+    border-radius: 20px;
+    background: #fff;
+    color: #1e293b;
+    font-size: clamp(18px, 2.6vw, 26px);
+    font-weight: bold;
+    line-height: 1.15;
+    padding: 8px 12px;
+    overflow-wrap: anywhere;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .15);
+    transition: transform .1s, box-shadow .1s, background .15s;
+}
+.carte-relier.carte-en { color: var(--couleur-jeu); }
+.carte-relier.choisie {
+    border-color: var(--couleur-jeu);
+    background: color-mix(in srgb, var(--couleur-jeu) 18%, #fff);
+    transform: scale(1.04);
+}
+.carte-relier.faite { background: #22c55e; color: #fff; box-shadow: none; opacity: .85; animation: pop .3s; }
+.carte-relier.erreur { background: #ef4444; color: #fff; border-color: #ef4444; animation: secoue .4s; }
+.carte-relier:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .15); }
+
+/* Pendu */
+.pendu-haut {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 4vw, 48px);
+    width: min(820px, 100%);
+}
+.pendu-dessin { width: 190px; flex-shrink: 0; }
+.pendu-dessin svg { display: block; width: 100%; height: auto; }
+.pendu-dessin.secoue { animation: secoue .4s; }
+.pendu-indice { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+.pendu-indice .consigne { overflow-wrap: anywhere; }
+.pendu-emoji { font-size: 72px; line-height: 1; filter: drop-shadow(0 5px 0 rgba(0, 0, 0, .12)); }
+.pendu-emoji[hidden] { display: none; }
+.pendu-vies { font-size: 18px; font-weight: bold; color: #475569; }
+.pendu-mot, .lettres-cases {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 8px;
+    width: min(820px, 100%);
+}
+.case-lettre {
+    flex: 0 1 58px;
+    min-width: 0;
+    height: 66px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    border-bottom: 5px solid var(--couleur-jeu);
+    background: rgba(255, 255, 255, .85);
+    font-size: clamp(22px, 4vw, 40px);
+    font-weight: bold;
+    color: #1e293b;
+}
+.case-espace { flex: 0 1 26px; }
+.case-signe { flex: 0 0 auto; align-self: center; font-size: clamp(22px, 4vw, 40px); font-weight: bold; }
+.pendu-mot.gagne .case-lettre, .lettres-cases.correct .case-lettre { background: #22c55e; color: #fff; border-color: #15803d; animation: pop .3s; }
+.case-lettre.manquee { color: #dc2626; background: #fee2e2; border-color: #dc2626; }
+.pendu-mot.perdu .case-lettre { color: #dc2626; border-color: #dc2626; }
+.clavier {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 8px;
+    width: min(820px, 100%);
+}
+.cle {
+    height: 52px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    color: #1e293b;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .15);
+    transition: transform .1s, box-shadow .1s;
+}
+.cle:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .15); }
+.cle:disabled { box-shadow: none; color: #94a3b8; background: #e2e8f0; }
+.cle.bonne:disabled { background: #22c55e; color: #fff; }
+.cle.mauvaise:disabled { background: #ef4444; color: #fff; opacity: .6; }
+
+/* Lettres mélangées */
+.lettres-indice {
+    padding: 10px 26px;
+    border-radius: 20px;
+    background: #fff;
+    border: 4px solid var(--couleur-jeu);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .1);
+    overflow-wrap: anywhere;
+}
+.lettres-cases.secoue { animation: secoue .4s; }
+.case-lettre.pleine { background: var(--couleur-jeu); color: #fff; }
+.case-lettre.fausse { background: #ef4444; color: #fff; border-color: #b91c1c; }
+.case-lettre.solution { background: #dcfce7; color: #15803d; border-color: #16a34a; }
+.lettres-tuiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: min(820px, 100%); }
+.tuile {
+    width: 62px;
+    height: 62px;
+    border: none;
+    border-radius: 16px;
+    background: #fff;
+    color: #1e293b;
+    font-size: 32px;
+    font-weight: bold;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .15);
+    transition: transform .1s, box-shadow .1s, opacity .15s;
+}
+.tuile.utilisee { opacity: .2; box-shadow: none; }
+.tuile:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .15); }
+.btn-effacer {
+    border: none;
+    border-radius: 18px;
+    padding: 10px 26px;
+    font-size: 22px;
+    font-weight: bold;
+    background: #fff;
+    color: #1e293b;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .15);
+}
+.btn-effacer:disabled { opacity: .4; box-shadow: none; }
+.lettres-essais { font-size: 18px; font-weight: bold; color: #475569; min-height: 1.3em; }
+
+@media (hover: hover) {
+    .carte-relier:hover:not(:disabled), .cle:hover:not(:disabled), .tuile:hover:not(:disabled),
+    .btn-effacer:hover:not(:disabled) { transform: translateY(-3px); }
+    .carte-relier.choisie:hover { transform: scale(1.04) translateY(-3px); }
+}
+
+@media (max-width: 520px) {
+    .carte-relier { min-height: 56px; font-size: 18px; padding: 6px 8px; }
+    .pendu-haut { gap: 10px; }
+    .pendu-dessin { width: 120px; }
+    .pendu-emoji { font-size: 52px; }
+    .pendu-vies { font-size: 14px; }
+    .pendu-mot, .lettres-cases { gap: 4px; }
+    .case-lettre { height: 50px; border-radius: 10px; }
+    .case-espace { flex-basis: 14px; }
+    .clavier { grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .cle { height: 46px; font-size: 20px; }
+    .tuile { width: 52px; height: 52px; font-size: 26px; }
+}
